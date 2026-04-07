@@ -5,7 +5,8 @@ sealed class Routes(val route: String) {
     object Login : Routes("login")
     object Home : Routes("home")
     object Cliente : Routes("cliente")
-    object Venta : Routes("venta")
+    object QrScanner : Routes("qr_scanner")
+    object Venta : Routes("venta?clienteId={clienteId}")
     object Inventario : Routes("inventario")
     object Carrito: Routes("carrito")
 }

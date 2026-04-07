@@ -8,6 +8,7 @@ data class VentaDetalleEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val ventaId: Int,
     val productoVariacionId: Int,
+    val nombreProducto: String,
     val cantidad: Double,
     val precioUnitario: Double
 )

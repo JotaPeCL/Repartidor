@@ -10,17 +10,21 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.repartidor.data.local.AppDatabase
 import com.example.repartidor.data.local.SessionManager
+import com.example.repartidor.data.repository.ClienteRepository
 import com.example.repartidor.data.repository.HomeRepository
 import com.example.repartidor.data.repository.InventarioRepository
 import com.example.repartidor.data.repository.SyncRepository
 import com.example.repartidor.data.repository.UsuarioRepository
 
 import com.example.repartidor.ui.screens.Cliente.ClienteScreen
+import com.example.repartidor.ui.screens.Cliente.QrScannerScreen
 import com.example.repartidor.ui.screens.Home.HomeScreen
 import com.example.repartidor.ui.screens.Inventario.InventarioSreen
 import com.example.repartidor.ui.screens.Venta.CarritosScreen
@@ -28,6 +32,7 @@ import com.example.repartidor.ui.screens.Venta.VentaScreen
 import com.example.repartidor.ui.screens.login.LoginScreen
 import com.example.repartidor.ui.screens.login.SyncScreen
 import com.example.repartidor.utils.AppConfig
+import com.example.repartidor.viewmodel.ClienteViewModel
 import com.example.repartidor.viewmodel.HomeViewModel
 import com.example.repartidor.viewmodel.InventarioViewModel
 import com.example.repartidor.viewmodel.LoginViewModel
@@ -70,6 +75,12 @@ fun AppNavigation() {
 
     val inventarioRepository = remember { InventarioRepository(db) }
     val inventarioViewModel = remember { InventarioViewModel(inventarioRepository) }
+
+    val clienteRepository = remember { ClienteRepository(db.clienteDao()) }
+
+    val clienteViewModel = remember {
+        ClienteViewModel(clienteRepository)
+    }
 
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
@@ -179,13 +190,44 @@ fun AppNavigation() {
         }
 
         composable(Routes.Cliente.route) {
-            ClienteScreen(onClienteSeleccionado = { navController.navigate(Routes.Venta.route) })
+            ClienteScreen(
+                viewModel = clienteViewModel,
+                onClienteSeleccionado = { clienteId ->
+                    navController.navigate("venta?clienteId=$clienteId")
+                },
+                onIrQrScanner = {
+                    navController.navigate(Routes.QrScanner.route)
+                }
+            )
         }
 
-        composable(Routes.Venta.route) {
-            VentaScreen(onIrCarrito = {
-                navController.navigate(Routes.Carrito.route)
-            })
+        composable(Routes.QrScanner.route) {
+            QrScannerScreen(
+                onQrDetectado = { clienteId ->
+                    clienteViewModel.buscarCliente(clienteId) // 🔥 reutilizas lógica
+                    navController.popBackStack() // 🔥 regresas a ClienteScreen
+                }
+            )
+        }
+
+        composable(
+            route = Routes.Venta.route,
+            arguments = listOf(
+                navArgument("clienteId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
+            )
+        ) { backStackEntry ->
+
+            val clienteId = backStackEntry.arguments?.getInt("clienteId")
+
+            VentaScreen(
+                clienteId = if (clienteId == -1) null else clienteId,
+                onIrCarrito = {
+                    navController.navigate(Routes.Carrito.route)
+                }
+            )
         }
 
         composable(Routes.Carrito.route) {

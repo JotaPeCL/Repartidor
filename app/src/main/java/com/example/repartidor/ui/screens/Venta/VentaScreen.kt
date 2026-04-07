@@ -24,64 +24,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun VentaScreen(onIrCarrito: () -> Unit) {
+fun VentaScreen(
+    clienteId: Int?,
+    onIrCarrito: () -> Unit
+) {
 
+    Column(modifier = Modifier.padding(16.dp)) {
 
-    val productos = listOf(
-        "cacahuates",
-        "papas",
-        "lunetas",
-        "Krankys"
-    )
+        if (clienteId != null) {
+            Text("Venta con cliente ID: $clienteId")
+        } else {
+            Text("Venta rápida")
+        }
 
-
-    var seleccionados by remember { mutableStateOf(setOf<String>()) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(text = "Selecciona los productos", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(productos) { producto ->
-                val seleccionado = seleccionados.contains(producto)
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            seleccionados = if (seleccionado) {
-                                seleccionados - producto
-                            } else {
-                                seleccionados + producto
-                            }
-                        }
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-
-                    Text(producto)
-
-                    if (seleccionado) {
-                        Text("✔")
-                    }
-                }
-            }
-        }
-
-
-        Button(
-            onClick = {
-                if(seleccionados.isNotEmpty()){
-                    onIrCarrito()
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Ir al carrito (\${seleccionados.size})")
+        Button(onClick = onIrCarrito) {
+            Text("Ir al carrito")
         }
     }
+
 }
