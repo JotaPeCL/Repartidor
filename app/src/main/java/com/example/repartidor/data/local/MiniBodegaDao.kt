@@ -14,4 +14,12 @@ interface MiniBodegaDao {
 
     @Query("SELECT * FROM mini_bodega")
     suspend fun getAll(): List<MiniBodegaEntity>
+
+    @Query("""
+        SELECT * FROM mini_bodega 
+        WHERE rutaId = :rutaId 
+        ORDER BY fecha DESC 
+        LIMIT 1
+    """)
+    suspend fun getUltimaPorRuta(rutaId: Int): MiniBodegaEntity?
 }

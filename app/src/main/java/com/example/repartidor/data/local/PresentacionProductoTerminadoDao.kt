@@ -14,4 +14,7 @@ interface PresentacionProductoTerminadoDao {
 
     @Query("DELETE FROM presentacion_producto")
     suspend fun deleteAll()
+
+    @Query("SELECT * FROM presentacion_producto WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Int): PresentacionProductoTerminadoEntity?
 }

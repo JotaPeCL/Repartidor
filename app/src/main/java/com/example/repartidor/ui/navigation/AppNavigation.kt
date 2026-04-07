@@ -16,6 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.repartidor.data.local.AppDatabase
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.repository.HomeRepository
+import com.example.repartidor.data.repository.InventarioRepository
 import com.example.repartidor.data.repository.SyncRepository
 import com.example.repartidor.data.repository.UsuarioRepository
 
@@ -28,6 +29,7 @@ import com.example.repartidor.ui.screens.login.LoginScreen
 import com.example.repartidor.ui.screens.login.SyncScreen
 import com.example.repartidor.utils.AppConfig
 import com.example.repartidor.viewmodel.HomeViewModel
+import com.example.repartidor.viewmodel.InventarioViewModel
 import com.example.repartidor.viewmodel.LoginViewModel
 import com.example.repartidor.viewmodel.SyncViewModel
 import kotlinx.coroutines.launch
@@ -65,6 +67,9 @@ fun AppNavigation() {
 
     val homeRepository = remember { HomeRepository(db) }
     val homeViewModel = remember { HomeViewModel(homeRepository) }
+
+    val inventarioRepository = remember { InventarioRepository(db) }
+    val inventarioViewModel = remember { InventarioViewModel(inventarioRepository) }
 
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
@@ -189,7 +194,10 @@ fun AppNavigation() {
         }
 
         composable(Routes.Inventario.route) {
-            InventarioSreen()
+            InventarioSreen(
+                viewModel = inventarioViewModel,
+                sessionManager = sessionManager
+            )
         }
 
 

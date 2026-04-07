@@ -14,4 +14,7 @@ interface ProductoTerminadoDao {
 
     @Query("DELETE FROM producto_terminado")
     suspend fun deleteAll()
+
+    @Query("SELECT * FROM producto_terminado WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Int): ProductoTerminadoEntity?
 }

@@ -21,4 +21,7 @@ interface ProductoVariacionDao {
 
     @Query("SELECT * FROM producto_variacion WHERE producto = :productoId")
     suspend fun getByProducto(productoId: Int): List<ProductoVariacionEntity>
+
+    @Query("SELECT * FROM producto_variacion WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Int): ProductoVariacionEntity?
 }

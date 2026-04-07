@@ -12,6 +12,11 @@ interface MiniBodegaDetalleDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(detalles: List<MiniBodegaDetalleEntity>)
 
-    @Query("SELECT * FROM mini_bodega_detalle WHERE miniBodegaId = :miniBodegaId")
+
+    @Query("""
+        SELECT * FROM mini_bodega_detalle 
+        WHERE miniBodegaId = :miniBodegaId
+    """)
     suspend fun getByMiniBodega(miniBodegaId: Int): List<MiniBodegaDetalleEntity>
+
 }
