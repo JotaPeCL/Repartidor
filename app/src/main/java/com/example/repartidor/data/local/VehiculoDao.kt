@@ -14,4 +14,7 @@ interface VehiculoDao {
 
     @Query("SELECT * FROM vehiculo")
     suspend fun getAll(): List<VehiculoEntity>
+
+    @Query("SELECT * FROM vehiculo WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Int): VehiculoEntity?
 }

@@ -74,6 +74,26 @@ object RetrofitClient {
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<ProductoVariacionDTO>>
 
+        @GET("mini-bodegas")
+        suspend fun getMiniBodegas(
+            @Query("updated_after") updatedAfter: String? = null
+        ): Response<List<MiniBodegaDto>>
+
+        @GET("mini-bodega-detalles")
+        suspend fun getMiniBodegaDetalles(
+            @Query("updated_after") updatedAfter: String? = null
+        ): Response<List<MiniBodegaDetalleDto>>
+
+        @GET("pedidos-reabastecimiento")
+        suspend fun getPedidosReabastecimiento(
+            @Query("updated_after") updatedAfter: String? = null
+        ): Response<List<PedidoReabastecimientoDto>>
+
+        @GET("pedido-reabastecimiento-detalles")
+        suspend fun getPedidosReabastecimientoDetalle(
+            @Query("updated_after") updatedAfter: String? = null
+        ): Response<List<PedidoReabastecimientoDetalleDto>>
+
     }
 
 

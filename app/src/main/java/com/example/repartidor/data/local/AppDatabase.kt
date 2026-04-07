@@ -12,6 +12,12 @@ import com.example.repartidor.data.model.CategoriaProductoEntity
 import com.example.repartidor.data.model.PresentacionProductoTerminadoEntity
 import com.example.repartidor.data.model.ProductoTerminadoEntity
 import com.example.repartidor.data.model.ProductoVariacionEntity
+import com.example.repartidor.data.model.MiniBodegaEntity
+import com.example.repartidor.data.model.MiniBodegaDetalleEntity
+import com.example.repartidor.data.model.PedidoReabastecimientoEntity
+import com.example.repartidor.data.model.PedidoReabastecimientoDetalleEntity
+import com.example.repartidor.data.model.VentaEntity
+import com.example.repartidor.data.model.VentaDetalleEntity
 
 @Database(
     entities = [
@@ -24,10 +30,16 @@ import com.example.repartidor.data.model.ProductoVariacionEntity
         CategoriaProductoEntity::class,
         PresentacionProductoTerminadoEntity::class,
         ProductoTerminadoEntity::class,
-        ProductoVariacionEntity::class
+        ProductoVariacionEntity::class,
+        MiniBodegaEntity::class,
+        MiniBodegaDetalleEntity::class,
+        PedidoReabastecimientoEntity::class,
+        PedidoReabastecimientoDetalleEntity::class,
+        VentaEntity::class,
+        VentaDetalleEntity::class
 
     ],
-    version = 3 // IMPORTANTE
+    version = 4 // IMPORTANTE
 
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -42,5 +54,11 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun presentacionDao(): PresentacionProductoTerminadoDao
     abstract fun productoDao(): ProductoTerminadoDao
     abstract fun variacionDao(): ProductoVariacionDao
+    abstract fun miniBodegaDao(): MiniBodegaDao
+    abstract fun miniBodegaDetalleDao(): MiniBodegaDetalleDao
+    abstract fun pedidoReabastecimientoDao(): PedidoReabastecimientoDao
+    abstract fun pedidoReabastecimientoDetalleDao(): PedidoReabastecimientoDetalleDao
+    abstract fun ventaDao(): VentaDao
+    abstract fun ventaDetalleDao(): VentaDetalleDao
 
 }

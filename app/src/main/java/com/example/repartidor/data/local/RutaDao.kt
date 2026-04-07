@@ -14,4 +14,10 @@ interface RutaDao {
 
     @Query("SELECT * FROM ruta")
     suspend fun getAll(): List<RutaEntity>
+
+    @Query("SELECT * FROM ruta WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Int): RutaEntity?
+
+    @Query("SELECT * FROM ruta WHERE usuarioId = :usuarioId LIMIT 1")
+    suspend fun getByUsuarioId(usuarioId: Int): RutaEntity?
 }

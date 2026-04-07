@@ -4,6 +4,10 @@ import com.example.repartidor.data.local.AppDatabase
 import com.example.repartidor.data.model.CategoriaProductoEntity
 import com.example.repartidor.data.model.ClienteDiasVisitaEntity
 import com.example.repartidor.data.model.ClienteEntity
+import com.example.repartidor.data.model.MiniBodegaDetalleEntity
+import com.example.repartidor.data.model.MiniBodegaEntity
+import com.example.repartidor.data.model.PedidoReabastecimientoDetalleEntity
+import com.example.repartidor.data.model.PedidoReabastecimientoEntity
 import com.example.repartidor.data.model.PresentacionProductoTerminadoEntity
 import com.example.repartidor.data.model.ProductoTerminadoEntity
 import com.example.repartidor.data.model.ProductoVariacionEntity
@@ -243,6 +247,87 @@ class SyncRepository(
 
             db.variacionDao().insertAll(varEntity)
             println("VARIACIONES OK")
+        }
+
+        // Mini bodega
+        val miniResponse = RetrofitClient.api.getMiniBodegas()
+        if (miniResponse.isSuccessful) {
+
+            val miniBodegas = miniResponse.body() ?: emptyList()
+
+            val miniEntity = miniBodegas.map {
+                MiniBodegaEntity(
+                    id = it.id,
+                    rutaId = it.ruta,
+                    fecha = it.fecha,
+                    usuarioId = it.usuario,
+                    vehiculoId = it.vehiculo,
+                    estado = it.estado,
+                    updatedAt = it.updated_at
+                )
+            }
+
+            db.miniBodegaDao().insertAll(miniEntity)
+            println("MINI BODEGAS OK")
+        }
+
+        // 🔹 MINI BODEGA DETALLE
+        val detalleResponse = RetrofitClient.api.getMiniBodegaDetalles()
+        if (detalleResponse.isSuccessful) {
+
+            val detalles = detalleResponse.body() ?: emptyList()
+
+            val detalleEntity = detalles.map {
+                MiniBodegaDetalleEntity(
+                    id = it.id,
+                    miniBodegaId = it.mini_bodega,
+                    productoVariacionId = it.producto_variacion,
+                    cantidadInicial = it.cantidad_inicial,
+                    cantidadActual = it.cantidad_actual
+                )
+            }
+
+            db.miniBodegaDetalleDao().insertAll(detalleEntity)
+            println("MINI BODEGA DETALLE OK")
+        }
+
+        // 🔹 PEDIDOS
+        val pedidosResponse = RetrofitClient.api.getPedidosReabastecimiento()
+        if (pedidosResponse.isSuccessful) {
+
+            val pedidos = pedidosResponse.body() ?: emptyList()
+
+            val pedidosEntity = pedidos.map {
+                PedidoReabastecimientoEntity(
+                    id = it.id,
+                    rutaId = it.ruta,
+                    fecha = it.fecha,
+                    estado = it.estado,
+                    updatedAt = it.updated_at
+                )
+            }
+
+            db.pedidoReabastecimientoDao().insertAll(pedidosEntity)
+            println("PEDIDOS OK")
+        }
+
+        val pedidodetalleResponse = RetrofitClient.api.getPedidosReabastecimientoDetalle()
+        if (pedidodetalleResponse.isSuccessful) {
+
+            val detalles = pedidodetalleResponse.body() ?: emptyList()
+
+            val detalleEntity = detalles.map {
+                PedidoReabastecimientoDetalleEntity(
+                    id = it.id,
+                    pedidoId = it.pedido,
+                    productoVariacionId = it.producto_variacion,
+                    cantidad = it.cantidad,
+                    updatedAt = it.updated_at
+                )
+            }
+
+            db.pedidoReabastecimientoDetalleDao().insertAll(detalleEntity)
+            println("PEDIDOS DETALLE OK")
         }
 
 

@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 val Context.dataStore by preferencesDataStore(name = "session")
@@ -55,6 +56,10 @@ class SessionManager(private val context: Context) {
         context.dataStore.edit {
             it[LAST_SYNC_KEY] = date
         }
+    }
+
+    suspend fun getUser(): String? {
+        return context.dataStore.data.first()[USERNAME_KEY]
     }
 
 }
