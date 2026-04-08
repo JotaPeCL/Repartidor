@@ -22,4 +22,11 @@ interface MiniBodegaDao {
         LIMIT 1
     """)
     suspend fun getUltimaPorRuta(rutaId: Int): MiniBodegaEntity?
+
+    @Query("""
+        SELECT * FROM mini_bodega 
+        WHERE usuarioId = :userId
+        LIMIT 1
+    """)
+    suspend fun getByUsuario(userId: Int): MiniBodegaEntity?
 }

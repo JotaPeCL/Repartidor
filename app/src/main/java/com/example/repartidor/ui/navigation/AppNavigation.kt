@@ -20,8 +20,10 @@ import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.repository.ClienteRepository
 import com.example.repartidor.data.repository.HomeRepository
 import com.example.repartidor.data.repository.InventarioRepository
+import com.example.repartidor.data.repository.MiniBodegaRepository
 import com.example.repartidor.data.repository.SyncRepository
 import com.example.repartidor.data.repository.UsuarioRepository
+import com.example.repartidor.data.repository.VentaRepository
 
 import com.example.repartidor.ui.screens.Cliente.ClienteScreen
 import com.example.repartidor.ui.screens.Cliente.QrScannerScreen
@@ -37,6 +39,7 @@ import com.example.repartidor.viewmodel.HomeViewModel
 import com.example.repartidor.viewmodel.InventarioViewModel
 import com.example.repartidor.viewmodel.LoginViewModel
 import com.example.repartidor.viewmodel.SyncViewModel
+import com.example.repartidor.viewmodel.VentaViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -68,7 +71,9 @@ fun AppNavigation() {
         SyncViewModel(repository, sessionManager)
     }
     val usuarioRepository = remember { UsuarioRepository(db) }
-    val loginViewModel = remember { LoginViewModel(usuarioRepository, sessionManager) }
+    val miniBodegaRepository = remember { MiniBodegaRepository(db) }
+
+    val loginViewModel = remember { LoginViewModel(usuarioRepository,miniBodegaRepository, sessionManager) }
 
     val homeRepository = remember { HomeRepository(db) }
     val homeViewModel = remember { HomeViewModel(homeRepository) }
@@ -81,6 +86,17 @@ fun AppNavigation() {
     val clienteViewModel = remember {
         ClienteViewModel(clienteRepository)
     }
+    val ventaRepository = remember {
+        VentaRepository(
+            db.productoDao(),
+            db.miniBodegaDetalleDao()
+        )
+    }
+
+    val ventaViewModel = remember {
+        VentaViewModel(ventaRepository, sessionManager)
+    }
+
 
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
@@ -88,11 +104,15 @@ fun AppNavigation() {
     //estados
     val lastSync by sessionManager.lastSyncFlow.collectAsState(initial = null)
     val userSession by sessionManager.userFlow.collectAsState(initial = null)
+    val miniBodegaId by sessionManager.miniBodegaFlow.collectAsState(initial = null)
+
 
 
     LaunchedEffect(userSession) {
         println("USER SESSION CAMBIÓ: $userSession")
         println("ultima sincronizacion: $lastSync")
+        println("MINI BODEGA ID: $miniBodegaId")
+
     }
     LaunchedEffect(navController) {
         navController.addOnDestinationChangedListener { _, destination, _ ->
@@ -226,7 +246,8 @@ fun AppNavigation() {
                 clienteId = if (clienteId == -1) null else clienteId,
                 onIrCarrito = {
                     navController.navigate(Routes.Carrito.route)
-                }
+                },
+                viewModel = ventaViewModel
             )
         }
 

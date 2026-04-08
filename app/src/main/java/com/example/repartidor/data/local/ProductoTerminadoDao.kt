@@ -2,6 +2,7 @@ package com.example.repartidor.data.local
 
 import androidx.room.*
 import com.example.repartidor.data.model.ProductoTerminadoEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProductoTerminadoDao {
@@ -17,4 +18,7 @@ interface ProductoTerminadoDao {
 
     @Query("SELECT * FROM producto_terminado WHERE id = :id LIMIT 1")
     suspend fun getById(id: Int): ProductoTerminadoEntity?
+
+    @Query("SELECT * FROM producto_terminado WHERE estado = 1")
+    fun getProductos(): Flow<List<ProductoTerminadoEntity>>
 }
