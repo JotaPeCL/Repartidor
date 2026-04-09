@@ -34,6 +34,7 @@ import com.example.repartidor.ui.screens.Venta.VentaScreen
 import com.example.repartidor.ui.screens.login.LoginScreen
 import com.example.repartidor.ui.screens.login.SyncScreen
 import com.example.repartidor.utils.AppConfig
+import com.example.repartidor.viewmodel.CarritoViewModel
 import com.example.repartidor.viewmodel.ClienteViewModel
 import com.example.repartidor.viewmodel.HomeViewModel
 import com.example.repartidor.viewmodel.InventarioViewModel
@@ -96,6 +97,7 @@ fun AppNavigation() {
     val ventaViewModel = remember {
         VentaViewModel(ventaRepository, sessionManager)
     }
+    val carritoViewModel = remember { CarritoViewModel() }
 
 
     val navController = rememberNavController()
@@ -247,12 +249,18 @@ fun AppNavigation() {
                 onIrCarrito = {
                     navController.navigate(Routes.Carrito.route)
                 },
-                viewModel = ventaViewModel
+                viewModel = ventaViewModel,
+                carritoViewModel=carritoViewModel
             )
         }
 
         composable(Routes.Carrito.route) {
-            CarritosScreen()
+            CarritosScreen(
+                carritoViewModel = carritoViewModel,
+                onVolver = {
+                    navController.popBackStack() // regresa a la pantalla anterior (VentaScreen)
+                }
+            )
 
         }
 

@@ -1,6 +1,6 @@
 package com.example.repartidor.ui.screens.Venta
 
-import android.R
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,7 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.example.repartidor.data.model.CarritoItem
 import com.example.repartidor.data.model.ProductoTerminadoEntity
+import com.example.repartidor.viewmodel.CarritoViewModel
 import com.example.repartidor.viewmodel.VentaViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,7 +48,8 @@ import com.example.repartidor.viewmodel.VentaViewModel
 fun VentaScreen(
     clienteId: Int?,
     onIrCarrito: () -> Unit,
-    viewModel: VentaViewModel
+    viewModel: VentaViewModel,
+    carritoViewModel: CarritoViewModel
 ) {
 
     val productos by viewModel.productos.collectAsState()
@@ -176,18 +179,23 @@ fun VentaScreen(
                         Button(
                             onClick = {
 
-                                val seleccionados = variaciones.mapNotNull { variacion ->
+                                val productosSeleccionados = variaciones.mapNotNull { variacion ->
+
                                     val cantidad = cantidades[variacion.id]?.toIntOrNull() ?: 0
 
                                     if (cantidad > 0) {
-                                        Pair(variacion, cantidad)
+                                        CarritoItem(
+                                            productoVariacionId = variacion.id,
+                                            productoNombre = productoSeleccionado!!.nombre, // 🔥 AQUÍ
+                                            presentacionNombre = variacion.presentacionNombre, // 🔥 AQUÍ
+                                            precio = variacion.precio,
+                                            cantidad = cantidad
+                                        )
                                     } else null
                                 }
 
-                                // 🔥 aquí mandas al carrito
-                                seleccionados.forEach { (variacion, cantidad) ->
-                                    println("Agregar: ${variacion.presentacionNombre} x$cantidad")
-                                }
+                                // 🔥 AQUÍ YA SE GUARDA EN EL CARRITO
+                                carritoViewModel.agregarProductos(productosSeleccionados)
 
                                 showDialog = false
                             }
