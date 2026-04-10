@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -32,16 +34,21 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.repartidor.viewmodel.CarritoViewModel
+import com.example.repartidor.viewmodel.VentaProcesoViewModel
+import androidx.compose.ui.window.Dialog
 
 @Composable
 fun CarritosScreen(
     carritoViewModel: CarritoViewModel,
-    onVolver: () -> Unit
+    ventaProcesoViewModel: VentaProcesoViewModel,
+    onVolver: () -> Unit,
+    onVentaExitosa: () -> Unit
 ) {
     val items by carritoViewModel.items.collectAsState()
     val total = remember(items) {
         items.sumOf { it.precio * it.cantidad }
     }
+    var showConfirmDialog by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.padding(16.dp)) {
 
@@ -139,13 +146,84 @@ fun CarritosScreen(
                 }
 
                 Button(onClick = {
-                    // 🔹 Aquí luego iría la lógica de confirmar venta
-                    println("Confirmar venta")
+                    showConfirmDialog = true
                 }) {
                     Text("Confirmar")
                 }
             }
-
         }
     }
+    if (showConfirmDialog) {
+
+        Dialog(onDismissRequest = { showConfirmDialog = false }) {
+
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    Text(
+                        text = "Confirmar venta",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "¿Seguro que deseas confirmar la venta?",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+
+                        // 🔹 NO
+                        Button(
+                            onClick = {
+                                showConfirmDialog = false
+                            }
+                        ) {
+                            Text("No")
+                        }
+
+                        // 🔥 SÍ
+                        Button(
+                            onClick = {
+                                showConfirmDialog = false
+
+                                ventaProcesoViewModel.confirmarVenta(
+                                    items = items,
+                                    onSuccess = {
+                                        carritoViewModel.limpiar()
+                                        ventaProcesoViewModel.reset()
+                                        onVentaExitosa()
+                                    },
+                                    onError = {
+                                        println(it)
+                                    }
+                                )
+                            }
+                        ) {
+                            Text("Sí")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
 }

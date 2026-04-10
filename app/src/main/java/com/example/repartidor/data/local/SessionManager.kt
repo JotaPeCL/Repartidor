@@ -19,12 +19,19 @@ class SessionManager(private val context: Context) {
     companion object {
         val USERNAME_KEY = stringPreferencesKey("username")
         val MINIBODEGA_ID_KEY = intPreferencesKey("mini_bodega_id")
+        val USER_ID_KEY = intPreferencesKey("user_id")
     }
 
     // 🔹 Guardar usuario
     suspend fun saveUser(username: String) {
         context.dataStore.edit { prefs ->
             prefs[USERNAME_KEY] = username
+        }
+    }
+
+    suspend fun saveUserId(id: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[USER_ID_KEY] = id
         }
     }
 
@@ -60,7 +67,9 @@ class SessionManager(private val context: Context) {
     suspend fun getMiniBodegaId(): Int? {
         return context.dataStore.data.first()[MINIBODEGA_ID_KEY]
     }
-
+    suspend fun getUserId(): Int? {
+        return context.dataStore.data.first()[USER_ID_KEY]
+    }
 
 
     // 🔹 Borrar sesión (logout)
@@ -68,6 +77,7 @@ class SessionManager(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs.remove(USERNAME_KEY)
             prefs.remove(MINIBODEGA_ID_KEY)
+            prefs.remove(USER_ID_KEY)
         }
     }
 

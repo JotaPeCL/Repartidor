@@ -23,6 +23,7 @@ import com.example.repartidor.data.repository.InventarioRepository
 import com.example.repartidor.data.repository.MiniBodegaRepository
 import com.example.repartidor.data.repository.SyncRepository
 import com.example.repartidor.data.repository.UsuarioRepository
+import com.example.repartidor.data.repository.VentaLocalRepository
 import com.example.repartidor.data.repository.VentaRepository
 
 import com.example.repartidor.ui.screens.Cliente.ClienteScreen
@@ -40,6 +41,7 @@ import com.example.repartidor.viewmodel.HomeViewModel
 import com.example.repartidor.viewmodel.InventarioViewModel
 import com.example.repartidor.viewmodel.LoginViewModel
 import com.example.repartidor.viewmodel.SyncViewModel
+import com.example.repartidor.viewmodel.VentaProcesoViewModel
 import com.example.repartidor.viewmodel.VentaViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -98,6 +100,20 @@ fun AppNavigation() {
         VentaViewModel(ventaRepository, sessionManager)
     }
     val carritoViewModel = remember { CarritoViewModel() }
+
+    val ventaLocalRepository = remember {
+        VentaLocalRepository(
+            db.ventaDao() // 🔥 importante
+        )
+    }
+
+    val ventaProcesoViewModel = remember {
+        VentaProcesoViewModel(
+            ventaLocalRepository,
+            sessionManager
+        )
+    }
+
 
 
     val navController = rememberNavController()
@@ -250,15 +266,24 @@ fun AppNavigation() {
                     navController.navigate(Routes.Carrito.route)
                 },
                 viewModel = ventaViewModel,
-                carritoViewModel=carritoViewModel
+                carritoViewModel=carritoViewModel,
+                ventaProcesoViewModel = ventaProcesoViewModel
             )
         }
 
         composable(Routes.Carrito.route) {
             CarritosScreen(
                 carritoViewModel = carritoViewModel,
+                ventaProcesoViewModel = ventaProcesoViewModel,
                 onVolver = {
                     navController.popBackStack() // regresa a la pantalla anterior (VentaScreen)
+                },
+                onVentaExitosa = {
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(Routes.Home.route) {
+                            inclusive = true
+                        }
+                    }
                 }
             )
 
@@ -270,11 +295,7 @@ fun AppNavigation() {
                 sessionManager = sessionManager
             )
         }
-
-
     }
-
-
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

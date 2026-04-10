@@ -28,6 +28,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -41,6 +42,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.repartidor.data.model.CarritoItem
 import com.example.repartidor.data.model.ProductoTerminadoEntity
 import com.example.repartidor.viewmodel.CarritoViewModel
+import com.example.repartidor.viewmodel.VentaProcesoViewModel
 import com.example.repartidor.viewmodel.VentaViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,8 +51,12 @@ fun VentaScreen(
     clienteId: Int?,
     onIrCarrito: () -> Unit,
     viewModel: VentaViewModel,
-    carritoViewModel: CarritoViewModel
+    carritoViewModel: CarritoViewModel,
+    ventaProcesoViewModel: VentaProcesoViewModel
 ) {
+    LaunchedEffect(clienteId) {
+        ventaProcesoViewModel.setCliente(clienteId)
+    }
 
     val productos by viewModel.productos.collectAsState()
     var productoSeleccionado by remember { mutableStateOf<ProductoTerminadoEntity?>(null) }

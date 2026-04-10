@@ -27,6 +27,7 @@ class LoginViewModel(
 
             if (user != null) {
                 sessionManager.saveUser(user.username)
+                sessionManager.saveUserId(user.id)
 
                 val miniBodega = miniBodegaRepository
                     .getMiniBodegaByUsuario(user.id)
