@@ -235,6 +235,9 @@ fun AppNavigation() {
                 },
                 onIrQrScanner = {
                     navController.navigate(Routes.QrScanner.route)
+                },
+                onBack = {
+                    navController.popBackStack()
                 }
             )
         }
@@ -242,8 +245,8 @@ fun AppNavigation() {
         composable(Routes.QrScanner.route) {
             QrScannerScreen(
                 onQrDetectado = { clienteId ->
-                    clienteViewModel.buscarCliente(clienteId) // 🔥 reutilizas lógica
-                    navController.popBackStack() // 🔥 regresas a ClienteScreen
+                    clienteViewModel.buscarCliente(clienteId) //reutilizas lógica
+                    navController.popBackStack() //regresas a ClienteScreen
                 }
             )
         }
@@ -267,7 +270,10 @@ fun AppNavigation() {
                 },
                 viewModel = ventaViewModel,
                 carritoViewModel=carritoViewModel,
-                ventaProcesoViewModel = ventaProcesoViewModel
+                ventaProcesoViewModel = ventaProcesoViewModel,
+                onBack = {
+                    navController.popBackStack() //
+                }
             )
         }
 
@@ -301,7 +307,7 @@ fun AppNavigation() {
 @RequiresApi(Build.VERSION_CODES.O)
 fun yaSincronizoHoy(lastSync: String?): Boolean {
 
-    if (AppConfig.FORCE_SYNC) return false // 🔥 en pruebas SIEMPRE entra a Sync
+    if (AppConfig.FORCE_SYNC) return false // en pruebas SIEMPRE entra a Sync
 
     if (lastSync == null) return false
 

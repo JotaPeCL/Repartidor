@@ -3,6 +3,9 @@ package com.example.repartidor.viewmodel
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.repartidor.data.local.SessionManager
@@ -19,25 +22,45 @@ class SyncViewModel(
     private val sessionManager: SessionManager // 🔥 agregar
 ) : ViewModel() {
 
+    var isLoading by mutableStateOf(false)
+        private set
+
+    var errorMensaje by mutableStateOf<String?>(null)
+        private set
+
     @RequiresApi(Build.VERSION_CODES.O)
     fun sincronizar(onFinish: () -> Unit) {
         viewModelScope.launch {
 
-            val lastSync = sessionManager.lastSyncFlow.first()
+            isLoading = true
+            errorMensaje = null
 
-            if (shouldSync(lastSync)) {
+            try {
 
-                repository.sincronizarTodo()
+                val lastSync = sessionManager.lastSyncFlow.first()
 
-                val today = LocalDate.now().toString()
-                sessionManager.saveLastSync(today)
+                if (shouldSync(lastSync)) {
+
+                    repository.sincronizarTodo()
+
+                    val today = LocalDate.now().toString()
+                    sessionManager.saveLastSync(today)
+                }
+
                 onFinish()
-            } else {
-                println("Ya sincronizado hoy")
-            }
 
-             // 🔥 navega al final SIEMPRE
+            } catch (e: Exception) {
+
+                errorMensaje = "No se pudo sincronizar. Verifica tu conexión."
+
+            } finally {
+                isLoading = false
+            }
         }
+    }
+
+    fun limpiarError() {
+        errorMensaje = null
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

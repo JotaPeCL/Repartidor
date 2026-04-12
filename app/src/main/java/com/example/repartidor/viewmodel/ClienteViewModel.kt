@@ -37,4 +37,9 @@ class ClienteViewModel(
         cliente = null
         error = null
     }
+
+    fun limpiarClienteSeleccionado() {
+        cliente = null
+        error = null
+    }
 }

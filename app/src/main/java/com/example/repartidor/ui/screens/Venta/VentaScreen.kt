@@ -1,6 +1,7 @@
 package com.example.repartidor.ui.screens.Venta
 
 
+import android.view.Surface
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.repartidor.data.model.CarritoItem
@@ -52,7 +56,8 @@ fun VentaScreen(
     onIrCarrito: () -> Unit,
     viewModel: VentaViewModel,
     carritoViewModel: CarritoViewModel,
-    ventaProcesoViewModel: VentaProcesoViewModel
+    ventaProcesoViewModel: VentaProcesoViewModel,
+    onBack: () -> Unit
 ) {
     LaunchedEffect(clienteId) {
         ventaProcesoViewModel.setCliente(clienteId)
@@ -61,9 +66,25 @@ fun VentaScreen(
     val productos by viewModel.productos.collectAsState()
     var productoSeleccionado by remember { mutableStateOf<ProductoTerminadoEntity?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    val carrito by carritoViewModel.items.collectAsState()
+    var mostrarDialogoSalir by remember { mutableStateOf(false) }
 
 
     Column(modifier = Modifier.padding(16.dp)) {
+
+        Button(
+            onClick = {
+                if (carrito.isNotEmpty()) {
+                    mostrarDialogoSalir = true
+                } else {
+                    carritoViewModel.limpiar()
+                    ventaProcesoViewModel.reset()
+                    onBack()
+                }
+            }
+        ) {
+            Text("Volver")
+        }
 
         if (clienteId != null) {
             Text("Venta con cliente ID: $clienteId")
@@ -73,7 +94,7 @@ fun VentaScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 🔹 Lista de productos
+        //  Lista de productos
         LazyColumn {
             items(productos) { producto ->
 
@@ -101,7 +122,7 @@ fun VentaScreen(
         }
     }
 
-    // 🔥 DIALOG DE VARIACIONES
+    //  DIALOG DE VARIACIONES
     if (showDialog && productoSeleccionado != null) {
 
         val variaciones by viewModel
@@ -148,7 +169,7 @@ fun VentaScreen(
 
                                 Spacer(modifier = Modifier.height(4.dp))
 
-                                // 🔥 TEXTFIELD SOLO NÚMEROS
+                                // TEXTFIELD SOLO NÚMEROS
                                 TextField(
                                     value = cantidad,
                                     onValueChange = { nuevo ->
@@ -176,12 +197,12 @@ fun VentaScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
 
-                        // 🔹 VOLVER
+                        // VOLVER
                         Button(onClick = { showDialog = false }) {
                             Text("Volver")
                         }
 
-                        // 🔥 AGREGAR AL CARRITO
+                        // AGREGAR AL CARRITO
                         Button(
                             onClick = {
 
@@ -192,15 +213,15 @@ fun VentaScreen(
                                     if (cantidad > 0) {
                                         CarritoItem(
                                             productoVariacionId = variacion.id,
-                                            productoNombre = productoSeleccionado!!.nombre, // 🔥 AQUÍ
-                                            presentacionNombre = variacion.presentacionNombre, // 🔥 AQUÍ
+                                            productoNombre = productoSeleccionado!!.nombre,
+                                            presentacionNombre = variacion.presentacionNombre,
                                             precio = variacion.precio,
                                             cantidad = cantidad
                                         )
                                     } else null
                                 }
 
-                                // 🔥 AQUÍ YA SE GUARDA EN EL CARRITO
+                                // AQUÍ YA SE GUARDA EN EL CARRITO
                                 carritoViewModel.agregarProductos(productosSeleccionados)
 
                                 showDialog = false
@@ -213,6 +234,49 @@ fun VentaScreen(
             }
         }
     }
+    //Dialog de salida
+    if (mostrarDialogoSalir) {
+        Dialog(onDismissRequest = { mostrarDialogoSalir = false }) {
 
+            Surface(
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
 
+                    Text("¿Salir?", fontWeight = FontWeight.Bold)
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text("Se perderá el carrito actual")
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row {
+                        Button(onClick = {
+                            mostrarDialogoSalir = false
+                        }) {
+                            Text("Cancelar")
+                        }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Button(onClick = {
+                            mostrarDialogoSalir = false
+
+                            //LIMPIAR TODO
+                            carritoViewModel.limpiar()
+                            ventaProcesoViewModel.reset()
+
+                            onBack()
+                        }) {
+                            Text("Salir")
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
