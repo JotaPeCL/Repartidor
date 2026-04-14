@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -21,9 +22,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun InventarioSreen(viewModel: InventarioViewModel,
-                    sessionManager: SessionManager
-){
+fun InventarioSreen(
+    viewModel: InventarioViewModel,
+    sessionManager: SessionManager,
+    onIrReabastecimiento: () -> Unit
+) {
     val lista = viewModel.inventario
 
     LaunchedEffect(Unit) {
@@ -63,6 +66,15 @@ fun InventarioSreen(viewModel: InventarioViewModel,
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                 }
             }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onIrReabastecimiento,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Ir a Reabastecimiento")
         }
     }
 }

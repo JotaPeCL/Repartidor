@@ -5,5 +5,6 @@ data class PedidoReabastecimientoDto(
     val ruta: Int,
     val fecha: String,
     val estado: Boolean,
-    val updated_at: String
+    val updated_at: String,
+    val usuario:Int
 )

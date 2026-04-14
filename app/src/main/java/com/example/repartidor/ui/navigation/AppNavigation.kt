@@ -30,6 +30,8 @@ import com.example.repartidor.ui.screens.Cliente.ClienteScreen
 import com.example.repartidor.ui.screens.Cliente.QrScannerScreen
 import com.example.repartidor.ui.screens.Home.HomeScreen
 import com.example.repartidor.ui.screens.Inventario.InventarioSreen
+import com.example.repartidor.ui.screens.Inventario.PedidoReabastecimientoScreen
+import com.example.repartidor.ui.screens.Inventario.ReabastecimientoScreen
 import com.example.repartidor.ui.screens.Venta.CarritosScreen
 import com.example.repartidor.ui.screens.Venta.VentaScreen
 import com.example.repartidor.ui.screens.login.LoginScreen
@@ -298,9 +300,40 @@ fun AppNavigation() {
         composable(Routes.Inventario.route) {
             InventarioSreen(
                 viewModel = inventarioViewModel,
-                sessionManager = sessionManager
+                sessionManager = sessionManager,
+                onIrReabastecimiento = {
+                    navController.navigate(Routes.Reabastecimiento.route)
+                }
             )
         }
+
+        composable(Routes.Reabastecimiento.route) {
+            ReabastecimientoScreen(
+                onIrPedido = {
+                    navController.navigate(Routes.PedidoReabastecimiento.route)
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Routes.PedidoReabastecimiento.route) {
+            PedidoReabastecimientoScreen(
+                onConfirmar = {
+                    // 🔥 Aquí después harás lógica real (guardar + sync)
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(Routes.Home.route) { inclusive = true }
+                    }
+                },
+                onVolver = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+
+
     }
 }
 

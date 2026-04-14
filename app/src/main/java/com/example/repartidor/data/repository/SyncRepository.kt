@@ -303,7 +303,8 @@ class SyncRepository(
                     rutaId = it.ruta,
                     fecha = it.fecha,
                     estado = it.estado,
-                    updatedAt = it.updated_at
+                    updatedAt = it.updated_at,
+                    usuario = it.usuario
                 )
             }
 

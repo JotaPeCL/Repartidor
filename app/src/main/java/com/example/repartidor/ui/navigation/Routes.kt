@@ -9,4 +9,6 @@ sealed class Routes(val route: String) {
     object Venta : Routes("venta?clienteId={clienteId}")
     object Inventario : Routes("inventario")
     object Carrito: Routes("carrito")
+    object Reabastecimiento : Routes("reabastecimiento")
+    object PedidoReabastecimiento : Routes("pedido_reabastecimiento")
 }

@@ -9,5 +9,6 @@ data class PedidoReabastecimientoEntity(
     val rutaId: Int,
     val fecha: String,
     val estado: Boolean,
-    val updatedAt: String
+    val updatedAt: String,
+    val usuario:Int
 )
