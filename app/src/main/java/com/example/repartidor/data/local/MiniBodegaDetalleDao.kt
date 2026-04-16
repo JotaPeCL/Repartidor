@@ -42,6 +42,27 @@ interface MiniBodegaDetalleDao {
         miniBodegaId: Int
     ): Flow<List<ProductoConStock>>
 
+    @Query("""
+    SELECT 
+        pv.id, 
+        pv.producto as productoId, 
+        pv.precio,
+        IFNULL(mbd.cantidadActual, 0) as stockActual,
+        pp.nombre as presentacionNombre
+    FROM producto_variacion pv
+    INNER JOIN presentacion_producto pp
+        ON pv.presentacion = pp.id
+    LEFT JOIN mini_bodega_detalle mbd 
+        ON pv.id = mbd.productoVariacionId
+        AND mbd.miniBodegaId = :miniBodegaId
+    WHERE pv.producto = :productoId
+""")
+    fun getVariacionesParaReabastecimiento(
+        productoId: Int,
+        miniBodegaId: Int
+    ): Flow<List<ProductoConStock>>
 
+    @Query("SELECT * FROM mini_bodega_detalle WHERE miniBodegaId = :miniBodegaId")
+    suspend fun obtenerDetallesPorMiniBodega(miniBodegaId: Int): List<MiniBodegaDetalleEntity>
 
 }

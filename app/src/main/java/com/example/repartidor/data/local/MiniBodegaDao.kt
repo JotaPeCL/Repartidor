@@ -29,4 +29,7 @@ interface MiniBodegaDao {
         LIMIT 1
     """)
     suspend fun getByUsuario(userId: Int): MiniBodegaEntity?
+
+    @Query("SELECT * FROM mini_bodega WHERE estado = 1 LIMIT 1")
+    suspend fun obtenerMiniBodegaActiva(): MiniBodegaEntity?
 }

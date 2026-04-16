@@ -22,4 +22,15 @@ class HomeRepository(private val db: AppDatabase) {
 
         return HomeData(usuario, ruta, vehiculo)
     }
+
+    suspend fun getRutaId(username: String): Int? {
+
+        val usuario = db.usuarioDao().getByUsername(username)
+
+        val ruta = usuario?.id?.let {
+            db.rutaDao().getByUsuarioId(it)
+        }
+
+        return ruta?.id
+    }
 }

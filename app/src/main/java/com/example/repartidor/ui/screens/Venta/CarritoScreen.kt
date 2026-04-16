@@ -222,8 +222,4 @@ fun CarritosScreen(
             }
         }
     }
-
-
-
-
 }

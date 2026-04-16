@@ -4,7 +4,9 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.example.repartidor.data.model.ProductoConStock
 import com.example.repartidor.data.model.ProductoVariacionEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProductoVariacionDao {
@@ -24,4 +26,24 @@ interface ProductoVariacionDao {
 
     @Query("SELECT * FROM producto_variacion WHERE id = :id LIMIT 1")
     suspend fun getById(id: Int): ProductoVariacionEntity?
+
+    @Query("""
+        SELECT 
+            pv.id AS id,
+            pv.producto AS productoId,
+            pv.precio AS precio,
+            IFNULL(mbd.cantidadActual, 0) AS stockActual,
+            p.nombre AS presentacionNombre
+        FROM producto_variacion pv
+        INNER JOIN presentacion_producto p
+            ON pv.presentacion = p.id
+        LEFT JOIN mini_bodega_detalle mbd
+            ON pv.id = mbd.productoVariacionId
+            AND mbd.miniBodegaId = :miniBodegaId
+        WHERE pv.producto = :productoId
+    """)
+    fun getVariacionesConStock(
+        productoId: Int,
+        miniBodegaId: Int
+    ): Flow<List<ProductoConStock>>
 }

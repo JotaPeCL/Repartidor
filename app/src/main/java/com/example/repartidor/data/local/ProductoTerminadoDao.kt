@@ -21,4 +21,7 @@ interface ProductoTerminadoDao {
 
     @Query("SELECT * FROM producto_terminado WHERE estado = 1")
     fun getProductos(): Flow<List<ProductoTerminadoEntity>>
+
+    @Query("SELECT * FROM producto_terminado")
+    fun getAllP(): Flow<List<ProductoTerminadoEntity>>
 }

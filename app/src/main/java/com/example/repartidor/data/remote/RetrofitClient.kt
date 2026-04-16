@@ -3,7 +3,9 @@ package com.example.repartidor.data.remote
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Query
 
 object RetrofitClient {
@@ -17,11 +19,6 @@ object RetrofitClient {
         .build()
 
     val api: Api = retrofit.create(Api::class.java)
-    /*
-    interface Api {
-        @GET("roles")
-        suspend fun getRoles(): Response<List<RolDto>>
-    }*/
 
     interface Api {
 
@@ -94,6 +91,16 @@ object RetrofitClient {
         suspend fun getPedidosReabastecimientoDetalle(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<PedidoReabastecimientoDetalleDto>>
+
+        @POST("reabastecimiento/crear/")
+        suspend fun crearReabastecimiento(
+            @Body request: PedidoReabastecimientoRequest
+        ): Response<Unit>
+
+        @POST("mini-bodega/cerrar/")
+        suspend fun cerrarMiniBodega(
+            @Body request: CerrarMiniBodegaRequest
+        ): Response<Unit>
 
     }
 

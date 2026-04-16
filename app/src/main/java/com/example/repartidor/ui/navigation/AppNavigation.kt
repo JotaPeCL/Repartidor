@@ -21,6 +21,8 @@ import com.example.repartidor.data.repository.ClienteRepository
 import com.example.repartidor.data.repository.HomeRepository
 import com.example.repartidor.data.repository.InventarioRepository
 import com.example.repartidor.data.repository.MiniBodegaRepository
+import com.example.repartidor.data.repository.MiniBodegaRepository2
+import com.example.repartidor.data.repository.ReabastecimientoRepository
 import com.example.repartidor.data.repository.SyncRepository
 import com.example.repartidor.data.repository.UsuarioRepository
 import com.example.repartidor.data.repository.VentaLocalRepository
@@ -38,10 +40,14 @@ import com.example.repartidor.ui.screens.login.LoginScreen
 import com.example.repartidor.ui.screens.login.SyncScreen
 import com.example.repartidor.utils.AppConfig
 import com.example.repartidor.viewmodel.CarritoViewModel
+import com.example.repartidor.viewmodel.CierreMiniBodegaViewModel
 import com.example.repartidor.viewmodel.ClienteViewModel
 import com.example.repartidor.viewmodel.HomeViewModel
 import com.example.repartidor.viewmodel.InventarioViewModel
 import com.example.repartidor.viewmodel.LoginViewModel
+import com.example.repartidor.viewmodel.ReabastecimientoCarritoViewModel
+import com.example.repartidor.viewmodel.ReabastecimientoProcesoViewModel
+import com.example.repartidor.viewmodel.ReabastecimientoViewModel
 import com.example.repartidor.viewmodel.SyncViewModel
 import com.example.repartidor.viewmodel.VentaProcesoViewModel
 import com.example.repartidor.viewmodel.VentaViewModel
@@ -116,6 +122,40 @@ fun AppNavigation() {
         )
     }
 
+    val reabastecimientoRepository = remember {
+        ReabastecimientoRepository(
+            db.productoDao(),
+            db.miniBodegaDetalleDao()
+        )
+    }
+
+    val reabastecimientoViewModel = remember {
+        ReabastecimientoViewModel(
+            reabastecimientoRepository,
+            sessionManager
+        )
+    }
+
+    val reabastecimientoCarritoViewModel = remember {
+        ReabastecimientoCarritoViewModel()
+    }
+
+    val reabastecimientoProcesoViewModel = remember {
+        ReabastecimientoProcesoViewModel(
+            sessionManager,
+            homeRepository
+        )
+    }
+    val miniBodegaRepository2 = remember {
+        MiniBodegaRepository2(
+            db.miniBodegaDao(),
+            db.miniBodegaDetalleDao(),
+            sessionManager
+        )
+    }
+    val cierreMiniBodegaViewModel = remember {
+        CierreMiniBodegaViewModel(miniBodegaRepository2)
+    }
 
 
     val navController = rememberNavController()
@@ -314,21 +354,20 @@ fun AppNavigation() {
                 },
                 onBack = {
                     navController.popBackStack()
-                }
+                },
+                viewModel = reabastecimientoViewModel,
+                carritoViewModel = reabastecimientoCarritoViewModel
             )
         }
 
         composable(Routes.PedidoReabastecimiento.route) {
             PedidoReabastecimientoScreen(
-                onConfirmar = {
-                    // 🔥 Aquí después harás lógica real (guardar + sync)
-                    navController.navigate(Routes.Home.route) {
-                        popUpTo(Routes.Home.route) { inclusive = true }
-                    }
-                },
+                carritoViewModel = reabastecimientoCarritoViewModel,
                 onVolver = {
                     navController.popBackStack()
-                }
+                },
+                reabastecimientoProcesoViewModel = reabastecimientoProcesoViewModel,
+                cierreMiniBodegaViewModel = cierreMiniBodegaViewModel
             )
         }
 
