@@ -41,7 +41,7 @@ class SyncViewModel(
 
                 if (shouldSync(lastSync)) {
 
-                    repository.sincronizarTodo()
+                    repository.sincronizarTodo(lastSync)
 
                     val today = LocalDate.now().toString()
                     sessionManager.saveLastSync(today)

@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.window.Dialog
 import com.example.repartidor.data.model.ProductoTerminadoEntity
 import com.example.repartidor.data.model.ReabastecimientoItem
@@ -47,9 +48,10 @@ fun ReabastecimientoScreen(
 ) {
 
     val productos by viewModel.productos.collectAsState()
-
+    val items by carritoViewModel.items.collectAsState()
     var productoSeleccionado by remember { mutableStateOf<ProductoTerminadoEntity?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    var showExitDialog by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.padding(16.dp)) {
 
@@ -83,10 +85,14 @@ fun ReabastecimientoScreen(
         Button(onClick = onIrPedido) {
             Text("Ir a Pedido")
         }
-
         Spacer(modifier = Modifier.height(10.dp))
-
-        Button(onClick = onBack) {
+        Button(onClick = {
+            if (items.isNotEmpty()) {
+                showExitDialog = true
+            } else {
+                onBack()
+            }
+        }) {
             Text("Volver")
         }
     }
@@ -185,6 +191,64 @@ fun ReabastecimientoScreen(
                             }
                         ) {
                             Text("Agregar al pedido")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showExitDialog) {
+
+        Dialog(onDismissRequest = { showExitDialog = false }) {
+
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    Text(
+                        text = "Salir del reabastecimiento",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "¿Seguro que quieres volver? Se perderán los productos agregados al pedido.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+
+                        Button(
+                            onClick = {
+                                showExitDialog = false
+                            }
+                        ) {
+                            Text("No")
+                        }
+
+                        Button(
+                            onClick = {
+                                showExitDialog = false
+                                carritoViewModel.limpiar()
+                                onBack()
+                            }
+                        ) {
+                            Text("Sí")
                         }
                     }
                 }

@@ -367,7 +367,14 @@ fun AppNavigation() {
                     navController.popBackStack()
                 },
                 reabastecimientoProcesoViewModel = reabastecimientoProcesoViewModel,
-                cierreMiniBodegaViewModel = cierreMiniBodegaViewModel
+                cierreMiniBodegaViewModel = cierreMiniBodegaViewModel,
+                onPedidoCompleto = {
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(Routes.Home.route) {
+                            inclusive = true
+                        }
+                    }
+                }
             )
         }
 

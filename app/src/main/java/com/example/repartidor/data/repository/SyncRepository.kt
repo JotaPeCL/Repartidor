@@ -16,15 +16,21 @@ import com.example.repartidor.data.model.RutaEntity
 import com.example.repartidor.data.model.UsuarioEntity
 import com.example.repartidor.data.model.VehiculoEntity
 import com.example.repartidor.data.remote.RetrofitClient
+import com.example.repartidor.utils.AppConfig
 
 class SyncRepository(
     private val db: AppDatabase
 ) {
 
-    suspend fun sincronizarTodo() {
+    suspend fun sincronizarTodo(lastSync: String?) {
+        val updatedAfter =
+            if (AppConfig.FORCE_SYNC) null else lastSync//Se hizo este cambio por si acaso en pruebas
+        println("FORCE_SYNC: ${AppConfig.FORCE_SYNC}")
+        println("lastSync: $lastSync")
+        println("updatedAfter enviado: $updatedAfter")
 
         // 🔹 ROLES
-        val rolesResponse = RetrofitClient.api.getRoles()
+        val rolesResponse = RetrofitClient.api.getRoles(updatedAfter)
         if (rolesResponse.isSuccessful) {
 
             val roles = rolesResponse.body() ?: emptyList()
@@ -44,7 +50,7 @@ class SyncRepository(
         }
 
         // 🔹 USUARIOS
-        val usuariosResponse = RetrofitClient.api.getUsuarios()
+        val usuariosResponse = RetrofitClient.api.getUsuarios(updatedAfter)
         if (usuariosResponse.isSuccessful) {
 
             val usuarios = usuariosResponse.body() ?: emptyList()
@@ -67,7 +73,7 @@ class SyncRepository(
             println("USUARIOS OK")
         }
         //vehiculos
-        val vehiculosResponse = RetrofitClient.api.getVehiculos()
+        val vehiculosResponse = RetrofitClient.api.getVehiculos(updatedAfter)
         if (vehiculosResponse.isSuccessful) {
 
             val vehiculos = vehiculosResponse.body() ?: emptyList()
@@ -92,7 +98,7 @@ class SyncRepository(
         }
 
         //RUTAS
-        val rutasResponse = RetrofitClient.api.getRutas()
+        val rutasResponse = RetrofitClient.api.getRutas(updatedAfter)
         if (rutasResponse.isSuccessful) {
 
             val rutas = rutasResponse.body() ?: emptyList()
@@ -114,7 +120,7 @@ class SyncRepository(
         }
 
         // 🔹 CLIENTES
-        val clientesResponse = RetrofitClient.api.getClientes()
+        val clientesResponse = RetrofitClient.api.getClientes(updatedAfter)
         if (clientesResponse.isSuccessful) {
 
             val clientes = clientesResponse.body() ?: emptyList()
@@ -144,7 +150,7 @@ class SyncRepository(
         }
 
 // 🔹 CLIENTE DIAS VISITA
-        val diasResponse = RetrofitClient.api.getClienteDiasVisita()
+        val diasResponse = RetrofitClient.api.getClienteDiasVisita(updatedAfter)
         if (diasResponse.isSuccessful) {
 
             val dias = diasResponse.body() ?: emptyList()
@@ -163,7 +169,7 @@ class SyncRepository(
         }
 
         // 🔹 CATEGORIAS
-        val catResponse = RetrofitClient.api.getCategorias()
+        val catResponse = RetrofitClient.api.getCategorias(updatedAfter)
         if (catResponse.isSuccessful) {
 
             val categorias = catResponse.body() ?: emptyList()
@@ -184,7 +190,7 @@ class SyncRepository(
         }
 
         // 🔹 PRESENTACIONES
-        val presResponse = RetrofitClient.api.getPresentaciones()
+        val presResponse = RetrofitClient.api.getPresentaciones(updatedAfter)
         if (presResponse.isSuccessful) {
 
             val presentaciones = presResponse.body() ?: emptyList()
@@ -205,7 +211,7 @@ class SyncRepository(
         }
 
         // 🔹 PRODUCTOS
-        val prodResponse = RetrofitClient.api.getProductos()
+        val prodResponse = RetrofitClient.api.getProductos(updatedAfter)
         if (prodResponse.isSuccessful) {
 
             val productos = prodResponse.body() ?: emptyList()
@@ -226,7 +232,7 @@ class SyncRepository(
         }
 
         // 🔹 VARIACIONES
-        val varResponse = RetrofitClient.api.getVariaciones()
+        val varResponse = RetrofitClient.api.getVariaciones(updatedAfter)
         if (varResponse.isSuccessful) {
 
             val variaciones = varResponse.body() ?: emptyList()
@@ -250,7 +256,7 @@ class SyncRepository(
         }
 
         // Mini bodega
-        val miniResponse = RetrofitClient.api.getMiniBodegas()
+        val miniResponse = RetrofitClient.api.getMiniBodegas(updatedAfter)
         if (miniResponse.isSuccessful) {
 
             val miniBodegas = miniResponse.body() ?: emptyList()
@@ -272,7 +278,7 @@ class SyncRepository(
         }
 
         // 🔹 MINI BODEGA DETALLE
-        val detalleResponse = RetrofitClient.api.getMiniBodegaDetalles()
+        val detalleResponse = RetrofitClient.api.getMiniBodegaDetalles(updatedAfter)
         if (detalleResponse.isSuccessful) {
 
             val detalles = detalleResponse.body() ?: emptyList()
@@ -292,7 +298,7 @@ class SyncRepository(
         }
 
         // 🔹 PEDIDOS
-        val pedidosResponse = RetrofitClient.api.getPedidosReabastecimiento()
+        val pedidosResponse = RetrofitClient.api.getPedidosReabastecimiento(updatedAfter)
         if (pedidosResponse.isSuccessful) {
 
             val pedidos = pedidosResponse.body() ?: emptyList()
@@ -312,7 +318,8 @@ class SyncRepository(
             println("PEDIDOS OK")
         }
 
-        val pedidodetalleResponse = RetrofitClient.api.getPedidosReabastecimientoDetalle()
+        val pedidodetalleResponse =
+            RetrofitClient.api.getPedidosReabastecimientoDetalle(updatedAfter)
         if (pedidodetalleResponse.isSuccessful) {
 
             val detalles = pedidodetalleResponse.body() ?: emptyList()
