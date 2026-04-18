@@ -36,7 +36,7 @@ import com.example.repartidor.utils.getBluetoothState
 import com.example.repartidor.utils.guardarImpresora
 
 
-@RequiresApi(Build.VERSION_CODES.S)
+
 @Composable
 fun BluetoothScreen(
     onBack: () -> Unit
@@ -212,7 +212,7 @@ fun getBondedDevicesSafe(context: Context, adapter: BluetoothAdapter?): List<Blu
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
+
 fun tienePermisoBluetooth(context: Context): Boolean {
     return ActivityCompat.checkSelfPermission(
         context,
@@ -220,7 +220,7 @@ fun tienePermisoBluetooth(context: Context): Boolean {
     ) == PackageManager.PERMISSION_GRANTED
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
+
 fun obtenerNombreDispositivo(
     context: Context,
     device: BluetoothDevice?

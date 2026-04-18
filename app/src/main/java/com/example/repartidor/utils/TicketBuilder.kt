@@ -6,6 +6,7 @@ import java.util.Locale
 data class TicketItem(
     val cantidad: Int,
     val nombre: String,
+    val presentacion: String, // 🔥 nuevo
     val precioUnitario: Double
 )
 object TicketBuilder {
@@ -34,12 +35,13 @@ object TicketBuilder {
             val subtotal = item.cantidad * item.precioUnitario
             total += subtotal
 
-            sb.append("${item.cantidad}x ${item.nombre}\n")
+            sb.append("${item.cantidad}x ${item.nombre} - ${item.presentacion}\n")
             sb.append("    Subtotal: $${String.format("%.2f", subtotal)}\n")
         }
 
         sb.append("------------------------------\n")
         sb.append("TOTAL: $${String.format("%.2f", total)}\n")
+        sb.append("\n\n\n")
 
         return sb.toString()
     }

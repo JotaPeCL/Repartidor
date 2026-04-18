@@ -29,23 +29,41 @@ class PrinterManager(
             return PrintResult.NoPrinter
         }
 
-        return try {
+        repeat(2) { intento ->
 
-            val socket: BluetoothSocket =
-                device.createRfcommSocketToServiceRecord(uuid)
+            try {
+                val socket = device.createRfcommSocketToServiceRecord(uuid)
 
-            socket.connect()
+                socket.connect()
 
-            val output = socket.outputStream
-            output.write(text.toByteArray(Charsets.UTF_8))
-            output.flush()
+                val output = socket.outputStream
 
-            socket.close()
+                Thread.sleep(300) // 🔥 deja estabilizar conexión
 
-            PrintResult.Success
+                // 🔥 despertar impresora
+                output.write("\n\n".toByteArray())
 
-        } catch (e: Exception) {
-            PrintResult.Error(e.message ?: "Error impresión")
+                output.write(text.toByteArray(Charsets.UTF_8))
+                output.flush()
+
+                Thread.sleep(200)
+
+                socket.close()
+
+                return PrintResult.Success
+
+            } catch (e: Exception) {
+
+                println("❌ Intento ${intento + 1} falló: ${e.message}")
+
+                if (intento == 1) {
+                    return PrintResult.Error(e.message ?: "Error impresión")
+                }
+
+                Thread.sleep(500) // 🔁 espera antes de reintentar
+            }
         }
+
+        return PrintResult.Error("Fallo inesperado")
     }
 }

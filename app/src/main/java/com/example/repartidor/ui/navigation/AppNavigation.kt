@@ -1,12 +1,13 @@
 package com.example.repartidor.ui.navigation
 
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
@@ -22,12 +23,12 @@ import com.example.repartidor.data.repository.HomeRepository
 import com.example.repartidor.data.repository.InventarioRepository
 import com.example.repartidor.data.repository.MiniBodegaRepository
 import com.example.repartidor.data.repository.MiniBodegaRepository2
+import com.example.repartidor.data.repository.PrinterRepository
 import com.example.repartidor.data.repository.ReabastecimientoRepository
 import com.example.repartidor.data.repository.SyncRepository
 import com.example.repartidor.data.repository.UsuarioRepository
 import com.example.repartidor.data.repository.VentaLocalRepository
 import com.example.repartidor.data.repository.VentaRepository
-
 import com.example.repartidor.ui.screens.Cliente.ClienteScreen
 import com.example.repartidor.ui.screens.Cliente.QrScannerScreen
 import com.example.repartidor.ui.screens.Home.HomeScreen
@@ -40,6 +41,7 @@ import com.example.repartidor.ui.screens.Venta.VentaScreen
 import com.example.repartidor.ui.screens.login.LoginScreen
 import com.example.repartidor.ui.screens.login.SyncScreen
 import com.example.repartidor.utils.AppConfig
+import com.example.repartidor.utils.PrinterManager
 import com.example.repartidor.viewmodel.CarritoViewModel
 import com.example.repartidor.viewmodel.CierreMiniBodegaViewModel
 import com.example.repartidor.viewmodel.ClienteViewModel
@@ -57,6 +59,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 
+@androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavigation() {
@@ -116,10 +119,22 @@ fun AppNavigation() {
         )
     }
 
+    val bluetoothManager =
+        context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+
+    val bluetoothAdapter = bluetoothManager.adapter
+
+    val printerRepository = remember { PrinterRepository(context) }
+
+    val printerManager = remember { PrinterManager(bluetoothAdapter) }
+
     val ventaProcesoViewModel = remember {
         VentaProcesoViewModel(
             ventaLocalRepository,
-            sessionManager
+            sessionManager,
+            printerRepository,
+            printerManager,
+            bluetoothAdapter
         )
     }
 

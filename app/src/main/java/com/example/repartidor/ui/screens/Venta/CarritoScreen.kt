@@ -36,7 +36,9 @@ import androidx.compose.ui.unit.dp
 import com.example.repartidor.viewmodel.CarritoViewModel
 import com.example.repartidor.viewmodel.VentaProcesoViewModel
 import androidx.compose.ui.window.Dialog
+import com.example.repartidor.utils.PrintResult
 
+@androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @Composable
 fun CarritosScreen(
     carritoViewModel: CarritoViewModel,
@@ -49,6 +51,9 @@ fun CarritosScreen(
         items.sumOf { it.precio * it.cantidad }
     }
     var showConfirmDialog by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var showResultDialog by remember { mutableStateOf(false) }
+    var mensajeResultado by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.padding(16.dp)) {
 
@@ -201,16 +206,34 @@ fun CarritosScreen(
                         Button(
                             onClick = {
                                 showConfirmDialog = false
+                                isLoading = true
 
                                 ventaProcesoViewModel.confirmarVenta(
                                     items = items,
-                                    onSuccess = {
+                                    onSuccess = { result ->
+                                        isLoading = false
+                                        mensajeResultado = when (result) {
+
+                                            is PrintResult.Success ->
+                                                "✅ Venta realizada\n🖨 Ticket impreso correctamente"
+
+                                            is PrintResult.NoPrinter ->
+                                                "✅ Venta realizada\n⚠ No hay impresora configurada"
+
+                                            is PrintResult.BluetoothOff ->
+                                                "✅ Venta realizada\n⚠ Bluetooth apagado"
+
+                                            is PrintResult.Error ->
+                                                "✅ Venta realizada\n❌ Error al imprimir:\n${result.msg}"
+                                        }
+                                        showResultDialog = true
                                         carritoViewModel.limpiar()
                                         ventaProcesoViewModel.reset()
-                                        onVentaExitosa()
                                     },
                                     onError = {
-                                        println(it)
+                                        isLoading = false
+                                        mensajeResultado = "❌ Error en la venta:\n$it"
+                                        showResultDialog = true
                                     }
                                 )
                             }
@@ -222,4 +245,64 @@ fun CarritosScreen(
             }
         }
     }
+
+    if (isLoading) {
+        Dialog(onDismissRequest = { }) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.padding(20.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    androidx.compose.material3.CircularProgressIndicator()
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Procesando venta...")
+                }
+            }
+        }
+    }
+    if (showResultDialog) {
+        Dialog(onDismissRequest = {
+            showResultDialog = false
+            onVentaExitosa() // 🔥 aquí ya sales
+        }) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.padding(20.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    Text(
+                        text = "Resultado",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = mensajeResultado,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Button(onClick = {
+                        showResultDialog = false
+                        onVentaExitosa()
+                    }) {
+                        Text("Aceptar")
+                    }
+                }
+            }
+        }
+    }
+
 }
