@@ -33,7 +33,8 @@ fun HomeScreen(
     onIrVenta: () -> Unit,
     onIrInventarios: () -> Unit,
     viewModel: HomeViewModel,
-    sessionManager: SessionManager
+    sessionManager: SessionManager,
+    onIrBluetooth: () -> Unit
 ) {
     val data = viewModel.homeData
     LaunchedEffect(Unit) {
@@ -112,7 +113,14 @@ fun HomeScreen(
         }
 
         Column() {
+            Button(
+                onClick = onIrBluetooth,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Configurar impresora")
+            }
 
+            Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = onCerrarSesion,
                 modifier = Modifier.fillMaxWidth()

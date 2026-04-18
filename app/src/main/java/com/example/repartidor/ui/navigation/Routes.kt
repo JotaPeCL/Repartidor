@@ -11,4 +11,5 @@ sealed class Routes(val route: String) {
     object Carrito: Routes("carrito")
     object Reabastecimiento : Routes("reabastecimiento")
     object PedidoReabastecimiento : Routes("pedido_reabastecimiento")
+    object Bluetooth : Routes("bluetooth")
 }

@@ -188,7 +188,7 @@ fun CarritosScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
 
-                        // 🔹 NO
+                        // NO
                         Button(
                             onClick = {
                                 showConfirmDialog = false
@@ -197,7 +197,7 @@ fun CarritosScreen(
                             Text("No")
                         }
 
-                        // 🔥 SÍ
+                        // SÍ
                         Button(
                             onClick = {
                                 showConfirmDialog = false

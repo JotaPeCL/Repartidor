@@ -31,6 +31,7 @@ import com.example.repartidor.data.repository.VentaRepository
 import com.example.repartidor.ui.screens.Cliente.ClienteScreen
 import com.example.repartidor.ui.screens.Cliente.QrScannerScreen
 import com.example.repartidor.ui.screens.Home.HomeScreen
+import com.example.repartidor.ui.screens.Impresora.BluetoothScreen
 import com.example.repartidor.ui.screens.Inventario.InventarioSreen
 import com.example.repartidor.ui.screens.Inventario.PedidoReabastecimientoScreen
 import com.example.repartidor.ui.screens.Inventario.ReabastecimientoScreen
@@ -265,7 +266,10 @@ fun AppNavigation() {
                     navController.navigate(Routes.Inventario.route)
                 },
                 viewModel = homeViewModel,
-                sessionManager = sessionManager
+                sessionManager = sessionManager,
+                onIrBluetooth = {
+                    navController.navigate(Routes.Bluetooth.route)
+                }
             )
         }
 
@@ -377,9 +381,13 @@ fun AppNavigation() {
                 }
             )
         }
-
-
-
+        composable(Routes.Bluetooth.route) {
+            BluetoothScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 }
 
