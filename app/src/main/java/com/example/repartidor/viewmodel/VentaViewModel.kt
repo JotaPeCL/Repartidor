@@ -29,8 +29,10 @@ class VentaViewModel(
             miniBodegaId = sessionManager.getMiniBodegaId()
 
             // 🔹 Escuchar productos desde Room
-            repository.getProductos().collect {
-                _productos.value = it
+            miniBodegaId?.let { id ->
+                repository.getProductos(id).collect {
+                    _productos.value = it
+                }
             }
         }
     }

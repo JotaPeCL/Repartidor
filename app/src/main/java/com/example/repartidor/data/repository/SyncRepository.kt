@@ -289,7 +289,8 @@ class SyncRepository(
                     miniBodegaId = it.mini_bodega,
                     productoVariacionId = it.producto_variacion,
                     cantidadInicial = it.cantidad_inicial,
-                    cantidadActual = it.cantidad_actual
+                    cantidadActual = it.cantidad_actual,
+                    updatedAt = it.updated_at
                 )
             }
 

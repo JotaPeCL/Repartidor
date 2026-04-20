@@ -12,8 +12,8 @@ class VentaRepository(
 ) {
 
     // 🔹 PRODUCTOS
-    fun getProductos(): Flow<List<ProductoTerminadoEntity>> {
-        return productoDao.getProductos()
+    fun getProductos(miniBodegaId: Int): Flow<List<ProductoTerminadoEntity>> {
+        return miniBodegaDao.getProductosConStock(miniBodegaId)
     }
 
     // 🔹 VARIACIONES FILTRADAS POR CAMIONETA

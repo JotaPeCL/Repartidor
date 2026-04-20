@@ -362,6 +362,9 @@ fun AppNavigation() {
                 sessionManager = sessionManager,
                 onIrReabastecimiento = {
                     navController.navigate(Routes.Reabastecimiento.route)
+                },
+                onBack = {
+                    navController.popBackStack() // 🔥 clave
                 }
             )
         }

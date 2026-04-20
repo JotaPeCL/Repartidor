@@ -9,5 +9,6 @@ data class MiniBodegaDetalleEntity(
     val miniBodegaId: Int,
     val productoVariacionId: Int,
     val cantidadInicial: Double,
-    val cantidadActual: Double
+    val cantidadActual: Double,
+    val updatedAt: String
 )

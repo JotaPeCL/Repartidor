@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.repartidor.data.model.MiniBodegaDetalleEntity
 import com.example.repartidor.data.model.ProductoConStock
+import com.example.repartidor.data.model.ProductoTerminadoEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -65,4 +66,16 @@ interface MiniBodegaDetalleDao {
     @Query("SELECT * FROM mini_bodega_detalle WHERE miniBodegaId = :miniBodegaId")
     suspend fun obtenerDetallesPorMiniBodega(miniBodegaId: Int): List<MiniBodegaDetalleEntity>
 
+    @Query("""
+    SELECT DISTINCT pt.*
+    FROM producto_terminado pt
+    INNER JOIN producto_variacion pv 
+        ON pv.producto = pt.id
+    INNER JOIN mini_bodega_detalle mbd 
+        ON mbd.productoVariacionId = pv.id
+    WHERE mbd.miniBodegaId = :miniBodegaId
+    AND mbd.cantidadActual > 0
+    AND pt.estado = 1
+""")
+    fun getProductosConStock(miniBodegaId: Int): Flow<List<ProductoTerminadoEntity>>
 }

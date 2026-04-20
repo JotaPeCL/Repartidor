@@ -25,7 +25,8 @@ import androidx.compose.ui.unit.dp
 fun InventarioSreen(
     viewModel: InventarioViewModel,
     sessionManager: SessionManager,
-    onIrReabastecimiento: () -> Unit
+    onIrReabastecimiento: () -> Unit,
+    onBack: () -> Unit
 ) {
     val lista = viewModel.inventario
 
@@ -38,6 +39,12 @@ fun InventarioSreen(
 
     Column(modifier = Modifier.padding(16.dp)) {
 
+        Button(
+            onClick = onBack
+        ) {
+            Text("Volver")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Inventario actual de la camioneta",
             style = MaterialTheme.typography.headlineSmall
