@@ -104,7 +104,8 @@ fun AppNavigation() {
     val ventaRepository = remember {
         VentaRepository(
             db.productoDao(),
-            db.miniBodegaDetalleDao()
+            db.miniBodegaDetalleDao(),
+            db.clienteDao()
         )
     }
 
@@ -115,7 +116,8 @@ fun AppNavigation() {
 
     val ventaLocalRepository = remember {
         VentaLocalRepository(
-            db.ventaDao() // 🔥 importante
+            db.ventaDao(), // 🔥 importante
+            db.clienteDao()
         )
     }
 

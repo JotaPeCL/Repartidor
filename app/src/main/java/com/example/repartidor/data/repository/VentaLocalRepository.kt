@@ -1,13 +1,20 @@
 package com.example.repartidor.data.repository
 
+import com.example.repartidor.data.local.ClienteDao
 import com.example.repartidor.data.local.VentaDao
 import com.example.repartidor.data.model.CarritoItem
+import com.example.repartidor.data.model.ClienteEntity
 import com.example.repartidor.data.model.VentaDetalleEntity
 import com.example.repartidor.data.model.VentaEntity
 
 class VentaLocalRepository(
-    private val ventaDao: VentaDao
+    private val ventaDao: VentaDao,
+    private val clienteDao: ClienteDao
 ) {
+
+    suspend fun getClienteById(id: Int): ClienteEntity? {
+        return clienteDao.getClienteById(id)
+    }
 
     suspend fun guardarVenta(
         clienteId: Int?,

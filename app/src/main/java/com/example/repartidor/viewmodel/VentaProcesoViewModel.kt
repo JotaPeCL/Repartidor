@@ -68,7 +68,15 @@ class VentaProcesoViewModel(
                     )
                 }
 
-                val ticket = TicketBuilder.build(ticketItems)
+                val cliente = clienteId?.let {
+                    repository.getClienteById(it)
+                }
+
+                val ticket = TicketBuilder.build(
+                    items = ticketItems,
+                    clienteNombre = cliente?.nombre,
+                    clienteNegocio = cliente?.nombreNegocio
+                )
 
                 val device = bluetoothAdapter?.let {
                     printerRepository.getSavedPrinter(it)

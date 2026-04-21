@@ -86,8 +86,16 @@ fun VentaScreen(
             Text("Volver")
         }
 
+        var clienteNombre by remember { mutableStateOf<String?>(null) }
+
+        LaunchedEffect(clienteId) {
+            clienteNombre = clienteId?.let {
+                viewModel.getClienteNombre(it) // 👈 lo agregamos abajo
+            }
+        }
+
         if (clienteId != null) {
-            Text("Venta con cliente ID: $clienteId")
+            Text("Venta con cliente: ${clienteNombre ?: "Cargando..."}")
         } else {
             Text("Venta rápida")
         }

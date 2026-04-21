@@ -44,4 +44,9 @@ class VentaViewModel(
 
         return repository.getVariaciones(productoId, id)
     }
+
+    suspend fun getClienteNombre(id: Int): String? {
+        return repository.getClienteById(id)?.nombre
+    }
+
 }

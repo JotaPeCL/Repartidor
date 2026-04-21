@@ -12,7 +12,9 @@ data class TicketItem(
 object TicketBuilder {
 
     fun build(
-        items: List<TicketItem>
+        items: List<TicketItem>,
+        clienteNombre: String? = null,
+        clienteNegocio: String? = null
     ): String {
 
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -26,6 +28,15 @@ object TicketBuilder {
         sb.append("Ticket de Venta\n")
         sb.append("------------------------------\n")
         sb.append("Fecha: $fecha\n")
+
+        // 🔥 CLIENTE (solo si existe)
+        if (clienteNombre != null) {
+            sb.append("Cliente: $clienteNombre\n")
+            clienteNegocio?.let {
+                sb.append("Negocio: $it\n")
+            }
+        }
+
         sb.append("------------------------------\n")
 
         var total = 0.0
