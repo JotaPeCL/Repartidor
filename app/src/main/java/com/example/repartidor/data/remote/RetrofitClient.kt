@@ -10,8 +10,10 @@ import retrofit2.http.Query
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://10.0.2.2:8000/api/"
-        //"http://192.168.68.51:8000/api/"
+    private const val BASE_URL = "https://osmit.up.railway.app/movil/"
+    //"http://192.168.68.51:8000/api/"
+    //"https://osmit.up.railway.app/movil/"
+    //"http://10.0.2.2:8000/movil/"
 
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)

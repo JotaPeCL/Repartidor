@@ -1,46 +1,23 @@
 package com.example.repartidor.ui.screens.Venta
 
-
-import android.view.Surface
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.Divider
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.repartidor.data.model.CarritoItem
@@ -68,71 +45,141 @@ fun VentaScreen(
     var showDialog by remember { mutableStateOf(false) }
     val carrito by carritoViewModel.items.collectAsState()
     var mostrarDialogoSalir by remember { mutableStateOf(false) }
+    var clienteNombre by remember { mutableStateOf<String?>(null) }
 
-
-    Column(modifier = Modifier.padding(16.dp)) {
-
-        Button(
-            onClick = {
-                if (carrito.isNotEmpty()) {
-                    mostrarDialogoSalir = true
-                } else {
-                    carritoViewModel.limpiar()
-                    ventaProcesoViewModel.reset()
-                    onBack()
-                }
-            }
-        ) {
-            Text("Volver")
+    LaunchedEffect(clienteId) {
+        clienteNombre = clienteId?.let {
+            viewModel.getClienteNombre(it)
         }
+    }
 
-        var clienteNombre by remember { mutableStateOf<String?>(null) }
-
-        LaunchedEffect(clienteId) {
-            clienteNombre = clienteId?.let {
-                viewModel.getClienteNombre(it) // 👈 lo agregamos abajo
-            }
-        }
-
-        if (clienteId != null) {
-            Text("Venta con cliente: ${clienteNombre ?: "Cargando..."}")
-        } else {
-            Text("Venta rápida")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        //  Lista de productos
-        LazyColumn {
-            items(productos) { producto ->
-
-                Card(
+    // 🌟 Uso de Scaffold para una estructura moderna
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "Productos",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = if (clienteId != null) "Cliente: ${clienteNombre ?: "Cargando..."}" else "Venta Rápida",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        if (carrito.isNotEmpty()) {
+                            mostrarDialogoSalir = true
+                        } else {
+                            carritoViewModel.limpiar()
+                            ventaProcesoViewModel.reset()
+                            onBack()
+                        }
+                    }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        },
+        bottomBar = {
+            // Barra inferior fija para el carrito
+            BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                tonalElevation = 8.dp
+            ) {
+                Button(
+                    onClick = onIrCarrito,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clickable {
-                            productoSeleccionado = producto
-                            showDialog = true
-                        }
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.ShoppingCart,
+                        contentDescription = "Carrito",
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
                     Text(
-                        text = producto.nombre,
-                        modifier = Modifier.padding(16.dp)
+                        text = "Ver Carrito (${carrito.size})",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
             }
         }
+    ) { paddingValues ->
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Button(onClick = onIrCarrito) {
-            Text("Ir al carrito")
+            if (productos.isEmpty()) {
+                // Pantalla vacía si no hay productos
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "No hay productos disponibles.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                // Lista de productos con diseño mejorado
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(productos) { producto ->
+                        ElevatedCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    productoSeleccionado = producto
+                                    showDialog = true
+                                },
+                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+                            colors = CardDefaults.elevatedCardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = producto.nombre,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
-    //  DIALOG DE VARIACIONES
+    // 🎨 DIALOG DE VARIACIONES MEJORADO
     if (showDialog && productoSeleccionado != null) {
-
         val variaciones by viewModel
             .getVariaciones(productoSeleccionado!!.id)
             .collectAsState(initial = emptyList())
@@ -140,84 +187,97 @@ fun VentaScreen(
         val cantidades = remember { mutableStateMapOf<Int, String>() }
 
         Dialog(onDismissRequest = { showDialog = false }) {
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
-
-                Column(modifier = Modifier.padding(16.dp)) {
-
+                Column(modifier = Modifier.padding(24.dp)) {
                     Text(
                         text = productoSeleccionado!!.nombre,
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
-
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Column(
                         modifier = Modifier
-                            .heightIn(max = 300.dp)
+                            .heightIn(max = 350.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
-
                         variaciones.forEach { variacion ->
-
                             val cantidad = cantidades[variacion.id] ?: "0"
 
-                            Column(
+                            Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 8.dp)
+                                    .padding(vertical = 6.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                )
                             ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = variacion.presentacionNombre,
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
+                                        Text(
+                                            text = "$${variacion.precio}",
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
 
-                                Text("Presentación: ${variacion.presentacionNombre}")
-                                Text("Precio: $${variacion.precio}")
-                                Text("Stock: ${variacion.stockActual}")
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Stock: ${variacion.stockActual}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
 
-                                Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(8.dp))
 
-                                // TEXTFIELD SOLO NÚMEROS
-                                TextField(
-                                    value = cantidad,
-                                    onValueChange = { nuevo ->
-                                        if (nuevo.all { it.isDigit() }) {
-                                            cantidades[variacion.id] = nuevo
-                                        }
-                                    },
-                                    label = { Text("Cantidad") },
-                                    singleLine = true
-                                )
-
-                                HorizontalDivider(
-                                    Modifier,
-                                    DividerDefaults.Thickness,
-                                    DividerDefaults.color
-                                )
+                                    // Campo de texto más limpio
+                                    OutlinedTextField(
+                                        value = cantidad,
+                                        onValueChange = { nuevo ->
+                                            if (nuevo.isEmpty() || nuevo.all { it.isDigit() }) {
+                                                cantidades[variacion.id] = nuevo
+                                            }
+                                        },
+                                        label = { Text("Cantidad") },
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        singleLine = true,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.End
                     ) {
-
-                        // VOLVER
-                        Button(onClick = { showDialog = false }) {
-                            Text("Volver")
+                        TextButton(onClick = { showDialog = false }) {
+                            Text("Cancelar")
                         }
-
-                        // AGREGAR AL CARRITO
+                        Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = {
-
                                 val productosSeleccionados = variaciones.mapNotNull { variacion ->
-
                                     val cantidad = cantidades[variacion.id]?.toIntOrNull() ?: 0
-
                                     if (cantidad > 0) {
                                         CarritoItem(
                                             productoVariacionId = variacion.id,
@@ -228,63 +288,46 @@ fun VentaScreen(
                                         )
                                     } else null
                                 }
-
-                                // AQUÍ YA SE GUARDA EN EL CARRITO
                                 carritoViewModel.agregarProductos(productosSeleccionados)
-
                                 showDialog = false
                             }
                         ) {
-                            Text("Agregar al carrito")
+                            Text("Agregar")
                         }
                     }
                 }
             }
         }
     }
-    //Dialog de salida
+
+    // 🎨 DIALOG DE SALIDA MEJORADO
     if (mostrarDialogoSalir) {
-        Dialog(onDismissRequest = { mostrarDialogoSalir = false }) {
-
-            Surface(
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-
-                    Text("¿Salir?", fontWeight = FontWeight.Bold)
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text("Se perderá el carrito actual")
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Row {
-                        Button(onClick = {
-                            mostrarDialogoSalir = false
-                        }) {
-                            Text("Cancelar")
-                        }
-
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Button(onClick = {
-                            mostrarDialogoSalir = false
-
-                            //LIMPIAR TODO
-                            carritoViewModel.limpiar()
-                            ventaProcesoViewModel.reset()
-
-                            onBack()
-                        }) {
-                            Text("Salir")
-                        }
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoSalir = false },
+            title = {
+                Text("¿Salir de la venta?", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text("Si sales ahora, se perderán los productos que tienes actualmente en tu carrito.")
+            },
+            confirmButton = {
+                Button(
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    onClick = {
+                        mostrarDialogoSalir = false
+                        carritoViewModel.limpiar()
+                        ventaProcesoViewModel.reset()
+                        onBack()
                     }
+                ) {
+                    Text("Sí, salir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoSalir = false }) {
+                    Text("Cancelar")
                 }
             }
-        }
+        )
     }
 }

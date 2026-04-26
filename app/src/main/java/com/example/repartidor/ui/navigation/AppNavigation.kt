@@ -33,7 +33,7 @@ import com.example.repartidor.ui.screens.Cliente.ClienteScreen
 import com.example.repartidor.ui.screens.Cliente.QrScannerScreen
 import com.example.repartidor.ui.screens.Home.HomeScreen
 import com.example.repartidor.ui.screens.Impresora.BluetoothScreen
-import com.example.repartidor.ui.screens.Inventario.InventarioSreen
+import com.example.repartidor.ui.screens.Inventario.InventarioScreen
 import com.example.repartidor.ui.screens.Inventario.PedidoReabastecimientoScreen
 import com.example.repartidor.ui.screens.Inventario.ReabastecimientoScreen
 import com.example.repartidor.ui.screens.Venta.CarritosScreen
@@ -308,8 +308,11 @@ fun AppNavigation() {
         composable(Routes.QrScanner.route) {
             QrScannerScreen(
                 onQrDetectado = { clienteId ->
-                    clienteViewModel.buscarCliente(clienteId) //reutilizas lógica
-                    navController.popBackStack() //regresas a ClienteScreen
+                    clienteViewModel.buscarCliente(clienteId) // reutilizas lógica
+                    navController.popBackStack() // regresas a ClienteScreen
+                },
+                onBack = {
+                    navController.popBackStack() // cierra el escáner si se arrepiente
                 }
             )
         }
@@ -359,7 +362,7 @@ fun AppNavigation() {
         }
 
         composable(Routes.Inventario.route) {
-            InventarioSreen(
+            InventarioScreen(
                 viewModel = inventarioViewModel,
                 sessionManager = sessionManager,
                 onIrReabastecimiento = {
