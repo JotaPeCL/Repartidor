@@ -23,6 +23,7 @@ import com.example.repartidor.viewmodel.CarritoViewModel
 import com.example.repartidor.viewmodel.VentaProcesoViewModel
 import com.example.repartidor.utils.PrintResult
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @Composable
