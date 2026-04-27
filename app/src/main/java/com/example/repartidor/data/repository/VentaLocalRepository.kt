@@ -20,10 +20,9 @@ class VentaLocalRepository(
         clienteId: Int?,
         usuarioId: Int,
         items: List<CarritoItem>,
-        miniBodegaId: Int
+        miniBodegaId: Int,
+        total: Double
     ) {
-
-        val total = items.sumOf { it.precio * it.cantidad }
 
         val ventaId = ventaDao.insertVenta(
             VentaEntity(

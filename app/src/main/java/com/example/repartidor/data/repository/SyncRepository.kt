@@ -141,7 +141,8 @@ class SyncRepository(
                     observaciones = it.observaciones,
                     rutaId = it.ruta,
                     estado = it.estado,
-                    updatedAt = it.updated_at
+                    updatedAt = it.updated_at,
+                    porcentajeDescuento = it.porcentaje_descuento
                 )
             }
 

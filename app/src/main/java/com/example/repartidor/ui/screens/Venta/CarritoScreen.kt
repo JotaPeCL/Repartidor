@@ -33,9 +33,21 @@ fun CarritosScreen(
     onVentaExitosa: () -> Unit
 ) {
     val items by carritoViewModel.items.collectAsState()
-    val total = remember(items) {
+    val cliente by ventaProcesoViewModel.cliente.collectAsState()
+    val subtotal = remember(items) {
         items.sumOf { it.precio * it.cantidad }
     }
+
+    val porcentajeDescuento = cliente?.porcentajeDescuento ?: 0.0
+
+    val descuento = remember(subtotal, porcentajeDescuento) {
+        if (porcentajeDescuento > 0) {
+            subtotal * (porcentajeDescuento / 100)
+        } else 0.0
+    }
+
+    val totalFinal = subtotal - descuento
+
 
     var showConfirmDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
@@ -74,14 +86,37 @@ fun CarritosScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column {Text(
+                            text = "Subtotal",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                            Text(
+                                text = "$${"%.2f".format(subtotal)}",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+
+                            if (porcentajeDescuento > 0) {
+                                Text(
+                                    text = "Descuento (${porcentajeDescuento.toInt()}%)",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "-$${"%.2f".format(descuento)}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
                             Text(
                                 text = "Total",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = MaterialTheme.typography.labelLarge
                             )
                             Text(
-                                text = "$${total}",
+                                text = "$${"%.2f".format(totalFinal)}",
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.primary
                             )

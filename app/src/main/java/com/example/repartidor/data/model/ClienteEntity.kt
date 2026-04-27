@@ -14,6 +14,7 @@ data class ClienteEntity(
     val localidad: String?,
     val colonia: String?,
     val telefono: String?,
+    val porcentajeDescuento: Double,
     val credito: Double?,
     val imagen: String?,
     val observaciones: String?,

@@ -11,6 +11,7 @@ data class ClienteDto(
     val colonia: String?,
     val telefono: String?,
     val credito: Double?,
+    val porcentaje_descuento: Double,
     val imagen: String?,
     val observaciones: String?,
     val ruta: Int?,

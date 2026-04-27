@@ -14,7 +14,11 @@ object TicketBuilder {
     fun build(
         items: List<TicketItem>,
         clienteNombre: String? = null,
-        clienteNegocio: String? = null
+        clienteNegocio: String? = null,
+        subtotal: Double,
+        porcentajeDescuento: Double,
+        descuento: Double,
+        totalFinal: Double
     ): String {
 
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -39,19 +43,27 @@ object TicketBuilder {
 
         sb.append("------------------------------\n")
 
-        var total = 0.0
-
+        // 🔹 DETALLE DE PRODUCTOS
         items.forEach { item ->
 
-            val subtotal = item.cantidad * item.precioUnitario
-            total += subtotal
+            val sub = item.cantidad * item.precioUnitario
 
             sb.append("${item.cantidad}x ${item.nombre} - ${item.presentacion}\n")
-            sb.append("    Subtotal: $${String.format("%.2f", subtotal)}\n")
+            sb.append("    Subtotal: $${String.format("%.2f", sub)}\n")
         }
 
         sb.append("------------------------------\n")
-        sb.append("TOTAL: $${String.format("%.2f", total)}\n")
+
+        // 🔹 SUBTOTAL GENERAL
+        sb.append("SUBTOTAL: $${String.format("%.2f", subtotal)}\n")
+
+        // 🔹 DESCUENTO (solo si aplica)
+        if (descuento > 0) {
+            sb.append("DESCUENTO (${String.format("%.0f", porcentajeDescuento)}%): -$${String.format("%.2f", descuento)}\n")
+        }
+
+        // 🔹 TOTAL FINAL
+        sb.append("TOTAL: $${String.format("%.2f", totalFinal)}\n")
         sb.append("\n\n\n")
 
         return sb.toString()
