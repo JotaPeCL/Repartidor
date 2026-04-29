@@ -12,6 +12,12 @@ interface ClienteDiasVisitaDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(dias: List<ClienteDiasVisitaEntity>)
 
+    @Query("SELECT id FROM cliente_dias_visita")
+    suspend fun getAllIds(): List<Int>
+
+    @Query("DELETE FROM cliente_dias_visita WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Int>)
+
     @Query("SELECT * FROM cliente_dias_visita")
     suspend fun getAll(): List<ClienteDiasVisitaEntity>
 }

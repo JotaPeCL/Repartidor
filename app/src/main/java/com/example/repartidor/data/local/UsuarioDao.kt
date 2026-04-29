@@ -12,6 +12,12 @@ interface UsuarioDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(lista: List<UsuarioEntity>)
 
+    @Query("SELECT id FROM usuario")
+    suspend fun getAllIds(): List<Int>
+
+    @Query("DELETE FROM usuario WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Int>)
+
     @Query("SELECT * FROM usuario")
     suspend fun getAll(): List<UsuarioEntity>
 

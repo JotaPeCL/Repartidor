@@ -12,6 +12,12 @@ interface VehiculoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(vehiculos: List<VehiculoEntity>)
 
+    @Query("SELECT id FROM vehiculo")
+    suspend fun getAllIds(): List<Int>
+
+    @Query("DELETE FROM vehiculo WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Int>)
+
     @Query("SELECT * FROM vehiculo")
     suspend fun getAll(): List<VehiculoEntity>
 

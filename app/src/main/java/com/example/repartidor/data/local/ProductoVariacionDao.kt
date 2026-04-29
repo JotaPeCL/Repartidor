@@ -20,6 +20,12 @@ interface ProductoVariacionDao {
     @Query("DELETE FROM producto_variacion")
     suspend fun deleteAll()
 
+    @Query("SELECT id FROM producto_variacion")
+    suspend fun getAllIds(): List<Int>
+
+    @Query("DELETE FROM producto_variacion WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Int>)
+
 
     @Query("SELECT * FROM producto_variacion WHERE producto = :productoId")
     suspend fun getByProducto(productoId: Int): List<ProductoVariacionEntity>

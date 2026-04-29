@@ -10,6 +10,12 @@ interface ProductoTerminadoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(lista: List<ProductoTerminadoEntity>)
 
+    @Query("SELECT id FROM producto_terminado")
+    suspend fun getAllIds(): List<Int>
+
+    @Query("DELETE FROM producto_terminado WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Int>)
+
     @Query("SELECT * FROM producto_terminado")
     suspend fun getAll(): List<ProductoTerminadoEntity>
 

@@ -13,4 +13,10 @@ interface RolDao {
 
     @Query("SELECT * FROM roles")
     suspend fun getAll(): List<RolEntity>
+
+    @Query("SELECT id FROM roles")
+    suspend fun getAllIds(): List<Int>
+
+    @Query("DELETE FROM roles WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Int>)
 }

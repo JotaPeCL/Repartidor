@@ -14,4 +14,10 @@ interface PedidoReabastecimientoDetalleDao {
 
     @Query("SELECT * FROM pedido_reabastecimiento_detalle WHERE pedidoId = :pedidoId")
     suspend fun getByPedido(pedidoId: Int): List<PedidoReabastecimientoDetalleEntity>
+
+    @Query("SELECT id FROM pedido_reabastecimiento_detalle")
+    suspend fun getAllIds(): List<Int>
+
+    @Query("DELETE FROM pedido_reabastecimiento_detalle WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Int>)
 }

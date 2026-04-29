@@ -22,9 +22,30 @@ class SyncRepository(
     private val db: AppDatabase
 ) {
 
+    private suspend fun <T> syncTable(
+        dataServidor: List<T>,
+        getId: (T) -> Int,
+        getAllIds: suspend () -> List<Int>,
+        deleteByIds: suspend (List<Int>) -> Unit,
+        insertAll: suspend (List<T>) -> Unit
+    ) {
+        val idsServidor = dataServidor.map { getId(it) }.toSet()
+        val idsLocales = getAllIds()
+
+        val idsAEliminar = idsLocales.filter { it !in idsServidor }
+
+        if (idsAEliminar.isNotEmpty()) {
+            deleteByIds(idsAEliminar)
+        }
+
+        insertAll(dataServidor)
+    }
+
     suspend fun sincronizarTodo(lastSync: String?) {
-        val updatedAfter =
-            if (AppConfig.FORCE_SYNC) null else lastSync//Se hizo este cambio por si acaso en pruebas
+
+        val updatedAfter = null
+        // val updatedAfter = if (AppConfig.FORCE_SYNC) null else lastSync
+
         println("FORCE_SYNC: ${AppConfig.FORCE_SYNC}")
         println("lastSync: $lastSync")
         println("updatedAfter enviado: $updatedAfter")
@@ -32,314 +53,234 @@ class SyncRepository(
         // 🔹 ROLES
         val rolesResponse = RetrofitClient.api.getRoles(updatedAfter)
         if (rolesResponse.isSuccessful) {
-
             val roles = rolesResponse.body() ?: emptyList()
 
             val rolesEntity = roles.map {
-                RolEntity(
-                    id = it.id,
-                    nombre = it.nombre,
-                    descripcion = it.descripcion,
-                    estado = it.estado,
-                    updated_at = it.updated_at
-                )
+                RolEntity(it.id, it.nombre, it.descripcion, it.estado, it.updated_at)
             }
 
-            db.rolDao().insertAll(rolesEntity)
+            syncTable(
+                rolesEntity,
+                { it.id },
+                { db.rolDao().getAllIds() },
+                { db.rolDao().deleteByIds(it) },
+                { db.rolDao().insertAll(it) }
+            )
             println("ROLES OK")
         }
 
         // 🔹 USUARIOS
         val usuariosResponse = RetrofitClient.api.getUsuarios(updatedAfter)
         if (usuariosResponse.isSuccessful) {
-
             val usuarios = usuariosResponse.body() ?: emptyList()
 
             val usuariosEntity = usuarios.map {
                 UsuarioEntity(
-                    id = it.id,
-                    username = it.username,
-                    firstName = it.first_name,
-                    lastName = it.last_name,
-                    email = it.email,
-                    telefono = it.telefono,
-                    direccion = it.direccion,
-                    foto = it.foto,
-                    rolId = it.rol,
-                    updatedAt = it.updated_at
+                    it.id, it.username, it.first_name, it.last_name,
+                    it.email, it.telefono, it.direccion, it.foto,
+                    it.rol, it.updated_at
                 )
             }
-            db.usuarioDao().insertAll(usuariosEntity)
+
+            syncTable(
+                usuariosEntity,
+                { it.id },
+                { db.usuarioDao().getAllIds() },
+                { db.usuarioDao().deleteByIds(it) },
+                { db.usuarioDao().insertAll(it) }
+            )
             println("USUARIOS OK")
         }
-        //vehiculos
+
+        // 🔹 VEHICULOS
         val vehiculosResponse = RetrofitClient.api.getVehiculos(updatedAfter)
         if (vehiculosResponse.isSuccessful) {
-
             val vehiculos = vehiculosResponse.body() ?: emptyList()
 
             val vehiculosEntity = vehiculos.map {
                 VehiculoEntity(
-                    id = it.id,
-                    marca = it.marca,
-                    color = it.color,
-                    placa = it.placa,
-                    kilometraje = it.kilometraje,
-                    ultimoServicio = it.ultimo_servicio,
-                    observaciones = it.observaciones,
-                    imagen = it.imagen,
-                    estado = it.estado,
-                    updatedAt = it.updated_at
+                    it.id, it.marca, it.color, it.placa,
+                    it.kilometraje, it.ultimo_servicio,
+                    it.observaciones, it.imagen,
+                    it.estado, it.updated_at
                 )
             }
 
-            db.vehiculoDao().insertAll(vehiculosEntity)
+            syncTable(
+                vehiculosEntity,
+                { it.id },
+                { db.vehiculoDao().getAllIds() },
+                { db.vehiculoDao().deleteByIds(it) },
+                { db.vehiculoDao().insertAll(it) }
+            )
             println("VEHICULOS OK")
         }
 
-        //RUTAS
+        // 🔹 RUTAS
         val rutasResponse = RetrofitClient.api.getRutas(updatedAfter)
         if (rutasResponse.isSuccessful) {
-
             val rutas = rutasResponse.body() ?: emptyList()
 
             val rutasEntity = rutas.map {
                 RutaEntity(
-                    id = it.id,
-                    nombre = it.nombre,
-                    descripcion = it.descripcion,
-                    usuarioId = it.usuario,
-                    vehiculoId = it.vehiculo,
-                    estado = it.estado,
-                    updatedAt = it.updated_at
+                    it.id, it.nombre, it.descripcion,
+                    it.usuario, it.vehiculo,
+                    it.estado, it.updated_at
                 )
             }
 
-            db.rutaDao().insertAll(rutasEntity)
+            syncTable(
+                rutasEntity,
+                { it.id },
+                { db.rutaDao().getAllIds() },
+                { db.rutaDao().deleteByIds(it) },
+                { db.rutaDao().insertAll(it) }
+            )
             println("RUTAS OK")
         }
 
         // 🔹 CLIENTES
         val clientesResponse = RetrofitClient.api.getClientes(updatedAfter)
         if (clientesResponse.isSuccessful) {
-
             val clientes = clientesResponse.body() ?: emptyList()
 
             val clientesEntity = clientes.map {
                 ClienteEntity(
-                    id = it.id,
-                    nombre = it.nombre,
-                    nombreNegocio = it.nombre_negocio,
-                    giro = it.giro,
-                    tipoExhibidor = it.tipo_exhibidor,
-                    direccion = it.direccion,
-                    localidad = it.localidad,
-                    colonia = it.colonia,
-                    telefono = it.telefono,
-                    credito = it.credito,
-                    imagen = it.imagen,
-                    observaciones = it.observaciones,
-                    rutaId = it.ruta,
-                    estado = it.estado,
-                    updatedAt = it.updated_at,
-                    porcentajeDescuento = it.porcentaje_descuento
+                    it.id, it.nombre, it.nombre_negocio,
+                    it.giro, it.tipo_exhibidor,
+                    it.direccion, it.localidad,
+                    it.colonia, it.telefono,
+                    it.porcentaje_descuento, it.credito,
+                    it.imagen, it.observaciones,
+                    it.ruta, it.estado,
+                    it.updated_at
                 )
             }
 
-            db.clienteDao().insertAll(clientesEntity)
+            syncTable(
+                clientesEntity,
+                { it.id },
+                { db.clienteDao().getAllIds() },
+                { db.clienteDao().deleteByIds(it) },
+                { db.clienteDao().insertAll(it) }
+            )
             println("CLIENTES OK")
         }
 
-// 🔹 CLIENTE DIAS VISITA
+        // 🔹 CLIENTE DIAS VISITA
         val diasResponse = RetrofitClient.api.getClienteDiasVisita(updatedAfter)
         if (diasResponse.isSuccessful) {
-
             val dias = diasResponse.body() ?: emptyList()
 
             val diasEntity = dias.map {
                 ClienteDiasVisitaEntity(
-                    id = it.id,
-                    clienteId = it.cliente,
-                    diaSemana = it.dia_semana,
-                    updatedAt = it.updated_at
+                    it.id, it.cliente, it.dia_semana, it.updated_at
                 )
             }
 
-            db.clienteDiasVisitaDao().insertAll(diasEntity)
+            syncTable(
+                diasEntity,
+                { it.id },
+                { db.clienteDiasVisitaDao().getAllIds() },
+                { db.clienteDiasVisitaDao().deleteByIds(it) },
+                { db.clienteDiasVisitaDao().insertAll(it) }
+            )
             println("CLIENTE DIAS OK")
         }
 
-        // 🔹 CATEGORIAS
-        val catResponse = RetrofitClient.api.getCategorias(updatedAfter)
-        if (catResponse.isSuccessful) {
-
-            val categorias = catResponse.body() ?: emptyList()
-
-            val categoriasEntity = categorias.map {
-                CategoriaProductoEntity(
-                    id = it.id,
-                    nombre = it.nombre,
-                    descripcion = it.descripcion,
-                    imagen = it.imagen,
-                    estado = it.estado,
-                    updatedAt = it.updated_at
-                )
-            }
-
-            db.categoriaDao().insertAll(categoriasEntity)
-            println("CATEGORIAS OK")
-        }
-
-        // 🔹 PRESENTACIONES
-        val presResponse = RetrofitClient.api.getPresentaciones(updatedAfter)
-        if (presResponse.isSuccessful) {
-
-            val presentaciones = presResponse.body() ?: emptyList()
-
-            val presEntity = presentaciones.map {
-                PresentacionProductoTerminadoEntity(
-                    id = it.id,
-                    nombre = it.nombre,
-                    descripcion = it.descripcion,
-                    imagen = it.imagen,
-                    estado = it.estado,
-                    updatedAt = it.updated_at
-                )
-            }
-
-            db.presentacionDao().insertAll(presEntity)
-            println("PRESENTACIONES OK")
-        }
-
-        // 🔹 PRODUCTOS
-        val prodResponse = RetrofitClient.api.getProductos(updatedAfter)
-        if (prodResponse.isSuccessful) {
-
-            val productos = prodResponse.body() ?: emptyList()
-
-            val prodEntity = productos.map {
-                ProductoTerminadoEntity(
-                    id = it.id,
-                    nombre = it.nombre,
-                    categoriaId = it.categoria_producto,
-                    imagen = it.imagen,
-                    estado = it.estado,
-                    updatedAt = it.updated_at
-                )
-            }
-
-            db.productoDao().insertAll(prodEntity)
-            println("PRODUCTOS OK")
-        }
-
-        // 🔹 VARIACIONES
-        val varResponse = RetrofitClient.api.getVariaciones(updatedAfter)
-        if (varResponse.isSuccessful) {
-
-            val variaciones = varResponse.body() ?: emptyList()
-
-            val varEntity = variaciones.map {
-                ProductoVariacionEntity(
-                    id = it.id,
-                    producto = it.producto,
-                    presentacion = it.presentacion,
-                    costo = it.costo,
-                    precio = it.precio,
-                    stock = it.stock,
-                    stock_min = it.stock_min,
-                    codigo_barras = it.codigo_barras,
-                    updatedAt = it.updated_at
-                )
-            }
-
-            db.variacionDao().insertAll(varEntity)
-            println("VARIACIONES OK")
-        }
-
-        // Mini bodega
+        // 🔹 MINI BODEGA
         val miniResponse = RetrofitClient.api.getMiniBodegas(updatedAfter)
         if (miniResponse.isSuccessful) {
-
             val miniBodegas = miniResponse.body() ?: emptyList()
 
             val miniEntity = miniBodegas.map {
                 MiniBodegaEntity(
-                    id = it.id,
-                    rutaId = it.ruta,
-                    fecha = it.fecha,
-                    usuarioId = it.usuario,
-                    vehiculoId = it.vehiculo,
-                    estado = it.estado,
-                    updatedAt = it.updated_at
+                    it.id, it.ruta, it.fecha,
+                    it.usuario, it.vehiculo,
+                    it.estado, it.updated_at
                 )
             }
 
-            db.miniBodegaDao().insertAll(miniEntity)
+            syncTable(
+                miniEntity,
+                { it.id },
+                { db.miniBodegaDao().getAllIds() },
+                { db.miniBodegaDao().deleteByIds(it) },
+                { db.miniBodegaDao().insertAll(it) }
+            )
             println("MINI BODEGAS OK")
         }
 
-        // 🔹 MINI BODEGA DETALLE
+        // 🔹 MINI BODEGA DETALLE 🔥
         val detalleResponse = RetrofitClient.api.getMiniBodegaDetalles(updatedAfter)
         if (detalleResponse.isSuccessful) {
-
             val detalles = detalleResponse.body() ?: emptyList()
 
             val detalleEntity = detalles.map {
                 MiniBodegaDetalleEntity(
-                    id = it.id,
-                    miniBodegaId = it.mini_bodega,
-                    productoVariacionId = it.producto_variacion,
-                    cantidadInicial = it.cantidad_inicial,
-                    cantidadActual = it.cantidad_actual,
-                    updatedAt = it.updated_at
+                    it.id,
+                    it.mini_bodega,
+                    it.producto_variacion,
+                    it.cantidad_inicial,
+                    it.cantidad_actual,
+                    it.updated_at
                 )
             }
 
-            db.miniBodegaDetalleDao().insertAll(detalleEntity)
+            syncTable(
+                detalleEntity,
+                { it.id },
+                { db.miniBodegaDetalleDao().getAllIds() },
+                { db.miniBodegaDetalleDao().deleteByIds(it) },
+                { db.miniBodegaDetalleDao().insertAll(it) }
+            )
             println("MINI BODEGA DETALLE OK")
         }
 
         // 🔹 PEDIDOS
         val pedidosResponse = RetrofitClient.api.getPedidosReabastecimiento(updatedAfter)
         if (pedidosResponse.isSuccessful) {
-
             val pedidos = pedidosResponse.body() ?: emptyList()
 
             val pedidosEntity = pedidos.map {
                 PedidoReabastecimientoEntity(
-                    id = it.id,
-                    rutaId = it.ruta,
-                    fecha = it.fecha,
-                    estado = it.estado,
-                    updatedAt = it.updated_at,
-                    usuario = it.usuario
+                    it.id, it.ruta, it.fecha,
+                    it.estado, it.updated_at, it.usuario
                 )
             }
 
-            db.pedidoReabastecimientoDao().insertAll(pedidosEntity)
+            syncTable(
+                pedidosEntity,
+                { it.id },
+                { db.pedidoReabastecimientoDao().getAllIds() },
+                { db.pedidoReabastecimientoDao().deleteByIds(it) },
+                { db.pedidoReabastecimientoDao().insertAll(it) }
+            )
             println("PEDIDOS OK")
         }
 
-        val pedidodetalleResponse =
-            RetrofitClient.api.getPedidosReabastecimientoDetalle(updatedAfter)
-        if (pedidodetalleResponse.isSuccessful) {
-
-            val detalles = pedidodetalleResponse.body() ?: emptyList()
+        // 🔹 PEDIDOS DETALLE
+        val detallePedidoResponse = RetrofitClient.api.getPedidosReabastecimientoDetalle(updatedAfter)
+        if (detallePedidoResponse.isSuccessful) {
+            val detalles = detallePedidoResponse.body() ?: emptyList()
 
             val detalleEntity = detalles.map {
                 PedidoReabastecimientoDetalleEntity(
-                    id = it.id,
-                    pedidoId = it.pedido,
-                    productoVariacionId = it.producto_variacion,
-                    cantidad = it.cantidad,
-                    updatedAt = it.updated_at
+                    it.id, it.pedido,
+                    it.producto_variacion,
+                    it.cantidad,
+                    it.updated_at
                 )
             }
 
-            db.pedidoReabastecimientoDetalleDao().insertAll(detalleEntity)
+            syncTable(
+                detalleEntity,
+                { it.id },
+                { db.pedidoReabastecimientoDetalleDao().getAllIds() },
+                { db.pedidoReabastecimientoDetalleDao().deleteByIds(it) },
+                { db.pedidoReabastecimientoDetalleDao().insertAll(it) }
+            )
             println("PEDIDOS DETALLE OK")
         }
-
-
     }
 }
