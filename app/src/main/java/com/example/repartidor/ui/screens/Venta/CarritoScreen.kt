@@ -22,6 +22,10 @@ import androidx.compose.ui.window.Dialog
 import com.example.repartidor.viewmodel.CarritoViewModel
 import com.example.repartidor.viewmodel.VentaProcesoViewModel
 import com.example.repartidor.utils.PrintResult
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,11 +53,37 @@ fun CarritosScreen(
 
     val totalFinal = subtotal - descuento
 
-
+    var isCheckingPrinter by remember { mutableStateOf(false) }
+    var showPrinterDialog by remember { mutableStateOf(false) }
+    var printerStatus by remember { mutableStateOf<PrintResult?>(null) }
+    var imprimir by remember { mutableStateOf(true) }
     var showConfirmDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var showResultDialog by remember { mutableStateOf(false) }
     var mensajeResultado by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    fun verificarImpresoraConLoading(
+        onSuccess: () -> Unit,
+        onError: () -> Unit
+    ) {
+        isCheckingPrinter = true
+
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                ventaProcesoViewModel.verificarImpresora()
+            }
+
+            isCheckingPrinter = false
+
+            if (result is PrintResult.Success) {
+                imprimir = true
+                onSuccess()
+            } else {
+                printerStatus = result
+                onError()
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -124,7 +154,16 @@ fun CarritosScreen(
                         }
 
                         Button(
-                            onClick = { showConfirmDialog = true },
+                            onClick = {
+                                verificarImpresoraConLoading(
+                                    onSuccess = {
+                                        showConfirmDialog = true
+                                    },
+                                    onError = {
+                                        showPrinterDialog = true
+                                    }
+                                )
+                            },
                             modifier = Modifier.height(50.dp),
                             shape = RoundedCornerShape(12.dp)
                         ) {
@@ -289,6 +328,7 @@ fun CarritosScreen(
 
                         ventaProcesoViewModel.confirmarVenta(
                             items = items,
+                            imprimir = imprimir,
                             onSuccess = { result ->
                                 isLoading = false
                                 mensajeResultado = when (result) {
@@ -371,5 +411,75 @@ fun CarritosScreen(
                 }
             }
         )
+    }
+
+    if (showPrinterDialog) {
+        AlertDialog(
+            onDismissRequest = { showPrinterDialog = false },
+            title = {
+                Text("Impresora no disponible", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(
+                    when (printerStatus) {
+                        is PrintResult.BluetoothOff -> "El Bluetooth está apagado."
+                        is PrintResult.NoPrinter -> "No hay impresora configurada."
+                        is PrintResult.Error -> "No se pudo conectar a la impresora."
+                        else -> "Error desconocido."
+                    } + "\n\n¿Deseas continuar sin imprimir o reintentar?"
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        imprimir = false
+                        showPrinterDialog = false
+                        showConfirmDialog = true
+                    }
+                ) {
+                    Text("Continuar sin imprimir")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showPrinterDialog = false
+
+                        verificarImpresoraConLoading(
+                            onSuccess = {
+                                showConfirmDialog = true
+                            },
+                            onError = {
+                                showPrinterDialog = true
+                            }
+                        )
+                    }
+                ) {
+                    Text("Reintentar")
+                }
+            }
+        )
+    }
+
+    if (isCheckingPrinter) {
+        Dialog(onDismissRequest = { }) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                tonalElevation = 8.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Verificando impresora...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
     }
 }

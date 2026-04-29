@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -52,6 +53,9 @@ fun VentaScreen(
             viewModel.getClienteNombre(it)
         }
     }
+    LaunchedEffect(Unit) {
+        viewModel.cargarProductos()
+    }
 
     // 🌟 Uso de Scaffold para una estructura moderna
     Scaffold(
@@ -80,7 +84,7 @@ fun VentaScreen(
                             onBack()
                         }
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

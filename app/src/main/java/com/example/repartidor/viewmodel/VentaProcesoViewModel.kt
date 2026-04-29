@@ -1,6 +1,7 @@
 package com.example.repartidor.viewmodel
 
 import android.bluetooth.BluetoothAdapter
+import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.repartidor.data.local.SessionManager
@@ -48,6 +49,7 @@ class VentaProcesoViewModel(
     @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     fun confirmarVenta(
         items: List<CarritoItem>,
+        imprimir: Boolean, // 🔥 NUEVO (único cambio en firma)
         onSuccess: (PrintResult) -> Unit,
         onError: (String) -> Unit
     ) {
@@ -65,17 +67,19 @@ class VentaProcesoViewModel(
                 val cliente = clienteId?.let {
                     repository.getClienteById(it)
                 }
+
                 val subtotal = snapshot.sumOf { it.precio * it.cantidad }
                 val porcentaje = cliente?.porcentajeDescuento ?: 0.0
                 val descuento = subtotal * (porcentaje / 100.0)
                 val totalFinal = subtotal - descuento
 
+                // 🔥 GUARDAR VENTA (NO SE TOCA)
                 repository.guardarVenta(
                     clienteId = clienteId,
                     usuarioId = usuarioId,
                     items = snapshot,
                     miniBodegaId = miniBodegaId,
-                    total=totalFinal
+                    total = totalFinal
                 )
 
                 val ticketItems = snapshot.map {
@@ -86,8 +90,6 @@ class VentaProcesoViewModel(
                         precioUnitario = it.precio
                     )
                 }
-
-
 
                 val ticket = TicketBuilder.build(
                     items = ticketItems,
@@ -102,10 +104,16 @@ class VentaProcesoViewModel(
                 val device = bluetoothAdapter?.let {
                     printerRepository.getSavedPrinter(it)
                 }
+
                 delay(300)
 
-                val result = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    printerManager.print(device, ticket)
+                // 🔥 AQUÍ ESTÁ EL ÚNICO CAMBIO REAL
+                val result = if (imprimir) {
+                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        printerManager.print(device, ticket)
+                    }
+                } else {
+                    PrintResult.NoPrinter
                 }
 
                 onSuccess(result)
@@ -114,5 +122,15 @@ class VentaProcesoViewModel(
                 onError(e.message ?: "Error al vender")
             }
         }
+    }
+
+    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+    fun verificarImpresora(): PrintResult {
+
+        val device = bluetoothAdapter?.let {
+            printerRepository.getSavedPrinter(it)
+        }
+
+        return printerManager.checkPrinter(device)
     }
 }

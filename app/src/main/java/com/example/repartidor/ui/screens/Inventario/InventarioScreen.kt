@@ -11,6 +11,9 @@ import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -27,7 +30,7 @@ fun InventarioScreen(
     onIrReabastecimiento: () -> Unit,
     onBack: () -> Unit
 ) {
-    val lista = viewModel.inventario
+    val lista by remember { derivedStateOf { viewModel.inventario } }
 
     LaunchedEffect(Unit) {
         val username = sessionManager.getUser()
@@ -44,6 +47,7 @@ fun InventarioScreen(
                         text = "Inventario Actual",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
+
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -95,6 +99,7 @@ fun InventarioScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
+            //Text("Items: ${lista.size}")
 
             if (lista.isEmpty()) {
                 // Diseño para cuando no hay nada en el inventario

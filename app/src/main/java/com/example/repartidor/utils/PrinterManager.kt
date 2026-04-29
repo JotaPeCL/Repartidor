@@ -66,4 +66,26 @@ class PrinterManager(
 
         return PrintResult.Error("Fallo inesperado")
     }
+
+    fun checkPrinter(device: BluetoothDevice?): PrintResult {
+
+        if (adapter == null || !adapter.isEnabled) {
+            return PrintResult.BluetoothOff
+        }
+
+        if (device == null) {
+            return PrintResult.NoPrinter
+        }
+
+        return try {
+            val socket = device.createRfcommSocketToServiceRecord(uuid)
+            socket.connect()
+            socket.close()
+            PrintResult.Success
+        } catch (e: Exception) {
+            PrintResult.Error("No se pudo conectar a la impresora")
+        }
+    }
+
+
 }

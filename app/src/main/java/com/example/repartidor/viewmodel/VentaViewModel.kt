@@ -6,6 +6,7 @@ import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.model.ProductoConStock
 import com.example.repartidor.data.model.ProductoTerminadoEntity
 import com.example.repartidor.data.repository.VentaRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,19 +21,28 @@ class VentaViewModel(
     private val _productos = MutableStateFlow<List<ProductoTerminadoEntity>>(emptyList())
     val productos: StateFlow<List<ProductoTerminadoEntity>> = _productos
 
+    private var job: Job? = null
     private var miniBodegaId: Int? = null
 
-    init {
-        viewModelScope.launch {
+    fun cargarProductos() {
+        // 🔥 Evita múltiples collectors
+        job?.cancel()
 
-            // 🔹 Obtener camioneta
-            miniBodegaId = sessionManager.getMiniBodegaId()
+        job = viewModelScope.launch {
 
-            // 🔹 Escuchar productos desde Room
-            miniBodegaId?.let { id ->
-                repository.getProductos(id).collect {
-                    _productos.value = it
-                }
+            val id = sessionManager.getMiniBodegaId()
+            println("MINI BODEGA ID: $id")
+
+            if (id == null) {
+                _productos.value = emptyList()
+                return@launch
+            }
+
+            miniBodegaId = id
+
+            repository.getProductos(id).collect { lista ->
+                println("PRODUCTOS SIZE: ${lista.size}")
+                _productos.value = lista.toList() // 🔥 fuerza recomposición
             }
         }
     }
