@@ -12,7 +12,6 @@ import com.example.repartidor.data.repository.UsuarioRepository
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
-
     private val repository: UsuarioRepository,
     private val miniBodegaRepository: MiniBodegaRepository,
     private val sessionManager: SessionManager
@@ -33,6 +32,7 @@ class LoginViewModel(
                     .getMiniBodegaByUsuario(user.id)
 
                 if (miniBodega != null) {
+
 
                     // 🔥 GUARDAR CAMIONETA
                     sessionManager.saveMiniBodegaId(miniBodega.id)

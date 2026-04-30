@@ -18,7 +18,12 @@ class InventarioViewModel(
 
     fun cargarInventario(username: String) {
         viewModelScope.launch {
-            inventario = repository.obtenerInventario(username).toList()
+            println("USERNAME: $username")
+            val data = repository.obtenerInventario(username)
+
+            println("RESULTADO INVENTARIO: ${data.size}")
+
+            inventario = data
         }
     }
 }

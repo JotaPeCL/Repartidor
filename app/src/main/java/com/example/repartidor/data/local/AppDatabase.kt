@@ -39,7 +39,7 @@ import com.example.repartidor.data.model.VentaDetalleEntity
         VentaDetalleEntity::class
 
     ],
-    version = 5 // IMPORTANTE
+    version = 6 // IMPORTANTE
 
 )
 abstract class AppDatabase : RoomDatabase() {

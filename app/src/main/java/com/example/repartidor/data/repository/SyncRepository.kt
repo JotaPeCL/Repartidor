@@ -188,6 +188,109 @@ class SyncRepository(
             println("CLIENTE DIAS OK")
         }
 
+        val categoriasResponse = RetrofitClient.api.getCategorias(updatedAfter)
+        if (categoriasResponse.isSuccessful) {
+            val categorias = categoriasResponse.body() ?: emptyList()
+
+            val categoriasEntity = categorias.map {
+                CategoriaProductoEntity(
+                    it.id,
+                    it.nombre,
+                    it.descripcion,
+                    it.imagen,
+                    it.estado,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                categoriasEntity,
+                { it.id },
+                { db.categoriaDao().getAllIds() },
+                { db.categoriaDao().deleteByIds(it) },
+                { db.categoriaDao().insertAll(it) }
+            )
+            println("CATEGORIAS OK")
+        }
+
+        val presentacionesResponse = RetrofitClient.api.getPresentaciones(updatedAfter)
+        if (presentacionesResponse.isSuccessful) {
+            val presentaciones = presentacionesResponse.body() ?: emptyList()
+
+            val presentacionesEntity = presentaciones.map {
+                PresentacionProductoTerminadoEntity(
+                    it.id,
+                    it.nombre,
+                    it.descripcion,
+                    it.imagen,
+                    it.estado,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                presentacionesEntity,
+                { it.id },
+                { db.presentacionDao().getAllIds() },
+                { db.presentacionDao().deleteByIds(it) },
+                { db.presentacionDao().insertAll(it) }
+            )
+            println("PRESENTACIONES OK")
+        }
+
+        val productosResponse = RetrofitClient.api.getProductos(updatedAfter)
+        if (productosResponse.isSuccessful) {
+            val productos = productosResponse.body() ?: emptyList()
+
+            val productosEntity = productos.map {
+                ProductoTerminadoEntity(
+                    it.id,
+                    it.nombre,
+                    it.categoria_producto,   // 👈 importante
+                    it.imagen,
+                    it.estado,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                productosEntity,
+                { it.id },
+                { db.productoDao().getAllIds() },
+                { db.productoDao().deleteByIds(it) },
+                { db.productoDao().insertAll(it) }
+            )
+            println("PRODUCTOS OK")
+        }
+
+        val variacionesResponse = RetrofitClient.api.getVariaciones(updatedAfter)
+        if (variacionesResponse.isSuccessful) {
+            val variaciones = variacionesResponse.body() ?: emptyList()
+
+            val variacionesEntity = variaciones.map {
+                ProductoVariacionEntity(
+                    it.id,
+                    it.producto,
+                    it.presentacion,
+                    it.costo,
+                    it.precio,
+                    it.stock,
+                    it.stock_min,
+                    it.codigo_barras,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                variacionesEntity,
+                { it.id },
+                { db.variacionDao().getAllIds() },
+                { db.variacionDao().deleteByIds(it) },
+                { db.variacionDao().insertAll(it) }
+            )
+            println("VARIACIONES OK")
+        }
+
         // 🔹 MINI BODEGA
         val miniResponse = RetrofitClient.api.getMiniBodegas(updatedAfter)
         if (miniResponse.isSuccessful) {

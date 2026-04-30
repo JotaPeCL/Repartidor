@@ -11,16 +11,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.repartidor.data.local.AppDatabase
+import com.example.repartidor.data.local.DatabaseProvider
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.repository.ClienteRepository
+import com.example.repartidor.data.repository.ClienteViewModelFactory
 import com.example.repartidor.data.repository.HomeRepository
+import com.example.repartidor.data.repository.HomeViewModelFactory
 import com.example.repartidor.data.repository.InventarioRepository
+import com.example.repartidor.data.repository.InventarioViewModelFactory
+import com.example.repartidor.data.repository.LoginViewModelFactory
 import com.example.repartidor.data.repository.MiniBodegaRepository
 import com.example.repartidor.data.repository.MiniBodegaRepository2
 import com.example.repartidor.data.repository.PrinterRepository
@@ -68,15 +74,7 @@ fun AppNavigation() {
     val sessionManager = remember { SessionManager(context) }
 
     // DB
-    val db = remember {
-        androidx.room.Room.databaseBuilder(
-            context,
-            AppDatabase::class.java,
-            "app-db"
-        )
-            //.fallbackToDestructiveMigration(true)// quitar esto despues, esto es para pruebas
-            .build()
-    }
+    val db = DatabaseProvider.getDatabase(context)
 
     // ViewModels
     val repository = remember {
@@ -88,19 +86,29 @@ fun AppNavigation() {
     val usuarioRepository = remember { UsuarioRepository(db) }
     val miniBodegaRepository = remember { MiniBodegaRepository(db) }
 
-    val loginViewModel = remember { LoginViewModel(usuarioRepository,miniBodegaRepository, sessionManager) }
+    val loginViewModel: LoginViewModel = viewModel(
+        factory = LoginViewModelFactory(
+            usuarioRepository,
+            miniBodegaRepository,
+            sessionManager
+        )
+    )
 
     val homeRepository = remember { HomeRepository(db) }
-    val homeViewModel = remember { HomeViewModel(homeRepository) }
+    val homeViewModel: HomeViewModel = viewModel(
+        factory = HomeViewModelFactory(homeRepository)
+    )
 
     val inventarioRepository = remember { InventarioRepository(db) }
-    val inventarioViewModel = remember { InventarioViewModel(inventarioRepository) }
+    val inventarioViewModel: InventarioViewModel = viewModel(
+        factory = InventarioViewModelFactory(inventarioRepository)
+    )
 
     val clienteRepository = remember { ClienteRepository(db.clienteDao()) }
 
-    val clienteViewModel = remember {
-        ClienteViewModel(clienteRepository)
-    }
+    val clienteViewModel: ClienteViewModel = viewModel(
+        factory = ClienteViewModelFactory(clienteRepository)
+    )
     val ventaRepository = remember {
         VentaRepository(
             db.productoDao(),

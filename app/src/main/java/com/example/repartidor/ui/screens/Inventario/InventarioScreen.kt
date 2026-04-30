@@ -30,7 +30,7 @@ fun InventarioScreen(
     onIrReabastecimiento: () -> Unit,
     onBack: () -> Unit
 ) {
-    val lista by remember { derivedStateOf { viewModel.inventario } }
+    val lista =viewModel.inventario
 
     LaunchedEffect(Unit) {
         val username = sessionManager.getUser()
@@ -99,7 +99,7 @@ fun InventarioScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
-            //Text("Items: ${lista.size}")
+            Text("Items: ${lista.size}")
 
             if (lista.isEmpty()) {
                 // Diseño para cuando no hay nada en el inventario
