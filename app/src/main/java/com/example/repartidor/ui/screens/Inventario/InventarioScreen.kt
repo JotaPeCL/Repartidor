@@ -1,26 +1,46 @@
 package com.example.repartidor.ui.screens.Inventario
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
+import androidx.compose.ui.unit.sp
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.viewmodel.InventarioViewModel
+
+// ── Paleta compartida (Inspirada en el Home) ─────────────────────────────────
+private val BackgroundLight  = Color(0xFFF4F6FB)
+private val SurfaceWhite     = Color(0xFFFFFFFF)
+private val AccentBlue       = Color(0xFF3A6FD8)
+private val AccentTeal       = Color(0xFF0F9E82)
+private val AccentTealSoft   = Color(0xFFE6F6F2)
+private val TextPrimary      = Color(0xFF111827)
+private val TextMuted        = Color(0xFF9CA3AF)
+// ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,7 +50,24 @@ fun InventarioScreen(
     onIrReabastecimiento: () -> Unit,
     onBack: () -> Unit
 ) {
-    val lista =viewModel.inventario
+    val lista = viewModel.inventario
+
+    // Estado para la búsqueda
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Lista filtrada reactiva
+    val filteredList by remember(searchQuery, lista) {
+        derivedStateOf {
+            if (searchQuery.isBlank()) {
+                lista
+            } else {
+                lista.filter {
+                    it.productoNombre.contains(searchQuery, ignoreCase = true) ||
+                            it.presentacion.contains(searchQuery, ignoreCase = true)
+                }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         val username = sessionManager.getUser()
@@ -40,53 +77,65 @@ fun InventarioScreen(
     }
 
     Scaffold(
+        containerColor = BackgroundLight,
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         text = "Inventario Actual",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
                     )
-
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = TextPrimary
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = SurfaceWhite
                 )
             )
         },
         bottomBar = {
-            // Barra inferior para el botón de reabastecimiento
-            BottomAppBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                tonalElevation = 8.dp
+            Surface(
+                color = SurfaceWhite,
+                shadowElevation = 8.dp,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
             ) {
-                Button(
-                    onClick = onIrReabastecimiento,
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.LocalShipping,
-                        contentDescription = "Reabastecer",
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                    Text(
-                        text = "Ir a Reabastecimiento",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Button(
+                        onClick = onIrReabastecimiento,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AccentBlue,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocalShipping,
+                            contentDescription = "Reabastecer",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Ir a Reabastecimiento",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
             }
         }
@@ -96,87 +145,177 @@ fun InventarioScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Items: ${lista.size}")
+
+            // ── BARRA DE BÚSQUEDA ──
+            if (lista.isNotEmpty()) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    placeholder = {
+                        Text("Buscar producto o presentación...", color = TextMuted, fontSize = 14.sp)
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = "Buscar", tint = TextMuted)
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Borrar", tint = TextMuted)
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = SurfaceWhite,
+                        unfocusedContainerColor = SurfaceWhite,
+                        focusedBorderColor = AccentBlue,
+                        unfocusedBorderColor = Color.Transparent,
+                        cursorColor = AccentBlue
+                    ),
+                    singleLine = true
+                )
+            }
 
             if (lista.isEmpty()) {
-                // Diseño para cuando no hay nada en el inventario
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                // ── ESTADO: INVENTARIO VACÍO ──
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.Inventory,
-                            contentDescription = "Inventario Vacío",
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .clip(CircleShape)
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Inventory,
+                                contentDescription = "Inventario Vacío",
+                                modifier = Modifier.size(42.dp),
+                                tint = TextMuted.copy(alpha = 0.5f)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "No hay productos registrados",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "Inventario vacío",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "No hay productos registrados\nactualmente en la unidad.",
+                            fontSize = 14.sp,
+                            color = TextMuted,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 20.sp
+                        )
+                    }
+                }
+            } else if (filteredList.isEmpty()) {
+                // ── ESTADO: SIN RESULTADOS DE BÚSQUEDA ──
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .clip(CircleShape)
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SearchOff,
+                                contentDescription = "Sin resultados",
+                                modifier = Modifier.size(42.dp),
+                                tint = TextMuted.copy(alpha = 0.5f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No se encontraron resultados",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Intenta buscar con otras palabras.",
+                            fontSize = 14.sp,
+                            color = TextMuted,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
             } else {
-                // Lista de inventario
+                // ── LISTA DE INVENTARIO FILTRADA ──
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(lista) { item ->
-                        ElevatedCard(
+                    items(filteredList) { item ->
+                        Card(
                             modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
-                            colors = CardDefaults.elevatedCardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            )
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Información del producto
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = item.productoNombre,
-                                        style = MaterialTheme.typography.titleMedium,
+                                        fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = TextPrimary
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = "Presentación: ${item.presentacion}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        fontSize = 13.sp,
+                                        color = TextMuted,
+                                        fontWeight = FontWeight.Medium
                                     )
                                 }
 
-                                // Etiqueta visual para el Stock
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    modifier = Modifier.padding(start = 12.dp)
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                // Etiqueta visual para el Stock (Estilo AccentTeal)
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(AccentTealSoft)
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Column(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text(
-                                            text = "Stock",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            text = "STOCK",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AccentTeal,
+                                            letterSpacing = 0.5.sp
                                         )
+                                        Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                            text = "${item.cantidadActual} / ${item.cantidadInicial}",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.ExtraBold,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            text = "${item.cantidadActual}/${item.cantidadInicial}",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Black,
+                                            color = AccentTeal
                                         )
                                     }
                                 }

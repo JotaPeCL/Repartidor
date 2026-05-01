@@ -1,24 +1,43 @@
 package com.example.repartidor.ui.screens.login
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.repartidor.R
 import com.example.repartidor.viewmodel.LoginViewModel
+
+// ── Paleta de colores (Heredada) ─────────────────────────────────────────────
+private val BackgroundLight  = Color(0xFFF4F6FB)
+private val SurfaceWhite     = Color(0xFFFFFFFF)
+private val AccentBlue       = Color(0xFF3A6FD8)
+private val AccentBlueSoft   = Color(0xFFEBF0FC)
+private val TextPrimary      = Color(0xFF111827)
+private val TextMuted        = Color(0xFF9CA3AF)
+private val ErrorRed         = Color(0xFFDC2626)
+private val ErrorRedSoft     = Color(0xFFFEF2F2)
+private val HeaderGradStart  = Color(0xFF3A6FD8)
+private val HeaderGradEnd    = Color(0xFF5B4CF5)
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun LoginScreen(
@@ -31,93 +50,125 @@ fun LoginScreen(
 
     LaunchedEffect(loginState) {
         if (loginState != null) {
-            // Solo dispara si loginState cambió de null a un usuario válido
             onLoginSuccess()
         }
     }
 
-
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
+        // 🌟 CAPA DE FONDO (Detrás de todo el contenido)
+        Column(modifier = Modifier.fillMaxSize()) {
+            // DEGRADADO SUPERIOR (Estilo Header del Home) - Ocupa la parte superior
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(320.dp) // Altura fija de lo azul
+                    .background(Brush.linearGradient(listOf(HeaderGradStart, HeaderGradEnd)))
+            )
+
+            // IMAGEN DE FONDO (Debajo de lo azul, detrás de la tarjeta)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f) // Ocupa el espacio restante hacia abajo
+                    .background(BackgroundLight) // Mantenemos el color de fondo base
+            ) {
+
+                Image(
+                    painter = painterResource(id = R.drawable.pistache2m), // USANDO EL LOGO COMO PLACEHOLDER. Reemplázalo por tu imagen real.
+                    contentDescription = "Fondo de login sutil",
+                    contentScale = ContentScale.Crop, // O 'Fit' según el diseño de tu imagen
+                    modifier = Modifier.fillMaxSize()
+                        // 👇 Ajusta la opacidad para que la imagen sea muy sutil (0.0 a 1.0)
+                        .alpha(0.1f)
+                )
+            }
+        }
+
+        // 🌟 CAPA DE CONTENIDO (En primer plano)
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
+                .padding(horizontal = 24.dp)
+                .imePadding() // Soporte para el teclado
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(100.dp))
 
-
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(100.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocalShipping,
-                    contentDescription = "Logo Reparto",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier
-                        .padding(24.dp)
-                        .fillMaxSize()
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 🌟 TEXTOS DE BIENVENIDA
-            Text(
-                text = "Bienvenido",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onBackground
+            Image(
+                painter = painterResource(id = R.drawable.logo_reparto_camioneta),
+                contentDescription = "Logo de la empresa",
+                // ContentScale.Fit asegura que el rectángulo completo se vea sin deformarse ni cortarse
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    // 👇 Ajusta estos valores según el tamaño que quieras que ocupe en la pantalla
+                    .width(300.dp)
+                    .height(100.dp)
             )
+            Spacer(modifier = Modifier.height(35.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Ingresa tu usuario para comenzar tu ruta de hoy.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // 🌟 TARJETA DEL FORMULARIO
-            ElevatedCard(
+            // 🌟 PANEL FLOTANTE DE INICIO DE SESIÓN
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Text(
+                        text = "Bienvenido",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = TextPrimary
+                    )
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Ingresa tu usuario para comenzar tu ruta de hoy.",
+                        fontSize = 14.sp,
+                        color = TextMuted,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Input de Usuario
                     OutlinedTextField(
                         value = usuario,
                         onValueChange = { usuario = it },
-                        label = { Text("Usuario") },
+                        placeholder = { Text("Usuario", color = TextMuted) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Person,
-                                contentDescription = "Icono Usuario"
+                                contentDescription = "Icono Usuario",
+                                tint = AccentBlue
                             )
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = BackgroundLight,
+                            unfocusedContainerColor = BackgroundLight,
+                            focusedBorderColor = AccentBlue,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary
+                        )
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    // Botón de Entrar
                     Button(
                         onClick = {
                             if (usuario.isNotBlank()) {
@@ -127,13 +178,20 @@ fun LoginScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(54.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = usuario.isNotBlank() // Se deshabilita si está vacío
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AccentBlue,
+                            contentColor = Color.White,
+                            disabledContainerColor = AccentBlueSoft,
+                            disabledContentColor = AccentBlue.copy(alpha = 0.5f)
+                        ),
+                        enabled = usuario.isNotBlank()
                     ) {
                         Text(
                             text = "Entrar",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
                         )
                     }
                 }
@@ -141,11 +199,11 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 🔴 MANEJO DE ERROR (Rediseñado)
+            // 🔴 MANEJO DE ERROR
             if (error != null) {
                 Surface(
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    shape = RoundedCornerShape(12.dp),
+                    color = ErrorRedSoft,
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -155,25 +213,31 @@ fun LoginScreen(
                         Icon(
                             imageVector = Icons.Default.ErrorOutline,
                             contentDescription = "Error",
-                            tint = MaterialTheme.colorScheme.onErrorContainer
+                            tint = ErrorRed,
+                            modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             text = error,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
+                            color = ErrorRed,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            lineHeight = 20.sp
                         )
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Pie de página
+            Text(
+                text = "Sistema de Reparto v1.0",
+                fontSize = 12.sp,
+                color = TextMuted,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(bottom = 24.dp, top = 24.dp)
+            )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    // Si quieres previsualizar, tendrías que pasarle un ViewModel falso
-    // Pero así se estructura correctamente la vista previa en Jetpack Compose.
 }

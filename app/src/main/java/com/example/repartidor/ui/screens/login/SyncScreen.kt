@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudSync
@@ -16,10 +17,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.repartidor.viewmodel.SyncViewModel
+
+// ── Paleta compartida (Inspirada en el Home) ─────────────────────────────────
+private val BackgroundLight  = Color(0xFFF4F6FB)
+private val SurfaceWhite     = Color(0xFFFFFFFF)
+private val AccentBlue       = Color(0xFF3A6FD8)
+private val AccentBlueSoft   = Color(0xFFEBF0FC)
+private val TextPrimary      = Color(0xFF111827)
+private val TextMuted        = Color(0xFF9CA3AF)
+private val ErrorRed         = Color(0xFFDC2626)
+private val ErrorRedSoft     = Color(0xFFFEF2F2)
+// ─────────────────────────────────────────────────────────────────────────────
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -30,11 +45,10 @@ fun SyncScreen(
     val isLoading = viewModel.isLoading
     val error = viewModel.errorMensaje
 
-    // Usamos el color de fondo del tema para mantener el contraste correcto
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(BackgroundLight) // Fondo claro del Home
     ) {
 
         // --- CONTENIDO PRINCIPAL ---
@@ -45,60 +59,73 @@ fun SyncScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Ícono principal minimalista
-            Icon(
-                imageVector = Icons.Rounded.CloudSync,
-                contentDescription = "Sincronización en la nube",
-                modifier = Modifier.size(80.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
+            // Ícono principal estilizado como en el Home
+            Box(
+                modifier = Modifier
+                    .size(110.dp)
+                    .clip(CircleShape)
+                    .background(AccentBlueSoft),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.CloudSync,
+                    contentDescription = "Sincronización en la nube",
+                    modifier = Modifier.size(54.dp),
+                    tint = AccentBlue
+                )
+            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Text(
                 text = "Sincronización de Datos",
-                style = MaterialTheme.typography.headlineSmall,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
+                color = TextPrimary
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Mantén tu ruta y ventas actualizadas con el servidor principal.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+                text = "Mantén tu ruta, inventario y ventas\nactualizadas con el servidor.",
+                fontSize = 15.sp,
+                color = TextMuted,
+                textAlign = TextAlign.Center,
+                lineHeight = 22.sp
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
-            // Botón de acción principal, ancho completo
+            // Botón principal
             Button(
-                onClick = {
-                    viewModel.sincronizar { onSyncCompleto() }
-                },
+                onClick = { viewModel.sincronizar { onSyncCompleto() } },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp), // Altura recomendada para accesibilidad
-                shape = RoundedCornerShape(12.dp),
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AccentBlue,
+                    contentColor = Color.White,
+                    disabledContainerColor = AccentBlueSoft,
+                    disabledContentColor = AccentBlue.copy(alpha = 0.5f)
+                ),
                 enabled = !isLoading
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Sync,
                     contentDescription = null,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(20.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = "Sincronizar Ahora",
-                    style = MaterialTheme.typography.titleMedium
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
                 )
             }
         }
 
         // --- OVERLAY DE CARGA ---
-        // AnimatedVisibility le da una entrada y salida profesional
         AnimatedVisibility(
             visible = isLoading,
             enter = fadeIn(),
@@ -107,56 +134,94 @@ fun SyncScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)),
+                    .background(Color.Black.copy(alpha = 0.3f)), // Scrim más suave
                 contentAlignment = Alignment.Center
             ) {
-                // Tarjeta limpia en lugar de texto sobre fondo transparente
                 Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier.padding(horizontal = 40.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(32.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp, horizontal = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            color = AccentBlue,
+                            trackColor = AccentBlueSoft,
+                            strokeWidth = 4.dp,
+                            modifier = Modifier.size(48.dp)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
                         Text(
                             text = "Sincronizando...",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Por favor, no cierres la app",
+                            fontSize = 13.sp,
+                            color = TextMuted
                         )
                     }
                 }
             }
         }
 
-        // --- DIÁLOGO DE ERROR ---
+        // --- DIÁLOGO DE ERROR (Estilo LogoutConfirmDialog) ---
         if (error != null) {
             AlertDialog(
                 onDismissRequest = { /* Previene cerrar tocando fuera */ },
+                containerColor = SurfaceWhite,
+                shape = RoundedCornerShape(24.dp),
                 icon = {
-                    Icon(
-                        imageVector = Icons.Rounded.ErrorOutline,
-                        contentDescription = "Error",
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(ErrorRedSoft),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.ErrorOutline,
+                            contentDescription = null,
+                            tint = ErrorRed,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
                 },
                 title = {
-                    Text(text = "Error de Sincronización")
+                    Text(
+                        text = "Error de Sincronización",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = TextPrimary,
+                        textAlign = TextAlign.Center
+                    )
                 },
                 text = {
                     Text(
                         text = error,
-                        textAlign = TextAlign.Center
+                        fontSize = 14.sp,
+                        color = TextMuted,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp
                     )
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { viewModel.limpiarError() },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Cerrar", fontWeight = FontWeight.SemiBold)
+                    }
                 },
                 confirmButton = {
                     Button(
@@ -164,21 +229,22 @@ fun SyncScreen(
                             viewModel.limpiarError()
                             viewModel.sincronizar { onSyncCompleto() }
                         },
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AccentBlue,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Reintentar")
+                        Icon(
+                            imageVector = Icons.Rounded.Sync,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Reintentar", fontWeight = FontWeight.SemiBold)
                     }
-                },
-                dismissButton = {
-                    OutlinedButton(
-                        onClick = { viewModel.limpiarError() },
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("Cerrar")
-                    }
-                },
-                shape = RoundedCornerShape(16.dp),
-                containerColor = MaterialTheme.colorScheme.surface
+                }
             )
         }
     }
