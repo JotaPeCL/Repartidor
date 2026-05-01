@@ -24,6 +24,22 @@ class VentaLocalRepository(
         total: Double
     ) {
 
+        // 🔥 1. VALIDAR STOCK PRIMERO
+        items.forEach { item ->
+
+            val stock = ventaDao.getProductoStock(
+                miniBodegaId,
+                item.productoVariacionId
+            ) ?: throw Exception("Producto sin stock")
+
+            val nuevaCantidad = stock.cantidadActual - item.cantidad
+
+            if (nuevaCantidad < 0) {
+                throw Exception("Stock insuficiente: ${item.productoNombre}")
+            }
+        }
+
+        // 🔥 2. SI TODO OK → GUARDAR
         val ventaId = ventaDao.insertVenta(
             VentaEntity(
                 clienteId = clienteId,
@@ -45,19 +61,14 @@ class VentaLocalRepository(
 
         ventaDao.insertDetalles(detalles)
 
-        // 🔥 Descontar stock
+        // 🔥 3. DESCONTAR STOCK
         items.forEach { item ->
-
             val stock = ventaDao.getProductoStock(
                 miniBodegaId,
                 item.productoVariacionId
-            ) ?: throw Exception("Producto sin stock")
+            )!!
 
             val nuevaCantidad = stock.cantidadActual - item.cantidad
-
-            if (nuevaCantidad < 0) {
-                throw Exception("Stock insuficiente: ${item.productoNombre}")
-            }
 
             ventaDao.updateMiniBodegaDetalle(
                 stock.copy(cantidadActual = nuevaCantidad)

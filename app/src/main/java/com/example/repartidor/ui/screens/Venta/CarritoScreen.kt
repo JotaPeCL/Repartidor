@@ -180,11 +180,11 @@ fun CarritosScreen(
             cancelText = null,
             onDismiss = {
                 showResultDialog = false
-                onVentaExitosa()
+                if (!isError) onVentaExitosa()
             },
             onConfirm = {
                 showResultDialog = false
-                onVentaExitosa()
+                if (!isError) onVentaExitosa()
             }
         )
     }

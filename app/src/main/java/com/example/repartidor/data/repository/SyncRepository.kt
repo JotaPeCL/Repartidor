@@ -339,7 +339,7 @@ class SyncRepository(
             )
             println("MINI BODEGA DETALLE OK")
         }
-
+        /*
         // 🔹 PEDIDOS
         val pedidosResponse = RetrofitClient.api.getPedidosReabastecimiento(updatedAfter)
         if (pedidosResponse.isSuccessful) {
@@ -385,5 +385,6 @@ class SyncRepository(
             )
             println("PEDIDOS DETALLE OK")
         }
+        */
     }
 }
