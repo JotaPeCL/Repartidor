@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.repartidor.ui.screens.components.StandardTopBar
 import com.example.repartidor.viewmodel.CarritoViewModel
 import com.example.repartidor.viewmodel.VentaProcesoViewModel
 import com.example.repartidor.utils.PrintResult
@@ -149,15 +150,11 @@ fun CarritosScreen(
                 is PrintResult.NoPrinter -> "No hay impresora configurada."
                 is PrintResult.Error -> "No se pudo conectar a la impresora."
                 else -> "Error desconocido."
-            } + "\n\n¿Deseas continuar sin imprimir o reintentar?",
+            } + "\n\n¿Deseas continuar sin imprimir o cancelar?",
             confirmText = "Continuar sin imprimir",
-            cancelText = "Reintentar",
+            cancelText = "Cancelar",
             onDismiss = {
-                showPrinterDialog = false
-                verificarImpresoraConLoading(
-                    onSuccess = { showConfirmDialog = true },
-                    onError = { showPrinterDialog = true }
-                )
+                showPrinterDialog = false // <-- Solo cierra la modal, cancelando el proceso
             },
             onConfirm = {
                 imprimir = false
@@ -198,7 +195,10 @@ fun CarritosScreen(
     Scaffold(
         containerColor = BackgroundLight,
         topBar = {
-            CarritoHeader(onVolver = onVolver)
+            StandardTopBar(
+                title = "Mi Carrito",
+                onBackClick = onVolver
+            )
         },
         bottomBar = {
             if (items.isNotEmpty()) {
@@ -269,34 +269,6 @@ fun CarritosScreen(
     }
 }
 
-// ── COMPONENTES UI ────────────────────────────────────────────────────────────
-
-@Composable
-private fun CarritoHeader(onVolver: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(SurfaceWhite)
-            .padding(top = 48.dp, bottom = 16.dp, start = 8.dp, end = 20.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onVolver) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Volver",
-                    tint = TextPrimary
-                )
-            }
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = "Mi Carrito",
-                color = TextPrimary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp
-            )
-        }
-    }
-}
 
 @Composable
 private fun CarritoItemCard(

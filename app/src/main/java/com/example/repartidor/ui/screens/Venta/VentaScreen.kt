@@ -14,8 +14,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -32,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.repartidor.data.model.CarritoItem
 import com.example.repartidor.data.model.ProductoTerminadoEntity
+import com.example.repartidor.ui.screens.components.StandardTopBar
 import com.example.repartidor.viewmodel.CarritoViewModel
 import com.example.repartidor.viewmodel.VentaProcesoViewModel
 import com.example.repartidor.viewmodel.VentaViewModel
@@ -69,6 +73,23 @@ fun VentaScreen(
     val carrito by carritoViewModel.items.collectAsState()
     var mostrarDialogoSalir by remember { mutableStateOf(false) }
     var clienteNombre by remember { mutableStateOf<String?>(null) }
+
+    // ── Estado para la búsqueda ──────────────────────────────────────────────
+    var searchQuery by remember { mutableStateOf("") }
+
+    // ── Lista filtrada reactiva ──────────────────────────────────────────────
+    val filteredProductos by remember(searchQuery, productos) {
+        derivedStateOf {
+            if (searchQuery.isBlank()) {
+                productos
+            } else {
+                productos.filter {
+                    it.nombre.contains(searchQuery, ignoreCase = true)
+                }
+            }
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     LaunchedEffect(clienteId) {
         clienteNombre = clienteId?.let {
@@ -108,10 +129,10 @@ fun VentaScreen(
     Scaffold(
         containerColor = BackgroundLight,
         topBar = {
-            VentaHeader(
-                clienteNombre = clienteNombre,
-                esVentaRapida = clienteId == null,
-                onBack = {
+            StandardTopBar(
+                title = "Productos",
+                subtitle = if (clienteId == null) "Venta Rápida" else "Cliente: ${clienteNombre ?: "Cargando..."}",
+                onBackClick = {
                     if (carrito.isNotEmpty()) {
                         mostrarDialogoSalir = true
                     } else {
@@ -132,38 +153,120 @@ fun VentaScreen(
         }
     ) { paddingValues ->
 
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+
+            // ── BARRA DE BÚSQUEDA ──
+            if (productos.isNotEmpty()) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    placeholder = {
+                        Text("Buscar producto...", color = TextMuted, fontSize = 14.sp)
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = "Buscar", tint = TextMuted)
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Borrar", tint = TextMuted)
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = SurfaceWhite,
+                        unfocusedContainerColor = SurfaceWhite,
+                        focusedBorderColor = AccentBlue,
+                        unfocusedBorderColor = Color.Transparent,
+                        cursorColor = AccentBlue
+                    ),
+                    singleLine = true
+                )
+            }
+
             if (productos.isEmpty()) {
-                Column(
+                // ── ESTADO: SIN PRODUCTOS DISPONIBLES ──
+                Box(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Inventory,
-                        contentDescription = null,
-                        tint = TextMuted.copy(alpha = 0.5f),
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No hay productos disponibles",
-                        fontSize = 16.sp,
-                        color = TextMuted,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .clip(CircleShape)
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Inventory,
+                                contentDescription = "Sin productos",
+                                modifier = Modifier.size(42.dp),
+                                tint = TextMuted.copy(alpha = 0.5f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No hay productos disponibles",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+                }
+            } else if (filteredProductos.isEmpty()) {
+                // ── ESTADO: SIN RESULTADOS DE BÚSQUEDA ──
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .clip(CircleShape)
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SearchOff,
+                                contentDescription = "Sin resultados",
+                                modifier = Modifier.size(42.dp),
+                                tint = TextMuted.copy(alpha = 0.5f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No se encontraron resultados",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Intenta buscar con otras palabras.",
+                            fontSize = 14.sp,
+                            color = TextMuted,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             } else {
+                // ── LISTA DE PRODUCTOS FILTRADA ──
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 80.dp),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(productos) { producto ->
+                    items(filteredProductos) { producto ->
                         ProductoCard(
                             producto = producto,
                             onClick = {
@@ -179,46 +282,6 @@ fun VentaScreen(
 }
 
 // ── COMPONENTES UI ────────────────────────────────────────────────────────────
-
-@Composable
-private fun VentaHeader(
-    clienteNombre: String?,
-    esVentaRapida: Boolean,
-    onBack: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(SurfaceWhite)
-            .padding(top = 48.dp, bottom = 16.dp, start = 8.dp, end = 20.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Volver",
-                    tint = TextPrimary
-                )
-            }
-            Spacer(modifier = Modifier.width(4.dp))
-            Column {
-                Text(
-                    text = "Productos",
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
-                )
-                Text(
-                    text = if (esVentaRapida) "Venta Rápida" else "Cliente: ${clienteNombre ?: "Cargando..."}",
-                    color = TextMuted,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-    }
-}
-
 @Composable
 private fun ProductoCard(
     producto: ProductoTerminadoEntity,

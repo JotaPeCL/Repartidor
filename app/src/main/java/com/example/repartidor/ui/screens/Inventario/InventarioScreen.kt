@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.repartidor.data.local.SessionManager
+import com.example.repartidor.ui.screens.components.StandardTopBar
 import com.example.repartidor.viewmodel.InventarioViewModel
 
 // ── Paleta compartida (Inspirada en el Home) ─────────────────────────────────
@@ -79,27 +80,9 @@ fun InventarioScreen(
     Scaffold(
         containerColor = BackgroundLight,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Inventario Actual",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = TextPrimary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SurfaceWhite
-                )
+            StandardTopBar(
+                title = "Inventario Actual",
+                onBackClick = onBack
             )
         },
         bottomBar = {
@@ -111,6 +94,7 @@ fun InventarioScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
                     Button(

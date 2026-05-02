@@ -26,4 +26,8 @@ interface ClienteDao {
 
     @Query("SELECT * FROM cliente WHERE id = :id LIMIT 1")
     suspend fun getClienteById(id: Int): ClienteEntity?
+
+    // ── NUEVA CONSULTA ─────────────────────────────────────────────
+    @Query("SELECT * FROM cliente WHERE CAST(id AS TEXT) = :query OR nombre LIKE '%' || :query || '%'")
+    suspend fun buscarPorIdONombre(query: String): List<ClienteEntity>
 }

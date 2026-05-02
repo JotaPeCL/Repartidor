@@ -316,8 +316,9 @@ fun AppNavigation() {
         composable(Routes.QrScanner.route) {
             QrScannerScreen(
                 onQrDetectado = { clienteId ->
-                    clienteViewModel.buscarCliente(clienteId) // reutilizas lógica
-                    navController.popBackStack() // regresas a ClienteScreen
+
+                    clienteViewModel.buscarCliente(clienteId.toString())
+                    navController.popBackStack()
                 },
                 onBack = {
                     navController.popBackStack() // cierra el escáner si se arrepiente

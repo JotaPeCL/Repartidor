@@ -18,26 +18,45 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.BluetoothConnected
 import androidx.compose.material.icons.filled.BluetoothDisabled
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import com.example.repartidor.data.remote.BluetoothState
 import com.example.repartidor.utils.getBluetoothState
 import com.example.repartidor.utils.guardarImpresora
 import com.example.repartidor.utils.obtenerDispositivoGuardado
 import kotlinx.coroutines.launch
+
+// ── Paleta de colores (Soft UI) ──────────────────────────────────────────────
+private val BackgroundLight  = Color(0xFFF4F6FB)
+private val SurfaceWhite     = Color(0xFFFFFFFF)
+private val AccentBlue       = Color(0xFF3A6FD8)
+private val AccentBlueSoft   = Color(0xFFEBF0FC)
+private val AccentTeal       = Color(0xFF0F9E82)
+private val AccentTealSoft   = Color(0xFFE6F6F2)
+private val TextPrimary      = Color(0xFF111827)
+private val TextMuted        = Color(0xFF9CA3AF)
+private val ErrorRed         = Color(0xFFDC2626)
+private val ErrorRedSoft     = Color(0xFFFEF2F2)
+private val WarningOrange    = Color(0xFFF59E0B)
+private val WarningOrangeSoft= Color(0xFFFEF3C7)
+// ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,24 +104,9 @@ fun BluetoothScreen(
     }
 
     Scaffold(
+        containerColor = BackgroundLight,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Impresora Térmica",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
+            BluetoothHeader(onBack = onBack)
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
@@ -110,161 +114,181 @@ fun BluetoothScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-
             // 🔴 ESTADO BLUETOOTH (Alertas)
             state?.let { st ->
-                when {
-                    !st.isSupported -> StatusCard(
-                        icon = Icons.Default.BluetoothDisabled,
-                        title = "Bluetooth no soportado",
-                        message = "Este dispositivo no cuenta con tecnología Bluetooth.",
-                        isError = true
-                    )
-                    !st.isEnabled -> StatusCard(
-                        icon = Icons.Default.BluetoothDisabled,
-                        title = "Bluetooth Apagado",
-                        message = "Por favor, enciende el Bluetooth de tu dispositivo para conectar la impresora.",
-                        isError = true
-                    )
-                    !st.hasPermission -> StatusCard(
-                        icon = Icons.Default.WarningAmber,
-                        title = "Permiso Requerido",
-                        message = "La app necesita permisos para buscar la impresora.",
-                        isError = false,
-                        actionText = "Conceder Permiso",
-                        onAction = { permissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT) }
-                    )
+                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                    when {
+                        !st.isSupported -> StatusCard(
+                            icon = Icons.Default.BluetoothDisabled,
+                            title = "Bluetooth no soportado",
+                            message = "Este dispositivo no cuenta con tecnología Bluetooth.",
+                            isError = true
+                        )
+                        !st.isEnabled -> StatusCard(
+                            icon = Icons.Default.BluetoothDisabled,
+                            title = "Bluetooth Apagado",
+                            message = "Por favor, enciende el Bluetooth para conectar la impresora.",
+                            isError = true
+                        )
+                        !st.hasPermission -> StatusCard(
+                            icon = Icons.Default.WarningAmber,
+                            title = "Permiso Requerido",
+                            message = "La app necesita permisos para buscar la impresora.",
+                            isError = false,
+                            actionText = "Conceder Permiso",
+                            onAction = { permissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT) }
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // 🟢 IMPRESORA GUARDADA (Activa)
             if (impresoraGuardada != null) {
                 val nombre = obtenerNombreDispositivo(context, impresoraGuardada)
 
-                Text(
-                    text = "Impresora Actual",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    SectionLabel("Impresora actual")
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                        shape = RoundedCornerShape(24.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f),
-                            modifier = Modifier.size(64.dp)
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Print,
-                                contentDescription = null,
-                                modifier = Modifier.padding(16.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            Box(
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .clip(CircleShape)
+                                    .background(AccentTealSoft),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Print,
+                                    contentDescription = null,
+                                    tint = AccentTeal,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = nombre,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
                             )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = nombre,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = impresoraGuardada?.address ?: "MAC desconocida",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedButton(
-                            onClick = { impresoraGuardada = null },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            Text(
+                                text = impresoraGuardada?.address ?: "MAC desconocida",
+                                fontSize = 13.sp,
+                                color = TextMuted,
+                                fontWeight = FontWeight.Medium
                             )
-                        ) {
-                            Icon(Icons.Default.BluetoothDisabled, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                            Text("Cambiar Impresora")
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Button(
+                                onClick = { impresoraGuardada = null },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = AccentBlueSoft,
+                                    contentColor = AccentBlue
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(0.dp)
+                            ) {
+                                Icon(Icons.Default.BluetoothDisabled, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Desvincular o cambiar", fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
             }
             // 🔵 LISTA DE DISPOSITIVOS VINCULADOS
             else if (state?.isEnabled == true && state?.hasPermission == true) {
-                Text(
-                    text = "Dispositivos Vinculados",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = "Selecciona tu impresora térmica de la lista. (Asegúrate de haberla vinculado antes en los ajustes de Android).",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    SectionLabel("Dispositivos vinculados")
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Selecciona tu impresora térmica. (Asegúrate de haberla vinculado antes en los ajustes de tu teléfono).",
+                        fontSize = 12.sp,
+                        color = TextMuted,
+                        lineHeight = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(dispositivos) { device ->
                         val nombre = obtenerNombreDispositivo(context, device)
 
-                        ElevatedCard(
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .height(78.dp)
                                 .clickable {
                                     guardarImpresora(context, device)
                                     impresoraGuardada = device
                                     coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("🖨 Impresora $nombre seleccionada")
+                                        snackbarHostState.showSnackbar("🖨 Impresora configurada")
                                     }
                                 },
-                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                         ) {
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Bluetooth,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                                Spacer(modifier = Modifier.width(16.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(AccentBlueSoft),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Bluetooth,
+                                        contentDescription = null,
+                                        tint = AccentBlue,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(14.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = nombre,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold
+                                        color = TextPrimary,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 15.sp,
+                                        maxLines = 1
                                     )
                                     Text(
                                         text = device.address,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = TextMuted,
+                                        fontSize = 12.sp
                                     )
                                 }
                                 Icon(
-                                    imageVector = Icons.Default.BluetoothConnected,
+                                    imageVector = Icons.Default.ChevronRight,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    tint = TextMuted,
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
@@ -274,16 +298,20 @@ fun BluetoothScreen(
                         item {
                             Spacer(modifier = Modifier.height(16.dp))
                             Surface(
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                shape = RoundedCornerShape(8.dp),
+                                color = AccentBlueSoft,
+                                shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    text = "🧪 Emulador: Bluetooth simulado",
-                                    modifier = Modifier.padding(12.dp),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
+                                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Print, contentDescription = null, tint = AccentBlue, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = "Emulador detectado: Bluetooth simulado",
+                                        fontSize = 13.sp,
+                                        color = AccentBlue,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
                         }
                     }
@@ -293,38 +321,102 @@ fun BluetoothScreen(
     }
 }
 
-// 🎨 COMPONENTE REUTILIZABLE PARA ALERTAS DE BLUETOOTH
+// ── COMPONENTES UI ADICIONALES ───────────────────────────────────────────────
+
+@Composable
+private fun BluetoothHeader(onBack: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SurfaceWhite)
+            .padding(top = 48.dp, bottom = 16.dp, start = 8.dp, end = 20.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = TextPrimary
+                )
+            }
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "Impresora Térmica",
+                color = TextPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text.uppercase(),
+        color = TextMuted,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.4.sp
+    )
+}
+
+// 🎨 COMPONENTE REUTILIZABLE PARA ALERTAS DE BLUETOOTH (Soft UI)
 @Composable
 fun StatusCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     message: String,
     isError: Boolean,
     actionText: String? = null,
     onAction: (() -> Unit)? = null
 ) {
-    val containerColor = if (isError) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer
-    val contentColor = if (isError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    val iconColor = if (isError) ErrorRed else WarningOrange
+    val iconBg    = if (isError) ErrorRedSoft else WarningOrangeSoft
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = containerColor, contentColor = contentColor),
-        shape = RoundedCornerShape(16.dp)
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(imageVector = icon, contentDescription = null)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(text = title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(iconBg),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(22.dp))
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = TextPrimary
+                )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = message, style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = message,
+                fontSize = 13.sp,
+                color = TextMuted,
+                lineHeight = 20.sp
+            )
 
             if (actionText != null && onAction != null) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = onAction,
-                    colors = ButtonDefaults.buttonColors(containerColor = contentColor, contentColor = containerColor)
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = WarningOrange,
+                        contentColor = Color.White
+                    )
                 ) {
                     Text(text = actionText, fontWeight = FontWeight.Bold)
                 }

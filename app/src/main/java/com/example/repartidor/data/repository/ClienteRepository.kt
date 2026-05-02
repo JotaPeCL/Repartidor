@@ -10,4 +10,9 @@ class ClienteRepository(
     suspend fun obtenerClientePorId(id: Int): ClienteEntity? {
         return clienteDao.obtenerClientePorId(id)
     }
+
+    // ── NUEVA FUNCIÓN ─────────────────────────────────────────────
+    suspend fun buscarClientes(query: String): List<ClienteEntity> {
+        return clienteDao.buscarPorIdONombre(query)
+    }
 }
