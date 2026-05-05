@@ -431,7 +431,7 @@ fun yaSincronizoHoy(lastSync: String?): Boolean {
     if (lastSync == null) return false
 
     val now = LocalDateTime.now()
-    val reset = now.toLocalDate().atTime(7, 0)
+    val reset = now.toLocalDate().atTime(5, 0)
 
     val effectiveToday = if (now.isBefore(reset)) {
         now.toLocalDate().minusDays(1)

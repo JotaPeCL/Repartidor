@@ -72,10 +72,10 @@ class SyncViewModel(
 
         val now = LocalDateTime.now()
 
-        // 🔥 Hora límite (7 AM)
-        val todayReset = now.toLocalDate().atTime(7, 0)
+        // 🔥 Hora límite (5 AM)
+        val todayReset = now.toLocalDate().atTime(5, 0)
 
-        // Si aún no son las 7 AM, el "día" sigue siendo el de ayer
+        // Si aún no son las 5 AM, el "día" sigue siendo el de ayer
         val effectiveToday = if (now.isBefore(todayReset)) {
             now.toLocalDate().minusDays(1)
         } else {
