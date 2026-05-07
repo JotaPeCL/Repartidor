@@ -35,6 +35,8 @@ import com.example.repartidor.data.repository.SyncRepository
 import com.example.repartidor.data.repository.UsuarioRepository
 import com.example.repartidor.data.repository.VentaLocalRepository
 import com.example.repartidor.data.repository.VentaRepository
+import com.example.repartidor.data.repository.VentasDiaRepository
+import com.example.repartidor.data.repository.VentasDiaViewModelFactory
 import com.example.repartidor.ui.screens.Cliente.ClienteScreen
 import com.example.repartidor.ui.screens.Cliente.QrScannerScreen
 import com.example.repartidor.ui.screens.Home.HomeScreen
@@ -44,6 +46,7 @@ import com.example.repartidor.ui.screens.Inventario.PedidoReabastecimientoScreen
 import com.example.repartidor.ui.screens.Inventario.ReabastecimientoScreen
 import com.example.repartidor.ui.screens.Venta.CarritosScreen
 import com.example.repartidor.ui.screens.Venta.VentaScreen
+import com.example.repartidor.ui.screens.VentasDia.VentaDiaScreen
 import com.example.repartidor.ui.screens.login.LoginScreen
 import com.example.repartidor.ui.screens.login.SyncScreen
 import com.example.repartidor.utils.AppConfig
@@ -60,6 +63,7 @@ import com.example.repartidor.viewmodel.ReabastecimientoViewModel
 import com.example.repartidor.viewmodel.SyncViewModel
 import com.example.repartidor.viewmodel.VentaProcesoViewModel
 import com.example.repartidor.viewmodel.VentaViewModel
+import com.example.repartidor.viewmodel.VentasDiaViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -182,6 +186,12 @@ fun AppNavigation() {
     val cierreMiniBodegaViewModel = remember {
         CierreMiniBodegaViewModel(miniBodegaRepository2)
     }
+    val ventasDiaRepository = remember {
+        VentasDiaRepository(db.ventaDao())
+    }
+    val ventasDiaViewModel: VentasDiaViewModel = viewModel(
+        factory = VentasDiaViewModelFactory(ventasDiaRepository)
+    )
 
 
     val navController = rememberNavController()
@@ -294,6 +304,9 @@ fun AppNavigation() {
                 sessionManager = sessionManager,
                 onIrBluetooth = {
                     navController.navigate(Routes.Bluetooth.route)
+                },
+                onIrVentasDia = {
+                    navController.navigate(Routes.VentasDia.route)
                 }
             )
         }
@@ -418,6 +431,14 @@ fun AppNavigation() {
                 onBack = {
                     navController.popBackStack()
                 }
+            )
+        }
+        composable(Routes.VentasDia.route) {
+            VentaDiaScreen(
+                onBack = {
+                    navController.popBackStack()
+                },
+                viewModel = ventasDiaViewModel
             )
         }
     }

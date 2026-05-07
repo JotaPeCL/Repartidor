@@ -13,6 +13,7 @@ import com.example.repartidor.utils.PrintResult
 import com.example.repartidor.utils.PrinterManager
 import com.example.repartidor.utils.TicketBuilder
 import com.example.repartidor.utils.TicketItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -109,8 +110,15 @@ class VentaProcesoViewModel(
 
                 // 🔥 AQUÍ ESTÁ EL ÚNICO CAMBIO REAL
                 val result = if (imprimir) {
-                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    withContext(Dispatchers.IO) {
+
+                        val firstResult = printerManager.print(device, ticket)
+
+                        // 🔥 Segunda copia (sin afectar tu lógica)
+                        delay(300)
                         printerManager.print(device, ticket)
+
+                        firstResult // 👈 respetamos el resultado original
                     }
                 } else {
                     PrintResult.NoPrinter
