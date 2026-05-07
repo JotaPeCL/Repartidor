@@ -91,6 +91,7 @@ class VentaProcesoViewModel(
                         precioUnitario = it.precio
                     )
                 }
+                val fechaVenta = System.currentTimeMillis()
 
                 val ticket = TicketBuilder.build(
                     items = ticketItems,
@@ -99,7 +100,8 @@ class VentaProcesoViewModel(
                     subtotal = subtotal,
                     porcentajeDescuento = porcentaje,
                     descuento = descuento,
-                    totalFinal = totalFinal
+                    totalFinal = totalFinal,
+                    fecha = fechaVenta
                 )
 
                 val device = bluetoothAdapter?.let {

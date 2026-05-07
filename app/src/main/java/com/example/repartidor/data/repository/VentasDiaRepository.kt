@@ -9,13 +9,14 @@ class VentasDiaRepository(
     private val dao: VentaDao
 ) {
 
-    suspend fun getVentasDelDia(): List<VentaUI> {
+    suspend fun getVentasDelDia(usuarioId: Int): List<VentaUI> {
         val inicio = getInicioDelDia()
         val fin = getFinDelDia()
 
-        val ventas = dao.getVentasDelDia(inicio, fin)
+        val ventas = dao.getVentasDelDia(inicio, fin, usuarioId)
 
         return ventas.map { venta ->
+
             val cliente = venta.clienteId?.let {
                 dao.getClienteById(it)
             }

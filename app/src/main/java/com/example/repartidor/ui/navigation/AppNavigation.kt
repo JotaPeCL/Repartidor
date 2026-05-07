@@ -190,7 +190,13 @@ fun AppNavigation() {
         VentasDiaRepository(db.ventaDao())
     }
     val ventasDiaViewModel: VentasDiaViewModel = viewModel(
-        factory = VentasDiaViewModelFactory(ventasDiaRepository)
+        factory = VentasDiaViewModelFactory(
+            repository = ventasDiaRepository,
+            printerRepository = printerRepository,
+            printerManager = printerManager,
+            bluetoothAdapter = bluetoothAdapter,
+            sessionManager=sessionManager
+        )
     )
 
 

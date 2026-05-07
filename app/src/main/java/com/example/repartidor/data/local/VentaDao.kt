@@ -44,11 +44,16 @@ interface VentaDao {
 
     // 🔹 Ventas del día
     @Query("""
-        SELECT * FROM venta 
-        WHERE fecha BETWEEN :inicio AND :fin
-        ORDER BY fecha DESC
-    """)
-    suspend fun getVentasDelDia(inicio: String, fin: String): List<VentaEntity>
+    SELECT * FROM venta 
+    WHERE fecha BETWEEN :inicio AND :fin
+    AND usuarioId = :usuarioId
+    ORDER BY fecha DESC
+""")
+    suspend fun getVentasDelDia(
+        inicio: String,
+        fin: String,
+        usuarioId: Int
+    ): List<VentaEntity>
 
 
     // 🔹 Cliente por id

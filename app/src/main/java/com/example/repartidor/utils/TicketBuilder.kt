@@ -18,11 +18,12 @@ object TicketBuilder {
         subtotal: Double,
         porcentajeDescuento: Double,
         descuento: Double,
-        totalFinal: Double
+        totalFinal: Double,
+        fecha:Long
     ): String {
 
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-        val fecha = sdf.format(Date())
+        val fechaFormateada = sdf.format(Date(fecha))
 
         val sb = StringBuilder()
 
@@ -31,7 +32,7 @@ object TicketBuilder {
 
         sb.append("Ticket de Venta\n")
         sb.append("------------------------------\n")
-        sb.append("Fecha: $fecha\n")
+        sb.append("Fecha: $fechaFormateada\n")
 
         // 🔥 CLIENTE (solo si existe)
         if (clienteNombre != null) {
