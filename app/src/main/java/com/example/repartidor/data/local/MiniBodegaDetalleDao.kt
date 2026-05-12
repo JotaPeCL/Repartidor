@@ -22,13 +22,16 @@ interface MiniBodegaDetalleDao {
     suspend fun deleteByIds(ids: List<Int>)
 
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM mini_bodega_detalle 
         WHERE miniBodegaId = :miniBodegaId
-    """)
+    """
+    )
     suspend fun getByMiniBodega(miniBodegaId: Int): List<MiniBodegaDetalleEntity>
 
-    @Query("""
+    @Query(
+        """
     SELECT 
         pv.id, 
         pv.producto as productoId, 
@@ -43,13 +46,15 @@ interface MiniBodegaDetalleDao {
     WHERE pv.producto = :productoId
     AND mbd.miniBodegaId = :miniBodegaId
     AND mbd.cantidadActual > 0
-""")
+"""
+    )
     fun getVariacionesConStock(
         productoId: Int,
         miniBodegaId: Int
     ): Flow<List<ProductoConStock>>
 
-    @Query("""
+    @Query(
+        """
     SELECT 
         pv.id, 
         pv.producto as productoId, 
@@ -63,7 +68,8 @@ interface MiniBodegaDetalleDao {
         ON pv.id = mbd.productoVariacionId
         AND mbd.miniBodegaId = :miniBodegaId
     WHERE pv.producto = :productoId
-""")
+"""
+    )
     fun getVariacionesParaReabastecimiento(
         productoId: Int,
         miniBodegaId: Int
@@ -72,7 +78,8 @@ interface MiniBodegaDetalleDao {
     @Query("SELECT * FROM mini_bodega_detalle WHERE miniBodegaId = :miniBodegaId")
     suspend fun obtenerDetallesPorMiniBodega(miniBodegaId: Int): List<MiniBodegaDetalleEntity>
 
-    @Query("""
+    @Query(
+        """
     SELECT DISTINCT pt.*
     FROM producto_terminado pt
     INNER JOIN producto_variacion pv 
@@ -82,6 +89,36 @@ interface MiniBodegaDetalleDao {
     WHERE mbd.miniBodegaId = :miniBodegaId
     AND mbd.cantidadActual > 0
     AND pt.estado = 1
-""")
+"""
+    )
     fun getProductosConStock(miniBodegaId: Int): Flow<List<ProductoTerminadoEntity>>
+
+
+    @Query(
+        """
+    SELECT cantidadActual 
+    FROM mini_bodega_detalle
+    WHERE miniBodegaId = :miniBodegaId
+    AND productoVariacionId = :productoId
+"""
+    )
+    suspend fun obtenerStock(
+        miniBodegaId: Int,
+        productoId: Int
+    ): Double?
+
+
+    @Query(
+        """
+    UPDATE mini_bodega_detalle
+    SET cantidadActual = cantidadActual - :cantidad
+    WHERE miniBodegaId = :miniBodegaId
+    AND productoVariacionId = :productoId
+"""
+    )
+    suspend fun descontarStock(
+        miniBodegaId: Int,
+        productoId: Int,
+        cantidad: Double
+    )
 }

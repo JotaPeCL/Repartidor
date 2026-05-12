@@ -22,6 +22,8 @@ import com.example.repartidor.data.local.DatabaseProvider
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.repository.ClienteRepository
 import com.example.repartidor.data.repository.ClienteViewModelFactory
+import com.example.repartidor.data.repository.DevolucionInventarioRepository
+import com.example.repartidor.data.repository.DevolucionRepository
 import com.example.repartidor.data.repository.HomeRepository
 import com.example.repartidor.data.repository.HomeViewModelFactory
 import com.example.repartidor.data.repository.InventarioRepository
@@ -39,6 +41,8 @@ import com.example.repartidor.data.repository.VentasDiaRepository
 import com.example.repartidor.data.repository.VentasDiaViewModelFactory
 import com.example.repartidor.ui.screens.Cliente.ClienteScreen
 import com.example.repartidor.ui.screens.Cliente.QrScannerScreen
+import com.example.repartidor.ui.screens.Devoluciones.DevolucionFormScreen
+import com.example.repartidor.ui.screens.Devoluciones.DevolucionesScreen
 import com.example.repartidor.ui.screens.Home.HomeScreen
 import com.example.repartidor.ui.screens.Impresora.BluetoothScreen
 import com.example.repartidor.ui.screens.Inventario.InventarioScreen
@@ -51,9 +55,12 @@ import com.example.repartidor.ui.screens.login.LoginScreen
 import com.example.repartidor.ui.screens.login.SyncScreen
 import com.example.repartidor.utils.AppConfig
 import com.example.repartidor.utils.PrinterManager
+import com.example.repartidor.viewmodel.CarritoDevolucionViewModel
 import com.example.repartidor.viewmodel.CarritoViewModel
 import com.example.repartidor.viewmodel.CierreMiniBodegaViewModel
 import com.example.repartidor.viewmodel.ClienteViewModel
+import com.example.repartidor.viewmodel.DevolucionProductosViewModel
+import com.example.repartidor.viewmodel.DevolucionViewModel
 import com.example.repartidor.viewmodel.HomeViewModel
 import com.example.repartidor.viewmodel.InventarioViewModel
 import com.example.repartidor.viewmodel.LoginViewModel
@@ -198,6 +205,34 @@ fun AppNavigation() {
             sessionManager=sessionManager
         )
     )
+    val devolucionRepository = remember {
+        DevolucionRepository(db.miniBodegaDetalleDao())
+    }
+
+    val devolucionViewModel = remember {
+        DevolucionProductosViewModel(devolucionRepository, sessionManager)
+    }
+
+    val carritoDevolucionViewModel = remember {
+        CarritoDevolucionViewModel()
+    }
+    val devolucionFormRepository = remember {
+        DevolucionInventarioRepository(
+            db.devolucionDao(),
+            db.miniBodegaDetalleDao(),
+            db.mermaDao()
+        )
+    }
+
+    val devolucionFormViewModel = remember {
+        DevolucionViewModel(
+            devolucionFormRepository,
+            sessionManager,
+            printerRepository,
+            printerManager,
+            bluetoothAdapter
+        )
+    }
 
 
     val navController = rememberNavController()
@@ -313,6 +348,9 @@ fun AppNavigation() {
                 },
                 onIrVentasDia = {
                     navController.navigate(Routes.VentasDia.route)
+                },
+                onIrDevoluciones = {
+                    navController.navigate(Routes.Devolucion.route)
                 }
             )
         }
@@ -447,6 +485,33 @@ fun AppNavigation() {
                 viewModel = ventasDiaViewModel
             )
         }
+        composable(Routes.Devolucion.route) {
+            DevolucionesScreen(
+                onIrCarrito = {
+                    navController.navigate(Routes.CarritoDevolucion.route)
+                },
+                viewModel = devolucionViewModel,
+                carritoViewModel = carritoDevolucionViewModel,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Routes.CarritoDevolucion.route) {
+            DevolucionFormScreen(
+                carritoViewModel = carritoDevolucionViewModel,
+                clienteViewModel = clienteViewModel,
+                devolucionViewModel = devolucionFormViewModel,
+                onBack = { navController.popBackStack() },
+                onDevolucionExitosa = {
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(Routes.Home.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
     }
 }
 

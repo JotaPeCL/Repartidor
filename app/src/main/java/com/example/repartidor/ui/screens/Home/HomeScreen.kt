@@ -56,6 +56,7 @@ fun HomeScreen(
     sessionManager: SessionManager,
     onIrBluetooth: () -> Unit,
     onIrVentasDia: () -> Unit,
+    onIrDevoluciones: () -> Unit,
 ) {
     val data = viewModel.homeData
 
@@ -136,6 +137,11 @@ fun HomeScreen(
 
                 VentasDiaCard(
                     onClick = onIrVentasDia
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                DevolucionesCard(
+                    onClick = onIrDevoluciones
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -461,6 +467,65 @@ private fun VentasDiaCard(onClick: () -> Unit) {
                 )
                 Text(
                     "Ver y reimprimir tickets",
+                    color = TextMuted,
+                    fontSize = 12.sp
+                )
+            }
+
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DevolucionesCard(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(78.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFFFE5E5)), // rojo suave
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.KeyboardReturn, // icono de devolución
+                    contentDescription = null,
+                    tint = Color(0xFFD32F2F), // rojo fuerte
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Devoluciones",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
+                Text(
+                    "Registrar merma o productos devueltos",
                     color = TextMuted,
                     fontSize = 12.sp
                 )
