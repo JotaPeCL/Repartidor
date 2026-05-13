@@ -43,6 +43,7 @@ class DevolucionViewModel(
     @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     fun registrarDevolucion(
         clienteId: Int?,
+        clienteNombre: String?,
         clienteNulo: Boolean,
         motivo: String,
         observacion: String,
@@ -60,6 +61,7 @@ class DevolucionViewModel(
 
                 val miniBodegaId = sessionManager.getMiniBodegaId()
                 val usuarioId = sessionManager.getUserId()
+                val usuarioNombre = sessionManager.getUser()
 
                 if (usuarioId == null || miniBodegaId == null) {
                     error = "Sesión inválida"
@@ -96,10 +98,10 @@ class DevolucionViewModel(
                 // ─────────────────────────────
                 val ticket = TicketDevolucionBuilder.build(
                     items = carrito,
-                    clienteNombre = clienteId?.toString(),
+                    clienteNombre = if (clienteNulo) "Venta rápida" else (clienteNombre ?: "Cliente"),
                     motivo = motivo,
                     observacion = observacion,
-                    usuario = usuarioId.toString(),
+                    usuario = usuarioNombre,
                     fecha = System.currentTimeMillis()
                 )
 
@@ -112,7 +114,14 @@ class DevolucionViewModel(
                 // ─────────────────────────────
                 printResult = if (imprimir) {
                     withContext(Dispatchers.IO) {
-                        printerManager.print(device, ticket)
+
+                        val firstPrint = printerManager.print(device, ticket) // 👈 ESTO (primera impresión)
+
+                        if (firstPrint is PrintResult.Success) {
+                            printerManager.print(device, ticket) // 👈 ESTO (segunda impresión)
+                        } else {
+                            firstPrint // 👈 ESTO (si falla, no intenta segunda)
+                        }
                     }
                 } else {
                     PrintResult.NoPrinter
@@ -134,9 +143,6 @@ class DevolucionViewModel(
         isLoading = false
     }
 
-    fun setLoading(value: Boolean) {
-        isLoading = value
-    }
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     fun verificarImpresora(): PrintResult {

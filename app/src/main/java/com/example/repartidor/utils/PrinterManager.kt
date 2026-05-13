@@ -43,7 +43,11 @@ class PrinterManager(
                 // 🔥 despertar impresora
                 output.write("\n\n".toByteArray())
 
-                output.write(text.toByteArray(Charsets.UTF_8))
+                // 🔥 configurar charset (latin)
+                output.write(byteArrayOf(0x1B, 0x74, 0x10)) // 👈 ESTO
+
+                // 🔥 imprimir con encoding correcto
+                output.write(text.toByteArray(Charsets.ISO_8859_1)) // 👈 ESTO
                 output.flush()
 
                 Thread.sleep(200)

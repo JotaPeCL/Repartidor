@@ -26,8 +26,8 @@ object TicketDevolucionBuilder {
 
         sb.append("------------------------------\n")
         sb.append("Fecha: $fechaFormateada\n")
-        sb.append("Tipo: DEVOLUCIÓN\n")
-        sb.append("Motivo: $motivo\n")
+        //sb.append("Tipo: DEVOLUCIÓN\n")
+        sb.append("Tipo: $motivo\n")
 
         if (!observacion.isNullOrBlank()) {
             sb.append("Obs: $observacion\n")
@@ -37,7 +37,7 @@ object TicketDevolucionBuilder {
             sb.append("Cliente: $clienteNombre\n")
         }
 
-        sb.append("Usuario: ${usuario ?: "N/A"}\n")
+        sb.append("Repartidor: ${usuario ?: "N/A"}\n")
 
         sb.append("------------------------------\n")
 

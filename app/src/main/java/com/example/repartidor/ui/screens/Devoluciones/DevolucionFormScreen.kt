@@ -53,8 +53,10 @@ import com.example.repartidor.utils.PrintResult
 import com.example.repartidor.viewmodel.CarritoDevolucionViewModel
 import com.example.repartidor.viewmodel.ClienteViewModel
 import com.example.repartidor.viewmodel.DevolucionViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,6 +92,7 @@ fun DevolucionFormScreen(
     var imprimir by remember { mutableStateOf(true) }
     var showPrinterDialog by remember { mutableStateOf(false) }
     var printerStatus by remember { mutableStateOf<PrintResult?>(null) }
+    var isProcessing by remember { mutableStateOf(false) }
 
     val motivos = listOf(
         "Devolución de cliente",
@@ -123,6 +126,7 @@ fun DevolucionFormScreen(
             esExito = false
             mensajeResultado = it
             showResultDialog = true
+            isProcessing = false
         }
     }
     val scope = rememberCoroutineScope()
@@ -131,14 +135,14 @@ fun DevolucionFormScreen(
 
         val clienteIdFinal = if (clienteNulo) null else cliente?.id
 
-        // 🔥 ACTIVAR LOADING
-        devolucionViewModel.setLoading(true)
+        isProcessing = true // 👈 ESTE ES EL BUENO
+
 
         scope.launch {
 
-            delay(100) // 👈 deja que Compose pinte el loading
-
-            val result = devolucionViewModel.verificarImpresora()
+            val result = withContext(Dispatchers.IO) {
+                devolucionViewModel.verificarImpresora()
+            }
 
             printerStatus = result
 
@@ -147,6 +151,7 @@ fun DevolucionFormScreen(
                 is PrintResult.Success -> {
                     devolucionViewModel.registrarDevolucion(
                         clienteId = clienteIdFinal,
+                        clienteNombre = cliente?.nombre,
                         clienteNulo = clienteNulo,
                         motivo = motivo,
                         observacion = observacion,
@@ -156,7 +161,7 @@ fun DevolucionFormScreen(
                 }
 
                 else -> {
-                    devolucionViewModel.setLoading(false)
+                    isProcessing = false // 👈 apagar aquí
                     showPrinterDialog = true
                 }
             }
@@ -223,6 +228,7 @@ fun DevolucionFormScreen(
                 TextButton(onClick = {
                     // ❌ no sale → solo cierra dialog
                     showPrinterDialog = false
+                    isProcessing = false
                 }) {
                     Text("Cancelar")
                 }
@@ -257,6 +263,7 @@ fun DevolucionFormScreen(
             showResultDialog = true
             carritoViewModel.limpiar()
             devolucionViewModel.reset()
+            isProcessing = false
         }
     }
 
@@ -311,12 +318,12 @@ fun DevolucionFormScreen(
                             showConfirmDialog = true
                         }
                     },
-                    enabled = !isLoading,
+                    enabled = !isProcessing,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    if (isLoading) {
+                    if (isProcessing) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp))
                     } else {
                         Text("Confirmar devolución")
@@ -498,6 +505,30 @@ fun DevolucionFormScreen(
                 }
             }
         }
+    }
+
+    if (isProcessing) { // 👈 ESTO
+        AlertDialog(
+            onDismissRequest = { }, // 👈 no se puede cerrar
+
+            title = {
+                Text("Procesando")
+            },
+
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Procesando devolución...")
+                }
+            },
+
+            confirmButton = {} // 👈 sin botones
+        )
     }
 
 }
