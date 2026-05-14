@@ -10,5 +10,9 @@ data class VentaEntity(
     val usuarioId: Int,
     val fecha: String,
     val total: Double,
+    val tipoVenta: String,
+    val estadoPago: String,
+    val saldoPendiente: Double,
+    val fechaVencimiento: String?,
     val sincronizado: Boolean = false
 )

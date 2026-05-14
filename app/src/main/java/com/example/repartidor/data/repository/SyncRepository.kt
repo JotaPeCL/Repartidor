@@ -146,13 +146,22 @@ class SyncRepository(
 
             val clientesEntity = clientes.map {
                 ClienteEntity(
-                    it.id, it.nombre, it.nombre_negocio,
-                    it.giro, it.tipo_exhibidor,
-                    it.direccion, it.localidad,
-                    it.colonia, it.telefono,
-                    it.porcentaje_descuento, it.credito,
-                    it.imagen, it.observaciones,
-                    it.ruta, it.estado,
+                    it.id,
+                    it.nombre,
+                    it.nombre_negocio,
+                    it.giro,
+                    it.tipo_exhibidor,
+                    it.direccion,
+                    it.localidad,
+                    it.colonia,
+                    it.telefono,
+                    it.porcentaje_descuento,
+                    it.limite_credito,
+                    it.saldo_adeudo,
+                    it.imagen,
+                    it.observaciones,
+                    it.ruta,
+                    it.estado,
                     it.updated_at
                 )
             }

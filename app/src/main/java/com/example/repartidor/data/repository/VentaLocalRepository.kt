@@ -45,7 +45,12 @@ class VentaLocalRepository(
                 clienteId = clienteId,
                 usuarioId = usuarioId,
                 fecha = System.currentTimeMillis().toString(),
-                total = total
+                total = total,
+                //Simulado de mientras
+                tipoVenta = "CONTADO",        // 👈 nuevo
+                estadoPago = "PAGADO",        // 👈 nuevo
+                saldoPendiente = 0.0,         // 👈 nuevo
+                fechaVencimiento = null       // 👈 nuevo
             )
         ).toInt()
 
