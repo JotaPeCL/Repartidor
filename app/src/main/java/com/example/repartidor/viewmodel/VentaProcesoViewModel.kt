@@ -50,7 +50,9 @@ class VentaProcesoViewModel(
     @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     fun confirmarVenta(
         items: List<CarritoItem>,
-        imprimir: Boolean, // 🔥 NUEVO (único cambio en firma)
+        tipoVenta: String,
+        abonoInicial: Double,
+        imprimir: Boolean,
         onSuccess: (PrintResult) -> Unit,
         onError: (String) -> Unit
     ) {
@@ -69,10 +71,43 @@ class VentaProcesoViewModel(
                     repository.getClienteById(it)
                 }
 
+
                 val subtotal = snapshot.sumOf { it.precio * it.cantidad }
                 val porcentaje = cliente?.porcentajeDescuento ?: 0.0
                 val descuento = subtotal * (porcentaje / 100.0)
                 val totalFinal = subtotal - descuento
+
+                if (tipoVenta == "CREDITO" && cliente != null) {
+
+                    val creditoDisponible =
+                        cliente.limiteCredito - cliente.saldoAdeudo
+
+                    if (creditoDisponible <= 0) {
+                        return@launch onError("El cliente no tiene crédito disponible")
+                    }
+
+                    if (totalFinal > creditoDisponible) {
+                        return@launch onError("La venta excede el crédito disponible")
+                    }
+                }
+
+                if (tipoVenta == "CREDITO" && cliente == null) {
+                    return@launch onError("No puedes vender a crédito sin cliente")
+                }
+
+                // 🔥 ESTADO DE PAGO
+                val estadoPago = when {
+                    tipoVenta == "CONTADO" -> "PAGADO"
+                    abonoInicial <= 0 -> "PENDIENTE"
+                    abonoInicial < totalFinal -> "PARCIAL"
+                    else -> "PAGADO"
+                }
+
+                // 🔥 SALDO PENDIENTE
+                val saldoPendiente = when (tipoVenta) {
+                    "CONTADO" -> 0.0
+                    else -> totalFinal - abonoInicial
+                }
 
                 // 🔥 GUARDAR VENTA (NO SE TOCA)
                 repository.guardarVenta(
@@ -80,7 +115,11 @@ class VentaProcesoViewModel(
                     usuarioId = usuarioId,
                     items = snapshot,
                     miniBodegaId = miniBodegaId,
-                    total = totalFinal
+                    total = totalFinal,
+                    tipoVenta = tipoVenta,
+                    estadoPago = estadoPago,
+                    saldoPendiente = saldoPendiente,
+                    abonoInicial = abonoInicial
                 )
 
                 val ticketItems = snapshot.map {
@@ -101,7 +140,9 @@ class VentaProcesoViewModel(
                     porcentajeDescuento = porcentaje,
                     descuento = descuento,
                     totalFinal = totalFinal,
-                    fecha = fechaVenta
+                    fecha = fechaVenta,
+                    tipoVenta = tipoVenta,
+                    abonoInicial = abonoInicial
                 )
 
                 val device = bluetoothAdapter?.let {

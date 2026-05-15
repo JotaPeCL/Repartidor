@@ -40,6 +40,9 @@ class VentasDiaViewModel(
     var mostrarDialogo by mutableStateOf(false)
         private set
 
+    var totalAbonos by mutableStateOf(0.0)
+        private set
+
 
     fun cargarVentas() {
         viewModelScope.launch {
@@ -55,8 +58,14 @@ class VentasDiaViewModel(
 
     fun seleccionarVenta(venta: VentaUI) {
         viewModelScope.launch {
+
             ventaSeleccionada = venta
-            detalleVenta = repository.getDetalleVenta(venta.id)
+
+            val (detalle, abonos) = repository.getDetalleVenta(venta.id)
+
+            detalleVenta = detalle
+            totalAbonos = abonos
+
             mostrarDialogo = true
         }
     }
@@ -99,7 +108,9 @@ class VentasDiaViewModel(
                     porcentajeDescuento = 0.0, // si no lo tienes guardado
                     descuento = descuento,
                     totalFinal = total,
-                    fecha = venta.fecha
+                    fecha = venta.fecha,
+                    tipoVenta = venta.tipoVenta,
+                    abonoInicial = totalAbonos
                 )
 
                 val device = bluetoothAdapter?.let {

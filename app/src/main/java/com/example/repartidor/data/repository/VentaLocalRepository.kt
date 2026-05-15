@@ -2,6 +2,7 @@ package com.example.repartidor.data.repository
 
 import com.example.repartidor.data.local.ClienteDao
 import com.example.repartidor.data.local.VentaDao
+import com.example.repartidor.data.model.AbonoEntity
 import com.example.repartidor.data.model.CarritoItem
 import com.example.repartidor.data.model.ClienteEntity
 import com.example.repartidor.data.model.VentaDetalleEntity
@@ -22,7 +23,11 @@ class VentaLocalRepository(
         usuarioId: Int,
         items: List<CarritoItem>,
         miniBodegaId: Int,
-        total: Double
+        total: Double,
+        tipoVenta: String,
+        estadoPago: String,
+        saldoPendiente: Double,
+        abonoInicial: Double
     ) {
 
         // 🔥 1. VALIDAR STOCK PRIMERO
@@ -50,10 +55,10 @@ class VentaLocalRepository(
                 fecha = System.currentTimeMillis().toString(),
                 total = total,
                 //Simulado de mientras
-                tipoVenta = "CONTADO",        // 👈 nuevo
-                estadoPago = "PAGADO",        // 👈 nuevo
-                saldoPendiente = 0.0,         // 👈 nuevo
-                fechaVencimiento = null       // 👈 nuevo
+                tipoVenta = tipoVenta,
+                estadoPago = estadoPago,
+                saldoPendiente = saldoPendiente,
+                fechaVencimiento = null
             )
         ).toInt()
 
@@ -71,6 +76,20 @@ class VentaLocalRepository(
 
         ventaDao.insertDetalles(detalles)
 
+        if (abonoInicial > 0) {
+            val abono = AbonoEntity(
+                uuid = UUID.randomUUID().toString(),
+                ventaId = ventaId,
+                ventaUuid = ventaUuid,
+                usuarioId = usuarioId,
+                monto = abonoInicial,
+                fecha = System.currentTimeMillis().toString(),
+                sincronizado = false
+            )
+
+            ventaDao.insertAbono(abono)
+        }
+
         // 🔥 3. DESCONTAR STOCK
         items.forEach { item ->
             val stock = ventaDao.getProductoStock(
@@ -84,5 +103,21 @@ class VentaLocalRepository(
                 stock.copy(cantidadActual = nuevaCantidad)
             )
         }
+
+        if (tipoVenta == "CREDITO" && clienteId != null) {
+
+            val cliente = clienteDao.getClienteById(clienteId)
+                ?: throw Exception("Cliente no encontrado")
+
+            val deudaGenerada = (total - abonoInicial).coerceAtLeast(0.0)
+
+            if (deudaGenerada > 0) {
+
+                val nuevoSaldo = cliente.saldoAdeudo + deudaGenerada
+
+                clienteDao.actualizarSaldo(clienteId, nuevoSaldo)
+            }
+        }
+
     }
 }

@@ -27,15 +27,18 @@ class VentasDiaRepository(
                 nombreNegocio = cliente?.nombreNegocio,
                 fecha = venta.fecha.toLongOrNull() ?: 0L,
                 total = venta.total,
-                porcentajeDescuento = cliente?.porcentajeDescuento
+                porcentajeDescuento = cliente?.porcentajeDescuento,
+                tipoVenta = venta.tipoVenta,           // 🔥
+
             )
         }
     }
 
-    suspend fun getDetalleVenta(ventaId: Int): List<DetalleVentaUI> {
+    suspend fun getDetalleVenta(ventaId: Int): Pair<List<DetalleVentaUI>, Double> {
+
         val detalles = dao.getDetallesByVentaId(ventaId)
 
-        return detalles.map { detalle ->
+        val lista = detalles.map { detalle ->
 
             val variacion = dao.getProductoVariacionById(detalle.productoVariacionId)
             val presentacion = variacion?.presentacion?.let {
@@ -57,6 +60,11 @@ class VentasDiaRepository(
                 subtotal = detalle.cantidad * detalle.precioUnitario
             )
         }
+
+        // 🔥 AQUÍ LA MAGIA
+        val totalAbonos = dao.getTotalAbonosByVentaId(ventaId) ?: 0.0
+
+        return Pair(lista, totalAbonos)
     }
 
     private fun getInicioDelDia(): String {

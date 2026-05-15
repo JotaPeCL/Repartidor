@@ -46,6 +46,7 @@ fun VentaDiaScreen(
     val mostrarDialogo = viewModel.mostrarDialogo
     val detalle = viewModel.detalleVenta
     val ventaSeleccionada = viewModel.ventaSeleccionada
+    val totalAbonos = viewModel.totalAbonos
 
     var showConfirmPrint by remember { mutableStateOf(false) }
     var showResultDialog by remember { mutableStateOf(false) }
@@ -104,6 +105,13 @@ fun VentaDiaScreen(
                         text = formatearFechaHora(ventaSeleccionada.fecha),
                         fontSize = 12.sp
                     )
+                    Text(
+                        text = "Tipo: ${ventaSeleccionada.tipoVenta.uppercase()}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+
 
                     Spacer(modifier = Modifier.height(10.dp))
 
@@ -150,6 +158,24 @@ fun VentaDiaScreen(
                         text = "Total: $${"%.2f".format(totalFinal)}",
                         fontWeight = FontWeight.Bold
                     )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    if (ventaSeleccionada.tipoVenta == "CREDITO") {
+
+                        val totalAbonos = viewModel.totalAbonos
+                        val saldoPendiente = totalFinal - totalAbonos
+
+                        Text(
+                            text = "Abonado: $${"%.2f".format(totalAbonos)}",
+                            color = Color(0xFF2E7D32)
+                        )
+
+                        Text(
+                            text = "Saldo pendiente: $${"%.2f".format(saldoPendiente)}",
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (saldoPendiente > 0) Color.Red else Color(0xFF2E7D32)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(12.dp))
 

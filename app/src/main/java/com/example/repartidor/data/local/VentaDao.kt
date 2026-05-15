@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
+import com.example.repartidor.data.model.AbonoEntity
 import com.example.repartidor.data.model.ClienteEntity
 import com.example.repartidor.data.model.MiniBodegaDetalleEntity
 import com.example.repartidor.data.model.PresentacionProductoTerminadoEntity
@@ -74,5 +75,11 @@ interface VentaDao {
     // 🔹 Presentación
     @Query("SELECT * FROM presentacion_producto WHERE id = :id")
     suspend fun getPresentacionById(id: Int): PresentacionProductoTerminadoEntity?
+
+    @Insert
+    suspend fun insertAbono(abono: AbonoEntity)
+
+    @Query("SELECT SUM(monto) FROM abono WHERE ventaId = :ventaId")
+    suspend fun getTotalAbonosByVentaId(ventaId: Int): Double?
 
 }

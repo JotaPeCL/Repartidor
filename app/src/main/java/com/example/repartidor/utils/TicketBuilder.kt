@@ -19,7 +19,9 @@ object TicketBuilder {
         porcentajeDescuento: Double,
         descuento: Double,
         totalFinal: Double,
-        fecha:Long
+        fecha:Long,
+        tipoVenta: String,
+        abonoInicial: Double = 0.0
     ): String {
 
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -33,6 +35,7 @@ object TicketBuilder {
         sb.append("Ticket de Venta\n")
         sb.append("------------------------------\n")
         sb.append("Fecha: $fechaFormateada\n")
+        sb.append("Tipo de venta: $tipoVenta\n")
 
         // 🔥 CLIENTE (solo si existe)
         if (clienteNombre != null) {
@@ -65,6 +68,20 @@ object TicketBuilder {
 
         // 🔹 TOTAL FINAL
         sb.append("TOTAL: $${String.format("%.2f", totalFinal)}\n")
+
+        if (tipoVenta == "CREDITO") {
+
+            val restante = (totalFinal - abonoInicial).coerceAtLeast(0.0)
+
+            sb.append("------------------------------\n")
+            sb.append("PAGO INICIAL: $${String.format("%.2f", abonoInicial)}\n")
+            sb.append("SALDO PENDIENTE: $${String.format("%.2f", restante)}\n")
+            sb.append("\n\n")
+            sb.append("------------------------------\n")
+            sb.append("\n\n")
+            sb.append("______________________________\n")
+            sb.append("            FIRMA\n")
+        }
         sb.append("\n\n\n")
 
         return sb.toString()

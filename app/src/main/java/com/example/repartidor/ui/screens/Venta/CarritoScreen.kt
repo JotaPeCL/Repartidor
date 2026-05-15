@@ -81,6 +81,9 @@ fun CarritosScreen(
     var showResultDialog by remember { mutableStateOf(false) }
     var mensajeResultado by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    var tipoVenta by remember { mutableStateOf("CONTADO") }
+    var abonoTexto by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
 
     fun verificarImpresoraConLoading(onSuccess: () -> Unit, onError: () -> Unit) {
         isCheckingPrinter = true
@@ -114,8 +117,11 @@ fun CarritosScreen(
             onConfirm = {
                 showConfirmDialog = false
                 isLoading = true
+                val abono = abonoTexto.toDoubleOrNull() ?: 0.0
                 ventaProcesoViewModel.confirmarVenta(
                     items = items,
+                    tipoVenta = if (cliente == null) "CONTADO" else tipoVenta,
+                    abonoInicial = abono,
                     imprimir = imprimir,
                     onSuccess = { result ->
                         isLoading = false
@@ -208,6 +214,26 @@ fun CarritosScreen(
                     descuento = descuento,
                     totalFinal = totalFinal,
                     onConfirmar = {
+                        if (cliente != null && tipoVenta == "CREDITO") {
+
+                            val creditoDisponible =
+                                (cliente?.limiteCredito ?: 0.0) - (cliente?.saldoAdeudo ?: 0.0)
+
+                            when {
+                                creditoDisponible <= 0.0 -> {
+                                    mensajeResultado = "Error en la venta:\nEl cliente no tiene crédito disponible."
+                                    showResultDialog = true
+                                    return@CarritoBottomBar
+                                }
+
+                                totalFinal > creditoDisponible -> {
+                                    mensajeResultado = "Error en la venta:\nEl total excede el crédito disponible."
+                                    showResultDialog = true
+                                    return@CarritoBottomBar
+                                }
+                            }
+                        }
+
                         verificarImpresoraConLoading(
                             onSuccess = { showConfirmDialog = true },
                             onError = { showPrinterDialog = true }
@@ -262,6 +288,88 @@ fun CarritosScreen(
                             item = item,
                             viewModel = carritoViewModel
                         )
+                    }
+                    if (cliente != null) {
+                        item {
+
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                ExposedDropdownMenuBox(
+                                    expanded = expanded,
+                                    onExpandedChange = { expanded = !expanded }
+                                ) {
+
+                                    OutlinedTextField(
+                                        value = tipoVenta,
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = { Text("Tipo de venta") },
+                                        trailingIcon = {
+                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded)
+                                        },
+                                        modifier = Modifier
+                                            .menuAnchor()
+                                            .fillMaxWidth()
+                                    )
+
+                                    ExposedDropdownMenu(
+                                        expanded = expanded,
+                                        onDismissRequest = { expanded = false }
+                                    ) {
+
+                                        DropdownMenuItem(
+                                            text = { Text("CONTADO") },
+                                            onClick = {
+                                                tipoVenta = "CONTADO"
+                                                abonoTexto = ""
+                                                expanded = false
+                                            }
+                                        )
+
+                                        DropdownMenuItem(
+                                            text = { Text("CRÉDITO") },
+                                            onClick = {
+                                                tipoVenta = "CREDITO"
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                if (tipoVenta == "CREDITO") {
+
+                                    cliente?.let { c ->
+
+                                        val creditoDisponible =
+                                            (c.limiteCredito ?: 0.0) - (c.saldoAdeudo ?: 0.0)
+
+
+
+                                        Text(
+                                            text = "El cliente ${c.nombre} cuenta con: $${"%.2f".format(creditoDisponible)} de crédito disponible",
+                                            fontSize = 14.sp,
+                                            color = TextMuted
+                                        )
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        OutlinedTextField(
+                                            value = abonoTexto,
+                                            onValueChange = { abonoTexto = it },
+                                            label = { Text("Abono inicial (opcional)") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

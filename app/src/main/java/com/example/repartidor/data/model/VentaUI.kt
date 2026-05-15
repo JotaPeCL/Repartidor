@@ -6,7 +6,8 @@ data class VentaUI(
     val nombreNegocio: String?,
     val fecha: Long,
     val total: Double,
-    val porcentajeDescuento: Double?
+    val porcentajeDescuento: Double?,
+    val tipoVenta: String,        // 🔥 NUEVO
 )
 
 data class DetalleVentaUI(
