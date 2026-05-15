@@ -53,6 +53,8 @@ class ReabastecimientoProcesoViewModel(
                     productos = productos
                 )
 
+                //RECORDATORIO IMPORTANTE FALTA AGREGARLE LA UUID A ESTO PERO SE HARA DESPUES DE ESTABILIZAR LAS VENTAS
+
                 // 🔥 Llamada a API
                 val response = RetrofitClient.api.crearReabastecimiento(request)
 

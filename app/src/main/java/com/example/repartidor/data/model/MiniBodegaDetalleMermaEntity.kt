@@ -7,9 +7,11 @@ import androidx.room.PrimaryKey
 data class MiniBodegaDetalleMermaEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    val uuid: String,
     val miniBodegaId: Int,
     val productoVariacionId: Int,
     val cantidad: Double,
     val devolucionId: Int?,
+    val devolucionUuid: String?,
     val createdAt: String
 )

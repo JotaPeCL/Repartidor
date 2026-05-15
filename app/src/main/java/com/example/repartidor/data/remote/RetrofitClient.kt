@@ -13,7 +13,7 @@ object RetrofitClient {
     private const val BASE_URL = "https://osmit.up.railway.app/movil/"
     //"http://192.168.68.62:8000/movil/"
     //"https://osmit.up.railway.app/movil/"
-    //"http://10.0.2.2:8000/api/"
+    //"http://10.0.2.2:8000/movil/"
 
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)

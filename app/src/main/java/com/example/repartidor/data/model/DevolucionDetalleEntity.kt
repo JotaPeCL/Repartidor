@@ -7,7 +7,9 @@ import androidx.room.PrimaryKey
 data class DevolucionDetalleEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    val uuid: String,
     val devolucionId: Int,
+    val devolucionUuid: String,
     val productoVariacionId: Int,
     val nombreProducto: String,
     val cantidad: Double,

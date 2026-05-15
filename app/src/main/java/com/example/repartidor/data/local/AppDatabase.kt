@@ -2,6 +2,7 @@ package com.example.repartidor.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.example.repartidor.data.model.AbonoEntity
 import com.example.repartidor.data.model.RolEntity
 import com.example.repartidor.data.model.RutaEntity
 import com.example.repartidor.data.model.UsuarioEntity
@@ -42,7 +43,8 @@ import com.example.repartidor.data.model.DevolucionDetalleEntity
         VentaDetalleEntity::class,
         DevolucionEntity::class,
         DevolucionDetalleEntity::class,
-        MiniBodegaDetalleMermaEntity::class
+        MiniBodegaDetalleMermaEntity::class,
+        AbonoEntity::class,
 
     ],
     version = 7 // IMPORTANTE
@@ -69,5 +71,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun devolucionDao(): DevolucionDao
     abstract fun devolucionDetalleDao(): DevolucionDetalleDao
     abstract fun mermaDao(): MiniBodegaDetalleMermaDao
-
+    abstract fun abonoDao(): AbonoDao
 }

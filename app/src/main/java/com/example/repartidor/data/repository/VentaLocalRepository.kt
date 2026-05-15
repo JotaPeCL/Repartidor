@@ -6,6 +6,7 @@ import com.example.repartidor.data.model.CarritoItem
 import com.example.repartidor.data.model.ClienteEntity
 import com.example.repartidor.data.model.VentaDetalleEntity
 import com.example.repartidor.data.model.VentaEntity
+import java.util.UUID
 
 class VentaLocalRepository(
     private val ventaDao: VentaDao,
@@ -38,10 +39,12 @@ class VentaLocalRepository(
                 throw Exception("Stock insuficiente: ${item.productoNombre}")
             }
         }
+        val ventaUuid = UUID.randomUUID().toString()
 
         // 🔥 2. SI TODO OK → GUARDAR
         val ventaId = ventaDao.insertVenta(
             VentaEntity(
+                uuid = ventaUuid,
                 clienteId = clienteId,
                 usuarioId = usuarioId,
                 fecha = System.currentTimeMillis().toString(),
@@ -56,7 +59,9 @@ class VentaLocalRepository(
 
         val detalles = items.map {
             VentaDetalleEntity(
+                uuid = UUID.randomUUID().toString(),
                 ventaId = ventaId,
+                ventaUuid = ventaUuid,
                 productoVariacionId = it.productoVariacionId,
                 nombreProducto = it.productoNombre,
                 cantidad = it.cantidad.toDouble(),

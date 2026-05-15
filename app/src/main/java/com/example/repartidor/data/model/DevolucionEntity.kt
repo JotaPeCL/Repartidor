@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class DevolucionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    val uuid: String,
     val tipo: String,
     val clienteId: Int?, // puede ser null
     val usuarioId: Int,

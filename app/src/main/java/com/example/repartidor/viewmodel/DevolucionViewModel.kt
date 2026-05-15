@@ -17,8 +17,8 @@ import com.example.repartidor.utils.PrinterManager
 import com.example.repartidor.utils.TicketDevolucionBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 class DevolucionViewModel(
     private val repository: DevolucionInventarioRepository,
@@ -79,6 +79,7 @@ class DevolucionViewModel(
                 }
 
                 val devolucion = DevolucionEntity(
+                    uuid = UUID.randomUUID().toString(),
                     tipo = motivo,
                     clienteId = if (clienteNulo) null else clienteId,
                     usuarioId = usuarioId,

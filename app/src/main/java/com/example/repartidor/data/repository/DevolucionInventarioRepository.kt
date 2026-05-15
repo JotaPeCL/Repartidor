@@ -7,6 +7,7 @@ import com.example.repartidor.data.model.CarritoItem
 import com.example.repartidor.data.model.DevolucionDetalleEntity
 import com.example.repartidor.data.model.DevolucionEntity
 import com.example.repartidor.data.model.MiniBodegaDetalleMermaEntity
+import java.util.UUID
 import kotlin.collections.map
 
 class DevolucionInventarioRepository(
@@ -48,7 +49,9 @@ class DevolucionInventarioRepository(
         // ─────────────────────────────
         val detalles = carrito.map { item ->
             DevolucionDetalleEntity(
+                uuid = UUID.randomUUID().toString(),
                 devolucionId = devolucionId,
+                devolucionUuid = devolucion.uuid,
                 productoVariacionId = item.productoVariacionId,
                 nombreProducto = item.productoNombre,
                 cantidad = item.cantidad.toDouble(),
@@ -75,10 +78,12 @@ class DevolucionInventarioRepository(
         carrito.forEach { item ->
 
             val merma = MiniBodegaDetalleMermaEntity(
+                uuid = UUID.randomUUID().toString(),
                 miniBodegaId = devolucion.miniBodegaId,
                 productoVariacionId = item.productoVariacionId,
                 cantidad = item.cantidad.toDouble(),
                 devolucionId = devolucionId,
+                devolucionUuid = devolucion.uuid,
                 createdAt = devolucion.createdAt
             )
 
