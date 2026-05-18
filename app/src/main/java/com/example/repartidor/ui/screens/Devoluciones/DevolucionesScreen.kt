@@ -1,53 +1,43 @@
 package com.example.repartidor.ui.screens.Devoluciones
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.AssignmentReturn
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.repartidor.data.model.CarritoItem
 import com.example.repartidor.data.model.ProductoTerminadoEntity
 import com.example.repartidor.ui.screens.components.StandardTopBar
 import com.example.repartidor.viewmodel.CarritoDevolucionViewModel
 import com.example.repartidor.viewmodel.DevolucionProductosViewModel
+import com.example.repartidor.ui.screens.components.* //Aqui estan los colores
+
 
 @Composable
 fun DevolucionesScreen(
@@ -92,7 +82,20 @@ fun DevolucionesScreen(
         )
     }
 
+    // ── Dialog de salir ──
+    if (showExitDialog) {
+        ExitConfirmDialog(
+            onDismiss = { showExitDialog = false },
+            onConfirm = {
+                carritoViewModel.limpiar()
+                showExitDialog = false
+                onBack()
+            }
+        )
+    }
+
     Scaffold(
+        containerColor = BackgroundLight,
         topBar = {
             StandardTopBar(
                 title = "Devoluciones",
@@ -121,58 +124,223 @@ fun DevolucionesScreen(
                 .padding(padding)
         ) {
 
-            // 🔍 Buscador
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                placeholder = { Text("Buscar producto...") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                singleLine = true
-            )
-
-            // 📦 Lista
-            LazyColumn {
-                items(filteredProductos) { producto ->
-                    ProductoCard(
-                        producto = producto,
-                        onClick = {
-                            productoSeleccionado = producto
-                            showDialog = true
+            // ── BARRA DE BÚSQUEDA ──
+            if (productos.isNotEmpty()) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    placeholder = {
+                        Text("Buscar producto...", color = TextMuted, fontSize = 14.sp)
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = "Buscar", tint = TextMuted)
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Borrar", tint = TextMuted)
+                            }
                         }
-                    )
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = SurfaceWhite,
+                        unfocusedContainerColor = SurfaceWhite,
+                        focusedBorderColor = AccentBlue,
+                        unfocusedBorderColor = Color.Transparent,
+                        cursorColor = AccentBlue
+                    ),
+                    singleLine = true
+                )
+            }
+
+            if (productos.isEmpty()) {
+                // ── ESTADO: SIN PRODUCTOS DISPONIBLES ──
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .clip(CircleShape)
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Inventory,
+                                contentDescription = "Sin productos",
+                                modifier = Modifier.size(42.dp),
+                                tint = TextMuted.copy(alpha = 0.5f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No hay productos disponibles",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+                }
+            } else if (filteredProductos.isEmpty()) {
+                // ── ESTADO: SIN RESULTADOS DE BÚSQUEDA ──
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .clip(CircleShape)
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SearchOff,
+                                contentDescription = "Sin resultados",
+                                modifier = Modifier.size(42.dp),
+                                tint = TextMuted.copy(alpha = 0.5f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No se encontraron resultados",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Intenta buscar con otras palabras.",
+                            fontSize = 14.sp,
+                            color = TextMuted,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            } else {
+                // ── LISTA DE PRODUCTOS FILTRADA ──
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredProductos) { producto ->
+                        ProductoCard(
+                            producto = producto,
+                            onClick = {
+                                productoSeleccionado = producto
+                                showDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }
     }
+}
 
-    if (showExitDialog) {
+// ── COMPONENTES UI ────────────────────────────────────────────────────────────
 
-        AlertDialog(
-            onDismissRequest = { showExitDialog = false },
-            title = { Text("Salir de devolución") },
-            text = { Text("Tienes productos en el carrito. ¿Seguro que quieres salir?") },
-            confirmButton = {
-
-                TextButton(onClick = {
-                    carritoViewModel.limpiar()
-                    showExitDialog = false
-                    onBack()
-                }) {
-                    Text("Sí, salir")
-                }
-            },
-            dismissButton = {
-
-                TextButton(onClick = {
-                    showExitDialog = false
-                }) {
-                    Text("Cancelar")
-                }
+@Composable
+fun ProductoCard(
+    producto: ProductoTerminadoEntity,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(78.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(AccentBlueSoft),
+                contentAlignment = Alignment.Center
+            ) {
+                // Usamos un icono de retorno para darle el toque de "devolución"
+                Icon(
+                    imageVector = Icons.Default.AssignmentReturn,
+                    contentDescription = null,
+                    tint = AccentBlue,
+                    modifier = Modifier.size(20.dp)
+                )
             }
-        )
+            Spacer(modifier = Modifier.width(14.dp))
+            Text(
+                text = producto.nombre,
+                color = TextPrimary,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun BottomCartBar(
+    cantidadItems: Int,
+    onClick: () -> Unit
+) {
+    Surface(
+        color = SurfaceWhite,
+        shadowElevation = 8.dp,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .navigationBarsPadding()
+        ) {
+            Button(
+                onClick = onClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AccentIndigo,
+                    contentColor = Color.White
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AssignmentReturn,
+                    contentDescription = "Ver Devolución",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Ver Devolución ($cantidadItems)",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
+        }
     }
 }
 
@@ -183,157 +351,226 @@ fun VariacionesDialogDevolucion(
     onDismiss: () -> Unit,
     onAgregar: (List<CarritoItem>) -> Unit
 ) {
-
-    val variaciones by viewModel
-        .getVariaciones(producto.id)
-        .collectAsState(initial = emptyList())
-
+    val variaciones by viewModel.getVariaciones(producto.id).collectAsState(initial = emptyList())
     val cantidades = remember { mutableStateMapOf<Int, String>() }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(producto.nombre) },
-        text = {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = SurfaceWhite,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp)
+            ) {
+                // Header del diálogo
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = producto.nombre,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(BackgroundLight)
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = TextMuted, modifier = Modifier.size(16.dp))
+                    }
+                }
 
-            if (variaciones.isEmpty()) {
-                Text("Sin variaciones disponibles")
-            } else {
+                Spacer(modifier = Modifier.height(16.dp))
 
-                LazyColumn {
-                    items(variaciones) { item ->
+                if (variaciones.isEmpty()) {
+                    Text(
+                        text = "Sin variaciones disponibles",
+                        color = TextMuted,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                    )
+                } else {
+                    // Lista de variaciones
+                    Column(
+                        modifier = Modifier
+                            .heightIn(max = 350.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        variaciones.forEach { variacion ->
+                            val cantidad = cantidades[variacion.id] ?: ""
 
-                        val cantidad = cantidades[item.id] ?: 0  // 🔥 FIX
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                        ) {
-
-                            Text(item.presentacionNombre) // 🔥 FIX
-
-                            Text(
-                                text = "Stock: ${item.stockActual}", // 🔥 FIX
-                                style = MaterialTheme.typography.bodySmall
-                            )
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = BackgroundLight),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                             ) {
-                                val cantidad = cantidades[item.id] ?: ""
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = variacion.presentacionNombre,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 15.sp,
+                                            color = TextPrimary
+                                        )
+                                        Text(
+                                            text = "$${variacion.precio}",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp,
+                                            color = AccentTeal
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Stock: ${variacion.stockActual}",
+                                        fontSize = 12.sp,
+                                        color = TextMuted,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
 
-                                OutlinedTextField(
-                                    value = cantidad,
-                                    onValueChange = { nuevo ->
-                                        if (nuevo.isEmpty() || nuevo.all { it.isDigit() }) {
-                                            cantidades[item.id] = nuevo
-                                        }
-                                    },
-                                    placeholder = { Text("0") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    singleLine = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 8.dp)
-                                )
-
+                                    // Input de cantidad estilizado
+                                    OutlinedTextField(
+                                        value = cantidad,
+                                        onValueChange = { nuevo ->
+                                            if (nuevo.isEmpty() || nuevo.all { it.isDigit() }) {
+                                                cantidades[variacion.id] = nuevo
+                                            }
+                                        },
+                                        placeholder = { Text("0", color = TextMuted) },
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        singleLine = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(50.dp),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedContainerColor = SurfaceWhite,
+                                            unfocusedContainerColor = SurfaceWhite,
+                                            focusedBorderColor = AccentBlue,
+                                            unfocusedBorderColor = Color.Transparent
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Botón de agregar
+                    Button(
+                        onClick = {
+                            val productosSeleccionados = variaciones.mapNotNull { variacion ->
+                                val cantidad = cantidades[variacion.id]?.toIntOrNull() ?: 0
+                                if (cantidad > 0) {
+                                    CarritoItem(
+                                        productoVariacionId = variacion.id,
+                                        productoNombre = producto.nombre,
+                                        presentacionNombre = variacion.presentacionNombre,
+                                        precio = variacion.precio,
+                                        cantidad = cantidad
+                                    )
+                                } else null
+                            }
+                            if (productosSeleccionados.isNotEmpty()) {
+                                onAgregar(productosSeleccionados)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AccentBlue,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("Agregar a devolución", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
                 }
+            }
+        }
+    }
+}
+
+// ── DIÁLOGO DE SALIDA (Estilo Logout) ─────────────────────────────────────────
+@Composable
+private fun ExitConfirmDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor   = SurfaceWhite,
+        shape            = RoundedCornerShape(24.dp),
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(ErrorRedSoft),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector        = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint               = ErrorRed,
+                    modifier           = Modifier.size(26.dp)
+                )
+            }
+        },
+        title = {
+            Text(
+                text       = "¿Salir de la devolución?",
+                fontWeight = FontWeight.Bold,
+                fontSize   = 18.sp,
+                color      = TextPrimary,
+                textAlign  = TextAlign.Center
+            )
+        },
+        text = {
+            Text(
+                text       = "Tienes productos en la lista. Si sales ahora, se perderán y tendrás que volver a agregarlos.",
+                fontSize   = 14.sp,
+                color      = TextMuted,
+                textAlign  = TextAlign.Center,
+                lineHeight = 20.sp
+            )
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick  = onDismiss,
+                shape    = RoundedCornerShape(12.dp),
+                colors   = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Cancelar", fontWeight = FontWeight.SemiBold)
             }
         },
         confirmButton = {
-
-            Button(onClick = {
-
-                val seleccionados = variaciones.mapNotNull { item ->
-
-                    val cantidad = cantidades[item.id]?.toIntOrNull() ?: 0
-
-                    if (cantidad > 0) {
-                        CarritoItem(
-                            productoVariacionId = item.id,              // 🔥 FIX
-                            productoNombre = producto.nombre,
-                            presentacionNombre = item.presentacionNombre, // 🔥 FIX
-                            precio = item.precio,
-                            cantidad = cantidad
-                        )
-                    } else null
-                }
-
-                if (seleccionados.isNotEmpty()) {
-                    onAgregar(seleccionados)
-                }
-
-            }) {
-                Text("Agregar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+            Button(
+                onClick  = onConfirm,
+                shape    = RoundedCornerShape(12.dp),
+                colors   = ButtonDefaults.buttonColors(
+                    containerColor = ErrorRed,
+                    contentColor   = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Sí, salir y descartar", fontWeight = FontWeight.SemiBold)
             }
         }
     )
-}
-
-@Composable
-fun BottomCartBar(
-    cantidadItems: Int,
-    onClick: () -> Unit
-) {
-
-    Surface(
-        tonalElevation = 8.dp,
-        shadowElevation = 8.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onClick() }
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-
-                Icon(Icons.Default.ShoppingCart, contentDescription = null)
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Text("Carrito")
-            }
-
-            Text("$cantidadItems items")
-        }
-    }
-}
-
-@Composable
-fun ProductoCard(
-    producto: ProductoTerminadoEntity,
-    onClick: () -> Unit
-) {
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-
-            Text(
-                text = producto.nombre,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-        }
-    }
 }

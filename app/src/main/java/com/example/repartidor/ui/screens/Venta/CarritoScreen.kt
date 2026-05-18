@@ -1,5 +1,12 @@
 package com.example.repartidor.ui.screens.Venta
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +19,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -38,19 +49,19 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 // ── Paleta de colores (Heredada de Home y Venta) ─────────────────────────────
-private val BackgroundLight  = Color(0xFFF4F6FB)
-private val SurfaceWhite     = Color(0xFFFFFFFF)
-private val AccentBlue       = Color(0xFF3A6FD8)
-private val AccentBlueSoft   = Color(0xFFEBF0FC)
-private val AccentIndigo     = Color(0xFF5B4CF5)
-private val AccentTeal       = Color(0xFF0F9E82)
-private val AccentTealSoft   = Color(0xFFE6F6F2)
-private val TextPrimary      = Color(0xFF111827)
-private val TextMuted        = Color(0xFF9CA3AF)
-private val ErrorRed         = Color(0xFFDC2626)
-private val ErrorRedSoft     = Color(0xFFFEF2F2)
-private val WarningOrange    = Color(0xFFF59E0B)
-private val WarningOrangeSoft= Color(0xFFFEF3C7)
+private val BackgroundLight = Color(0xFFF4F6FB)
+private val SurfaceWhite = Color(0xFFFFFFFF)
+private val AccentBlue = Color(0xFF3A6FD8)
+private val AccentBlueSoft = Color(0xFFEBF0FC)
+private val AccentIndigo = Color(0xFF5B4CF5)
+private val AccentTeal = Color(0xFF0F9E82)
+private val AccentTealSoft = Color(0xFFE6F6F2)
+private val TextPrimary = Color(0xFF111827)
+private val TextMuted = Color(0xFF9CA3AF)
+private val ErrorRed = Color(0xFFDC2626)
+private val ErrorRedSoft = Color(0xFFFEF2F2)
+private val WarningOrange = Color(0xFFF59E0B)
+private val WarningOrangeSoft = Color(0xFFFEF3C7)
 // ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,9 +92,10 @@ fun CarritosScreen(
     var showResultDialog by remember { mutableStateOf(false) }
     var mensajeResultado by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+
+    // ── Estados para opciones de pago ──
     var tipoVenta by remember { mutableStateOf("CONTADO") }
     var abonoTexto by remember { mutableStateOf("") }
-    var expanded by remember { mutableStateOf(false) }
 
     fun verificarImpresoraConLoading(onSuccess: () -> Unit, onError: () -> Unit) {
         isCheckingPrinter = true
@@ -103,14 +115,17 @@ fun CarritosScreen(
     }
 
     // ── DIÁLOGOS DE LA PANTALLA ───────────────────────────────────────────────
-
     if (showConfirmDialog) {
         SoftDialog(
             icon = Icons.Default.ShoppingCart,
             iconColor = AccentBlue,
             iconBg = AccentBlueSoft,
             title = "Confirmar venta",
-            message = "¿Seguro que deseas proceder con la venta de estos artículos por un total de $${"%.2f".format(totalFinal)}?",
+            message = "¿Seguro que deseas proceder con la venta de estos artículos por un total de $${
+                "%.2f".format(
+                    totalFinal
+                )
+            }?",
             confirmText = "Sí, confirmar",
             cancelText = "Cancelar",
             onDismiss = { showConfirmDialog = false },
@@ -159,9 +174,7 @@ fun CarritosScreen(
             } + "\n\n¿Deseas continuar sin imprimir o cancelar?",
             confirmText = "Continuar sin imprimir",
             cancelText = "Cancelar",
-            onDismiss = {
-                showPrinterDialog = false // <-- Solo cierra la modal, cancelando el proceso
-            },
+            onDismiss = { showPrinterDialog = false },
             onConfirm = {
                 imprimir = false
                 showPrinterDialog = false
@@ -213,27 +226,34 @@ fun CarritosScreen(
                     porcentajeDescuento = porcentajeDescuento,
                     descuento = descuento,
                     totalFinal = totalFinal,
+                    tieneCliente = cliente != null,
+                    limiteCredito = cliente?.limiteCredito ?: 0.0,
+                    saldoAdeudo = cliente?.saldoAdeudo ?: 0.0,
+                    tipoVenta = tipoVenta,
+                    onTipoVentaChange = { tipoVenta = it },
+                    abonoTexto = abonoTexto,
+                    onAbonoTextoChange = { abonoTexto = it },
                     onConfirmar = {
                         if (cliente != null && tipoVenta == "CREDITO") {
-
                             val creditoDisponible =
                                 (cliente?.limiteCredito ?: 0.0) - (cliente?.saldoAdeudo ?: 0.0)
 
                             when {
                                 creditoDisponible <= 0.0 -> {
-                                    mensajeResultado = "Error en la venta:\nEl cliente no tiene crédito disponible."
+                                    mensajeResultado =
+                                        "Error en la venta:\nEl cliente no tiene crédito disponible."
                                     showResultDialog = true
                                     return@CarritoBottomBar
                                 }
 
                                 totalFinal > creditoDisponible -> {
-                                    mensajeResultado = "Error en la venta:\nEl total excede el crédito disponible."
+                                    mensajeResultado =
+                                        "Error en la venta:\nEl total excede el crédito disponible."
                                     showResultDialog = true
                                     return@CarritoBottomBar
                                 }
                             }
                         }
-
                         verificarImpresoraConLoading(
                             onSuccess = { showConfirmDialog = true },
                             onError = { showPrinterDialog = true }
@@ -280,96 +300,20 @@ fun CarritosScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
+                    contentPadding = PaddingValues(
+                        start = 20.dp,
+                        end = 20.dp,
+                        top = 8.dp,
+                        bottom = 24.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // ── SÓLO LA LISTA DE PRODUCTOS ──
                     items(items) { item ->
                         CarritoItemCard(
                             item = item,
                             viewModel = carritoViewModel
                         )
-                    }
-                    if (cliente != null) {
-                        item {
-
-                            Column(
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                ExposedDropdownMenuBox(
-                                    expanded = expanded,
-                                    onExpandedChange = { expanded = !expanded }
-                                ) {
-
-                                    OutlinedTextField(
-                                        value = tipoVenta,
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        label = { Text("Tipo de venta") },
-                                        trailingIcon = {
-                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded)
-                                        },
-                                        modifier = Modifier
-                                            .menuAnchor()
-                                            .fillMaxWidth()
-                                    )
-
-                                    ExposedDropdownMenu(
-                                        expanded = expanded,
-                                        onDismissRequest = { expanded = false }
-                                    ) {
-
-                                        DropdownMenuItem(
-                                            text = { Text("CONTADO") },
-                                            onClick = {
-                                                tipoVenta = "CONTADO"
-                                                abonoTexto = ""
-                                                expanded = false
-                                            }
-                                        )
-
-                                        DropdownMenuItem(
-                                            text = { Text("CRÉDITO") },
-                                            onClick = {
-                                                tipoVenta = "CREDITO"
-                                                expanded = false
-                                            }
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                if (tipoVenta == "CREDITO") {
-
-                                    cliente?.let { c ->
-
-                                        val creditoDisponible =
-                                            (c.limiteCredito ?: 0.0) - (c.saldoAdeudo ?: 0.0)
-
-
-
-                                        Text(
-                                            text = "El cliente ${c.nombre} cuenta con: $${"%.2f".format(creditoDisponible)} de crédito disponible",
-                                            fontSize = 14.sp,
-                                            color = TextMuted
-                                        )
-
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        OutlinedTextField(
-                                            value = abonoTexto,
-                                            onValueChange = { abonoTexto = it },
-                                            label = { Text("Abono inicial (opcional)") },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            singleLine = true
-                                        )
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -377,6 +321,310 @@ fun CarritosScreen(
     }
 }
 
+// ── COMPONENTES UI ────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CarritoBottomBar(
+    subtotal: Double,
+    porcentajeDescuento: Double,
+    descuento: Double,
+    totalFinal: Double,
+    tieneCliente: Boolean,
+    limiteCredito: Double,
+    saldoAdeudo: Double,
+    tipoVenta: String,
+    onTipoVentaChange: (String) -> Unit,
+    abonoTexto: String,
+    onAbonoTextoChange: (String) -> Unit,
+    onConfirmar: () -> Unit
+) {
+    // Estado para el acordeón (abrir/cerrar opciones de pago)
+    var isPaymentExpanded by remember { mutableStateOf(false) }
+    // Estado para el menú desplegable del Tipo de Venta
+    var isDropdownExpanded by remember { mutableStateOf(false) }
+
+    Surface(
+        color = SurfaceWhite,
+        shadowElevation = 12.dp,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .navigationBarsPadding()
+        ) {
+            // ── SECCIÓN DESPLEGABLE DE PAGOS (Solo si hay cliente) ──
+            if (tieneCliente) {
+                // Header (Clickable para expandir/colapsar)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { isPaymentExpanded = !isPaymentExpanded }
+                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(AccentBlueSoft),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.CreditCard,
+                                contentDescription = null,
+                                tint = AccentBlue,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Opciones de Pago",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = TextPrimary
+                            )
+                            // Pequeño subtítulo para ver qué seleccionaste cuando está cerrado
+                            if (!isPaymentExpanded) {
+                                Text(
+                                    text = tipoVenta,
+                                    fontSize = 12.sp,
+                                    color = if (tipoVenta == "CREDITO") WarningOrange else AccentTeal,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                    Icon(
+                        imageVector = if (isPaymentExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                        contentDescription = "Expandir/Colapsar",
+                        tint = TextMuted
+                    )
+                }
+
+                // ── CONTENIDO ANIMADO SUAVEMENTE ──
+                AnimatedVisibility(
+                    visible = isPaymentExpanded,
+                    enter = expandVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) + fadeIn(),
+                    exit = shrinkVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) + fadeOut()
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Dropdown Tipo de Venta
+                        Text(
+                            text = "Tipo de venta",
+                            color = TextMuted,
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                        )
+                        ExposedDropdownMenuBox(
+                            expanded = isDropdownExpanded,
+                            onExpandedChange = { isDropdownExpanded = !isDropdownExpanded }
+                        ) {
+                            OutlinedTextField(
+                                value = tipoVenta,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(
+                                        isDropdownExpanded
+                                    )
+                                },
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = BackgroundLight,
+                                    unfocusedContainerColor = BackgroundLight,
+                                    focusedBorderColor = AccentBlue,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary
+                                )
+                            )
+
+                            ExposedDropdownMenu(
+                                expanded = isDropdownExpanded,
+                                onDismissRequest = { isDropdownExpanded = false },
+                                modifier = Modifier.background(SurfaceWhite)
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("CONTADO", fontWeight = FontWeight.Medium) },
+                                    onClick = {
+                                        onTipoVentaChange("CONTADO")
+                                        onAbonoTextoChange("") // Limpiar abono
+                                        isDropdownExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("CRÉDITO", fontWeight = FontWeight.Medium) },
+                                    onClick = {
+                                        onTipoVentaChange("CREDITO")
+                                        isDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+
+                        // Campos extra si es Crédito
+                        AnimatedVisibility(
+                            visible = tipoVenta == "CREDITO",
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            Column {
+                                val creditoDisponible = limiteCredito - saldoAdeudo
+                                val hasCredit = creditoDisponible >= totalFinal
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                // Box info crédito
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(if (hasCredit) AccentTealSoft else ErrorRedSoft)
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = if (hasCredit) AccentTeal else ErrorRed,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = "Crédito disponible",
+                                            fontSize = 12.sp,
+                                            color = if (hasCredit) AccentTeal else ErrorRed
+                                        )
+                                        Text(
+                                            text = "$${"%.2f".format(creditoDisponible)}",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp,
+                                            color = if (hasCredit) AccentTeal else ErrorRed
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                // Input de Abono
+                                Text(
+                                    text = "Abono inicial (opcional)",
+                                    color = TextMuted,
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                                )
+                                OutlinedTextField(
+                                    value = abonoTexto,
+                                    onValueChange = onAbonoTextoChange,
+                                    leadingIcon = {
+                                        Text(
+                                            text = "$",
+                                            color = TextPrimary,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(start = 12.dp, end = 4.dp)
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = BackgroundLight,
+                                        unfocusedContainerColor = BackgroundLight,
+                                        focusedBorderColor = AccentBlue,
+                                        unfocusedBorderColor = Color.Transparent,
+                                        focusedTextColor = TextPrimary,
+                                        unfocusedTextColor = TextPrimary
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Separador visual
+                HorizontalDivider(
+                    color = BackgroundLight,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+
+            // ── SECCIÓN DE TOTALES Y BOTÓN CONFIRMAR ──
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
+                    Text("Subtotal", fontSize = 13.sp, color = TextMuted)
+                    Text(
+                        "$${"%.2f".format(subtotal)}",
+                        fontSize = 15.sp,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    if (porcentajeDescuento > 0) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            "Descuento (${porcentajeDescuento.toInt()}%)",
+                            fontSize = 12.sp,
+                            color = TextMuted
+                        )
+                        Text(
+                            "-$${"%.2f".format(descuento)}",
+                            fontSize = 13.sp,
+                            color = ErrorRed,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("Total", fontSize = 14.sp, color = TextMuted)
+                    Text(
+                        text = "$${"%.2f".format(totalFinal)}",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Black,
+                        color = AccentIndigo
+                    )
+                }
+
+                Button(
+                    onClick = onConfirmar,
+                    modifier = Modifier
+                        .height(54.dp)
+                        .width(160.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentIndigo,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ShoppingCart,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Confirmar", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun CarritoItemCard(
@@ -418,9 +666,7 @@ private fun CarritoItemCard(
                     )
                 }
 
-                // Controles de cantidad Soft UI
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Botón Menos
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -432,7 +678,12 @@ private fun CarritoItemCard(
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Remove, contentDescription = "-", tint = TextPrimary, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Remove,
+                            contentDescription = "-",
+                            tint = TextPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
 
                     var textoCantidad by remember { mutableStateOf(item.cantidad.toString()) }
@@ -445,7 +696,10 @@ private fun CarritoItemCard(
                                 textoCantidad = nuevo
                                 val nuevaCantidad = nuevo.toIntOrNull()
                                 if (nuevaCantidad != null) {
-                                    viewModel.actualizarCantidad(item.productoVariacionId, nuevaCantidad)
+                                    viewModel.actualizarCantidad(
+                                        item.productoVariacionId,
+                                        nuevaCantidad
+                                    )
                                 }
                             }
                         },
@@ -458,7 +712,6 @@ private fun CarritoItemCard(
                         ),
                         modifier = Modifier
                             .width(72.dp)
-                            //.height(44.dp)
                             .padding(horizontal = 4.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
@@ -468,7 +721,6 @@ private fun CarritoItemCard(
                         )
                     )
 
-                    // Botón Más
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -480,7 +732,12 @@ private fun CarritoItemCard(
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "+", tint = AccentBlue, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "+",
+                            tint = AccentBlue,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             }
@@ -488,68 +745,7 @@ private fun CarritoItemCard(
     }
 }
 
-@Composable
-private fun CarritoBottomBar(
-    subtotal: Double,
-    porcentajeDescuento: Double,
-    descuento: Double,
-    totalFinal: Double,
-    onConfirmar: () -> Unit
-) {
-    Surface(
-        color = SurfaceWhite,
-        shadowElevation = 8.dp,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp)
-                .navigationBarsPadding()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Column {
-                    Text("Subtotal", fontSize = 13.sp, color = TextMuted)
-                    Text("$${"%.2f".format(subtotal)}", fontSize = 15.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
-
-                    if (porcentajeDescuento > 0) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text("Descuento (${porcentajeDescuento.toInt()}%)", fontSize = 12.sp, color = TextMuted)
-                        Text("-$${"%.2f".format(descuento)}", fontSize = 13.sp, color = ErrorRed, fontWeight = FontWeight.Medium)
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text("Total", fontSize = 14.sp, color = TextMuted)
-                    Text(
-                        text = "$${"%.2f".format(totalFinal)}",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black,
-                        color = AccentIndigo
-                    )
-                }
-
-                Button(
-                    onClick = onConfirmar,
-                    modifier = Modifier
-                        .height(54.dp)
-                        .width(160.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo, contentColor = Color.White)
-                ) {
-                    Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Confirmar", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                }
-            }
-        }
-    }
-}
-
-// ── DIÁLOGOS REUTILIZABLES (Estilo Soft) ─────────────────────────────────────
+// ── DIÁLOGOS REUTILIZABLES ───────────────────────────────────────────────────
 
 @Composable
 private fun SoftDialog(
@@ -576,7 +772,12 @@ private fun SoftDialog(
                     .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(26.dp))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(26.dp)
+                )
             }
         },
         title = {

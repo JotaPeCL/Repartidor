@@ -28,23 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.viewmodel.HomeViewModel
+import com.example.repartidor.ui.screens.components.* // Aquí están los colores del tema
 
-// ── Paleta clara ──────────────────────────────────────────────────────────────
-private val BackgroundLight  = Color(0xFFF4F6FB)
-private val SurfaceWhite     = Color(0xFFFFFFFF)
-private val AccentBlue       = Color(0xFF3A6FD8)
-private val AccentBlueSoft   = Color(0xFFEBF0FC)
-private val AccentIndigo     = Color(0xFF5B4CF5)
-private val AccentIndigoSoft = Color(0xFFEFEDFD)
-private val AccentTeal       = Color(0xFF0F9E82)
-private val AccentTealSoft   = Color(0xFFE6F6F2)
-private val TextPrimary      = Color(0xFF111827)
-private val TextMuted        = Color(0xFF9CA3AF)
-private val ErrorRed         = Color(0xFFDC2626)
-private val ErrorRedSoft     = Color(0xFFFEF2F2)
-private val HeaderGradStart  = Color(0xFF3A6FD8)
-private val HeaderGradEnd    = Color(0xFF5B4CF5)
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------------------
 
 @Composable
 fun HomeScreen(
@@ -85,7 +71,7 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundLight)
+            .background(BackgroundLight) // Tu color de fondo base
     ) {
         Column(
             modifier = Modifier
@@ -97,14 +83,41 @@ fun HomeScreen(
                 ruta           = data.ruta?.nombre,
                 vehiculo       = if (data.vehiculo != null)
                     "${data.vehiculo.marca} · ${data.vehiculo.placa}" else null,
-                onCerrarSesion = { showLogoutDialog = true }  // ← abre el diálogo
+                onCerrarSesion = { showLogoutDialog = true }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
 
-                SectionLabel("Acciones rápidas")
+                // ── SECCIÓN: VENTAS (Énfasis Principal en blanco) ─────────────────
+                SectionLabel("Generar Venta")
+                Spacer(modifier = Modifier.height(12.dp))
+
+                PrimaryActionCard(
+                    title = "Venta Rápida",
+                    subtitle = "Venta de mostrador directa",
+                    icon = Icons.Default.PointOfSale,
+                    accent = AccentIndigo,
+                    accentBg = AccentIndigoSoft,
+                    onClick = onIrVenta
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                PrimaryActionCard(
+                    title = "Venta por Cliente",
+                    subtitle = "Buscar cliente en el directorio",
+                    icon = Icons.Default.PersonSearch,
+                    accent = AccentBlue,
+                    accentBg = AccentBlueSoft,
+                    onClick = onIrClientes
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                // ── SECCIÓN: OTRAS OPERACIONES (Abonos y Devoluciones) ────────
+                SectionLabel("Otras Operaciones")
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
@@ -113,39 +126,48 @@ fun HomeScreen(
                 ) {
                     ActionCard(
                         modifier  = Modifier.weight(1f),
-                        title     = "Buscar\nCliente",
-                        subtitle  = "Directorio",
-                        icon      = Icons.Default.PersonSearch,
-                        accent    = AccentBlue,
-                        accentBg  = AccentBlueSoft,
-                        onClick   = onIrClientes
+                        title     = "Recibir\nAbono",
+                        subtitle  = "Pago de crédito",
+                        icon      = Icons.Default.AttachMoney,
+                        accent    = AccentGreen,
+                        accentBg  = AccentGreenSoft,
+                        onClick   = { /* TODO: No programado aún */ }
                     )
                     ActionCard(
                         modifier  = Modifier.weight(1f),
-                        title     = "Venta\nRápida",
-                        subtitle  = "Nueva venta",
-                        icon      = Icons.Default.PointOfSale,
-                        accent    = AccentIndigo,
-                        accentBg  = AccentIndigoSoft,
-                        onClick   = onIrVenta
+                        title     = "Control\nDevolución",
+                        subtitle  = "Mermas / Retornos",
+                        icon      = Icons.Default.KeyboardReturn,
+                        accent    = AccentRed,
+                        accentBg  = AccentRedSoft,
+                        onClick   = onIrDevoluciones
                     )
                 }
 
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // ── SECCIÓN: GESTIÓN DE RUTA ──────────────────────────────────
+                SectionLabel("Gestión de ruta")
                 Spacer(modifier = Modifier.height(12.dp))
+
                 InventoryCard(onClick = onIrInventarios)
                 Spacer(modifier = Modifier.height(12.dp))
 
-                VentasDiaCard(
-                    onClick = onIrVentasDia
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                DevolucionesCard(
-                    onClick = onIrDevoluciones
-                )
+                VentasDiaCard(onClick = onIrVentasDia)
 
                 Spacer(modifier = Modifier.height(32.dp))
 
+                // ── SECCIÓN DE RENDIMIENTO ────────────────────────────────────
+                SectionLabel("Mi Rendimiento")
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ResumenGeneralCard(
+                    onClick = { /* TODO: No programado aún */ }
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                // ── SECCIÓN: CONFIGURACIÓN ────────────────────────────────────
                 SectionLabel("Configuración")
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -157,6 +179,124 @@ fun HomeScreen(
                 )
 
                 Spacer(modifier = Modifier.height(36.dp))
+            }
+        }
+    }
+}
+
+// ── NUEVO COMPONENTE: PRIMARY ACTION CARD (Blanco con acentos) ───────────────
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PrimaryActionCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    accent: Color,
+    accentBg: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(96.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite), // Fondo blanco recuperado
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) // Un poquito más de elevación para destacar
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(accentBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = accent,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    color = TextPrimary,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 15.sp
+                )
+                Text(
+                    text = subtitle,
+                    color = TextMuted,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── COMPONENTE: RESUMEN GENERAL ──────────────────────────────────────────────
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ResumenGeneralCard(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(90.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Resumen general",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 15.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Métricas, saldos y cobranza del día",
+                    color = TextMuted,
+                    fontSize = 12.sp
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .clip(CircleShape)
+                    .background(AccentPurpleSoft),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.TrendingUp,
+                    contentDescription = "Resumen General",
+                    tint = AccentPurple,
+                    modifier = Modifier.size(28.dp)
+                )
             }
         }
     }
@@ -241,7 +381,6 @@ private fun LogoutConfirmDialog(
         }
     )
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 // ── HEADER ────────────────────────────────────────────────────────────────────
 @Composable
@@ -302,7 +441,7 @@ private fun HomeHeader(
                 }
 
                 IconButton(
-                    onClick  = onCerrarSesion,   // ← ahora llama al lambda del diálogo
+                    onClick  = onCerrarSesion,
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
@@ -329,7 +468,6 @@ private fun HomeHeader(
         }
     }
 }
-
 
 @Composable
 private fun HeaderChip(icon: ImageVector, label: String, modifier: Modifier = Modifier) {
@@ -376,11 +514,16 @@ private fun ActionCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
-                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(accentBg),
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(accentBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(icon, contentDescription = title, tint = accent, modifier = Modifier.size(22.dp))
@@ -398,17 +541,24 @@ private fun ActionCard(
 private fun InventoryCard(onClick: () -> Unit) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(78.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(78.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 18.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(AccentTealSoft),
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(AccentTealSoft),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.Inventory, contentDescription = null, tint = AccentTeal, modifier = Modifier.size(22.dp))
@@ -445,7 +595,7 @@ private fun VentasDiaCard(onClick: () -> Unit) {
                 modifier = Modifier
                     .size(42.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(AccentIndigoSoft), // puedes cambiar color si quieres
+                    .background(AccentIndigoSoft),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -484,65 +634,6 @@ private fun VentasDiaCard(onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DevolucionesCard(onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(78.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFFFE5E5)), // rojo suave
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Default.KeyboardReturn, // icono de devolución
-                    contentDescription = null,
-                    tint = Color(0xFFD32F2F), // rojo fuerte
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Devoluciones",
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                )
-                Text(
-                    "Registrar merma o productos devueltos",
-                    color = TextMuted,
-                    fontSize = 12.sp
-                )
-            }
-
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = TextMuted,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 private fun FooterActionRow(
     icon: ImageVector,
     label: String,
@@ -556,17 +647,24 @@ private fun FooterActionRow(
 
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(68.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(68.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(iconBg),
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(icon, contentDescription = label, tint = iconColor, modifier = Modifier.size(19.dp))

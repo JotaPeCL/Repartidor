@@ -74,7 +74,8 @@ import com.example.repartidor.viewmodel.VentasDiaViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
-
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 
 @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -234,7 +235,6 @@ fun AppNavigation() {
         )
     }
 
-
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
 
@@ -243,23 +243,18 @@ fun AppNavigation() {
     val userSession by sessionManager.userFlow.collectAsState(initial = null)
     val miniBodegaId by sessionManager.miniBodegaFlow.collectAsState(initial = null)
 
-
-
     LaunchedEffect(userSession) {
         println("USER SESSION CAMBIÓ: $userSession")
         println("ultima sincronizacion: $lastSync")
         println("MINI BODEGA ID: $miniBodegaId")
-
     }
     LaunchedEffect(navController) {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             println("📍 Pantalla actual: ${destination.route}")
-
         }
     }
 
     val startDestination = remember(lastSync, userSession) {
-
         when {
             !yaSincronizoHoy(lastSync) -> Routes.Sync.route
             userSession.isNullOrEmpty() -> Routes.Login.route
@@ -267,7 +262,6 @@ fun AppNavigation() {
         }
     }
     LaunchedEffect(lastSync, userSession) {
-
         when {
             !yaSincronizoHoy(lastSync) -> {
                 navController.navigate(Routes.Sync.route) {
@@ -291,8 +285,14 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        //startDestination = Routes.Sync.route
-        startDestination = startDestination
+        startDestination = startDestination,
+
+        // 🚀 AQUÍ SE ELIMINAN LAS ANIMACIONES Y SE HACE INSTANTÁNEO
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None }
+
     ) {
 
         composable(Routes.Sync.route) {
@@ -301,11 +301,8 @@ fun AppNavigation() {
                 onSyncCompleto = {
                     navController.navigate(Routes.Login.route) {
                         popUpTo(Routes.Sync.route) { inclusive = true }
-
                     }
-
                 }
-
             )
         }
 
@@ -373,7 +370,6 @@ fun AppNavigation() {
         composable(Routes.QrScanner.route) {
             QrScannerScreen(
                 onQrDetectado = { clienteId ->
-
                     clienteViewModel.buscarCliente(clienteId.toString())
                     navController.popBackStack()
                 },
@@ -424,7 +420,6 @@ fun AppNavigation() {
                     }
                 }
             )
-
         }
 
         composable(Routes.Inventario.route) {
@@ -470,6 +465,7 @@ fun AppNavigation() {
                 }
             )
         }
+
         composable(Routes.Bluetooth.route) {
             BluetoothScreen(
                 onBack = {
@@ -477,6 +473,7 @@ fun AppNavigation() {
                 }
             )
         }
+
         composable(Routes.VentasDia.route) {
             VentaDiaScreen(
                 onBack = {
@@ -485,6 +482,7 @@ fun AppNavigation() {
                 viewModel = ventasDiaViewModel
             )
         }
+
         composable(Routes.Devolucion.route) {
             DevolucionesScreen(
                 onIrCarrito = {
@@ -535,4 +533,3 @@ fun yaSincronizoHoy(lastSync: String?): Boolean {
 
     return last == effectiveToday
 }
-

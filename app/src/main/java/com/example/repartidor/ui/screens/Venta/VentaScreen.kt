@@ -39,20 +39,7 @@ import com.example.repartidor.ui.screens.components.StandardTopBar
 import com.example.repartidor.viewmodel.CarritoViewModel
 import com.example.repartidor.viewmodel.VentaProcesoViewModel
 import com.example.repartidor.viewmodel.VentaViewModel
-
-// ── Paleta de colores (Heredada de Home) ─────────────────────────────────────
-private val BackgroundLight  = Color(0xFFF4F6FB)
-private val SurfaceWhite     = Color(0xFFFFFFFF)
-private val AccentBlue       = Color(0xFF3A6FD8)
-private val AccentBlueSoft   = Color(0xFFEBF0FC)
-private val AccentIndigo     = Color(0xFF5B4CF5)
-private val AccentTeal       = Color(0xFF0F9E82)
-private val AccentTealSoft   = Color(0xFFE6F6F2)
-private val TextPrimary      = Color(0xFF111827)
-private val TextMuted        = Color(0xFF9CA3AF)
-private val ErrorRed         = Color(0xFFDC2626)
-private val ErrorRedSoft     = Color(0xFFFEF2F2)
-// ─────────────────────────────────────────────────────────────────────────────
+import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
 
 @Composable
 fun VentaScreen(

@@ -32,16 +32,8 @@ import androidx.compose.ui.unit.sp
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.ui.screens.components.StandardTopBar
 import com.example.repartidor.viewmodel.InventarioViewModel
+import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
 
-// ── Paleta compartida (Inspirada en el Home) ─────────────────────────────────
-private val BackgroundLight  = Color(0xFFF4F6FB)
-private val SurfaceWhite     = Color(0xFFFFFFFF)
-private val AccentBlue       = Color(0xFF3A6FD8)
-private val AccentTeal       = Color(0xFF0F9E82)
-private val AccentTealSoft   = Color(0xFFE6F6F2)
-private val TextPrimary      = Color(0xFF111827)
-private val TextMuted        = Color(0xFF9CA3AF)
-// ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

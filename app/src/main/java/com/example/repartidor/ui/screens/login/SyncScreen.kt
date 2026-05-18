@@ -24,17 +24,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.repartidor.viewmodel.SyncViewModel
+import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
 
-// ── Paleta compartida (Inspirada en el Home) ─────────────────────────────────
-private val BackgroundLight  = Color(0xFFF4F6FB)
-private val SurfaceWhite     = Color(0xFFFFFFFF)
-private val AccentBlue       = Color(0xFF3A6FD8)
-private val AccentBlueSoft   = Color(0xFFEBF0FC)
-private val TextPrimary      = Color(0xFF111827)
-private val TextMuted        = Color(0xFF9CA3AF)
-private val ErrorRed         = Color(0xFFDC2626)
-private val ErrorRedSoft     = Color(0xFFFEF2F2)
-// ─────────────────────────────────────────────────────────────────────────────
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

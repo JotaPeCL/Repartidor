@@ -42,21 +42,7 @@ import com.example.repartidor.utils.getBluetoothState
 import com.example.repartidor.utils.guardarImpresora
 import com.example.repartidor.utils.obtenerDispositivoGuardado
 import kotlinx.coroutines.launch
-
-// ── Paleta de colores (Soft UI) ──────────────────────────────────────────────
-private val BackgroundLight  = Color(0xFFF4F6FB)
-private val SurfaceWhite     = Color(0xFFFFFFFF)
-private val AccentBlue       = Color(0xFF3A6FD8)
-private val AccentBlueSoft   = Color(0xFFEBF0FC)
-private val AccentTeal       = Color(0xFF0F9E82)
-private val AccentTealSoft   = Color(0xFFE6F6F2)
-private val TextPrimary      = Color(0xFF111827)
-private val TextMuted        = Color(0xFF9CA3AF)
-private val ErrorRed         = Color(0xFFDC2626)
-private val ErrorRedSoft     = Color(0xFFFEF2F2)
-private val WarningOrange    = Color(0xFFF59E0B)
-private val WarningOrangeSoft= Color(0xFFFEF3C7)
-// ─────────────────────────────────────────────────────────────────────────────
+import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
