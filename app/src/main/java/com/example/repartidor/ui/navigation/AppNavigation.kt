@@ -76,6 +76,14 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import com.example.repartidor.data.repository.AbonoRepository
+import com.example.repartidor.data.repository.AbonosFormRepository
+import com.example.repartidor.data.repository.AbonosRepository
+import com.example.repartidor.ui.screens.Abonos.AbonosFormScreen
+import com.example.repartidor.ui.screens.Abonos.AbonosScreen
+import com.example.repartidor.viewmodel.AbonoViewModel
+import com.example.repartidor.viewmodel.AbonosFormViewModel
+import com.example.repartidor.viewmodel.AbonosViewModel
 
 @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -235,6 +243,32 @@ fun AppNavigation() {
         )
     }
 
+    val abonosRepository = remember {
+        AbonosRepository(db.ventaDao())
+    }
+
+    val abonosViewModel = remember {
+        AbonosViewModel(abonosRepository)
+    }
+
+    val abonosFormRepository = remember {
+        AbonosFormRepository(
+            db.ventaDao()
+        )
+    }
+
+    val abonosFormViewModel = remember {
+        AbonosFormViewModel(abonosFormRepository)
+    }
+
+    val abonoRepository = remember {
+        AbonoRepository(db)
+    }
+
+    val abonoViewModel = remember {
+        AbonoViewModel(abonoRepository)
+    }
+
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
 
@@ -348,7 +382,10 @@ fun AppNavigation() {
                 },
                 onIrDevoluciones = {
                     navController.navigate(Routes.Devolucion.route)
-                }
+                },
+                onIrAbonos = {
+                    navController.navigate(Routes.Abonos.route)
+                },
             )
         }
 
@@ -509,7 +546,45 @@ fun AppNavigation() {
                 }
             )
         }
+        composable(Routes.Abonos.route) {
+            AbonosScreen(
+                viewModel = abonosViewModel,
+                onIrForm = { ventaId ->
+                    navController.navigate(Routes.AbonoForm.createRoute(ventaId))
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
 
+        composable(
+            route = Routes.AbonoForm.route,
+            arguments = listOf(
+                navArgument("ventaId") {
+                    type = NavType.IntType
+                }
+            )
+        ) { backStackEntry ->
+
+            val ventaId = backStackEntry.arguments?.getInt("ventaId") ?: 0
+
+            AbonosFormScreen(
+                ventaId = ventaId,
+                viewModel = abonosFormViewModel,
+                abonoViewModel = abonoViewModel,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onSuccess = {
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(Routes.Home.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
+        }
     }
 }
 

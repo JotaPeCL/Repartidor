@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.example.repartidor.data.model.ClienteEntity
 
 @Dao
@@ -33,4 +34,10 @@ interface ClienteDao {
 
     @Query("UPDATE cliente SET saldoAdeudo = :nuevoSaldo WHERE id = :clienteId")
     suspend fun actualizarSaldo(clienteId: Int, nuevoSaldo: Double)
+
+    @Query("SELECT * FROM cliente WHERE id = :clienteId")
+    suspend fun getClienteById2(clienteId: Int): ClienteEntity
+
+    @Update
+    suspend fun updateCliente(cliente: ClienteEntity)
 }

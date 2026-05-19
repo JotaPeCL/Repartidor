@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ fun HomeScreen(
     onIrBluetooth: () -> Unit,
     onIrVentasDia: () -> Unit,
     onIrDevoluciones: () -> Unit,
+    onIrAbonos: () -> Unit,
 ) {
     val data = viewModel.homeData
 
@@ -131,13 +133,13 @@ fun HomeScreen(
                         icon      = Icons.Default.AttachMoney,
                         accent    = AccentGreen,
                         accentBg  = AccentGreenSoft,
-                        onClick   = { /* TODO: No programado aún */ }
+                        onClick   = onIrAbonos
                     )
                     ActionCard(
                         modifier  = Modifier.weight(1f),
                         title     = "Control\nDevolución",
                         subtitle  = "Mermas / Retornos",
-                        icon      = Icons.Default.KeyboardReturn,
+                        icon      = Icons.AutoMirrored.Filled.KeyboardReturn,
                         accent    = AccentRed,
                         accentBg  = AccentRedSoft,
                         onClick   = onIrDevoluciones

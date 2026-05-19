@@ -9,8 +9,11 @@ import com.example.repartidor.data.model.ClienteEntity
 import com.example.repartidor.data.model.MiniBodegaDetalleEntity
 import com.example.repartidor.data.model.PresentacionProductoTerminadoEntity
 import com.example.repartidor.data.model.ProductoVariacionEntity
+import com.example.repartidor.data.model.ProductoVenta
+import com.example.repartidor.data.model.VentaCredito
 import com.example.repartidor.data.model.VentaDetalleEntity
 import com.example.repartidor.data.model.VentaEntity
+import com.example.repartidor.data.model.VentaInfo
 
 @Dao
 interface VentaDao {
@@ -44,12 +47,14 @@ interface VentaDao {
     suspend fun updateMiniBodegaDetalle(detalle: MiniBodegaDetalleEntity)
 
     // 🔹 Ventas del día
-    @Query("""
+    @Query(
+        """
     SELECT * FROM venta 
     WHERE fecha BETWEEN :inicio AND :fin
     AND usuarioId = :usuarioId
     ORDER BY fecha DESC
-""")
+"""
+    )
     suspend fun getVentasDelDia(
         inicio: String,
         fin: String,
@@ -82,4 +87,59 @@ interface VentaDao {
     @Query("SELECT SUM(monto) FROM abono WHERE ventaId = :ventaId")
     suspend fun getTotalAbonosByVentaId(ventaId: Int): Double?
 
+    @Query("""
+    SELECT 
+    v.*,
+    c.nombre,
+    c.nombreNegocio,
+    IFNULL(SUM(a.monto), 0) as totalAbonado,
+    (v.total - IFNULL(SUM(a.monto), 0)) as saldoCalculado
+FROM venta v
+LEFT JOIN cliente c ON v.clienteId = c.id
+LEFT JOIN abono a ON a.ventaId = v.id
+WHERE v.tipoVenta = 'CREDITO'
+AND (v.estadoPago = 'PENDIENTE' OR v.estadoPago = 'PARCIAL')
+GROUP BY v.id""")
+    suspend fun getVentasCreditoPendientes(): List<VentaCredito>
+
+
+    @Query("""
+SELECT 
+    v.id,
+    v.fecha,
+    v.tipoVenta,
+    v.total,
+
+    c.nombre AS clienteNombre,
+    c.nombreNegocio AS clienteNegocio,
+    c.porcentajeDescuento,
+
+    IFNULL(SUM(a.monto), 0) AS totalAbonado,
+    (v.total - IFNULL(SUM(a.monto), 0)) AS saldoPendiente
+
+FROM venta v
+INNER JOIN cliente c ON c.id = v.clienteId
+LEFT JOIN abono a ON a.ventaId = v.id
+
+WHERE v.id = :ventaId
+
+GROUP BY v.id
+""")
+    suspend fun getVentaInfo(ventaId: Int): VentaInfo
+
+    @Query("""
+SELECT 
+    nombreProducto AS nombre,
+    cantidad,
+    precioUnitario
+FROM venta_detalle
+WHERE ventaId = :ventaId
+""")
+    suspend fun getProductosVenta(ventaId: Int): List<ProductoVenta>
+
+    @Query("SELECT * FROM venta WHERE id = :ventaId")
+    suspend fun getVentaById(ventaId: Int): VentaEntity
+
+    @Update
+    suspend fun updateVenta(venta: VentaEntity)
 }

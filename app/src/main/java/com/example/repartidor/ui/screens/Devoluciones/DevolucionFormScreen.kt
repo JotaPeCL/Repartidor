@@ -189,7 +189,17 @@ fun DevolucionFormScreen(
             confirmText = "Continuar sin imprimir",
             onConfirm = {
                 showPrinterDialog = false
-                intentarRegistrar(imprimir = false)
+                val clienteIdFinal = if (clienteNulo) null else cliente?.id
+
+                devolucionViewModel.registrarDevolucion(
+                    clienteId = clienteIdFinal,
+                    clienteNombre = cliente?.nombre,
+                    clienteNulo = clienteNulo,
+                    motivo = motivo,
+                    observacion = observacion,
+                    carrito = items,
+                    imprimir = false // 🔥 directo sin validar impresora otra vez
+                )
             },
             onDismiss = { showPrinterDialog = false }
         )

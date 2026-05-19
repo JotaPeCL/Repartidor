@@ -27,4 +27,8 @@ interface AbonoDao {
 
     @Delete
     suspend fun eliminar(abono: AbonoEntity)
+
+    @Insert
+    suspend fun insertAbono(abono: AbonoEntity)
+
 }
