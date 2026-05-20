@@ -19,4 +19,5 @@ sealed class Routes(val route: String) {
     object AbonoForm : Routes("abono_form/{ventaId}") {
         fun createRoute(ventaId: Int) = "abono_form/$ventaId"
     }
+    object ResumenDia: Routes("resumen_dia")
 }

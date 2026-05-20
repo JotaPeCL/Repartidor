@@ -83,8 +83,7 @@ class AbonoViewModel(
 
                 // 🔥 4. VALIDAR RESULTADO DE IMPRESIÓN
                 if (imprimir && printResult !is PrintResult.Success) {
-                    // 🔥 IMPORTANTE: NO GUARDAR
-                    abonoResult = AbonoResult.Success
+                    abonoResult = AbonoResult.PrintError(printResult!!)
                     return@launch
                 }
 
@@ -113,5 +112,6 @@ class AbonoViewModel(
 sealed class AbonoResult {
     object Idle : AbonoResult()
     object Success : AbonoResult()
+    data class PrintError(val printResult: PrintResult) : AbonoResult()
     data class Error(val message: String) : AbonoResult()
 }

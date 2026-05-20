@@ -31,4 +31,15 @@ interface AbonoDao {
     @Insert
     suspend fun insertAbono(abono: AbonoEntity)
 
+    @Query("""
+    SELECT IFNULL(SUM(monto), 0.0)
+    FROM abono
+    WHERE date(fecha) = date(:fecha)
+    AND usuarioId = :usuarioId
+""")
+    suspend fun getTotalAbonosDelDia(
+        fecha: String,
+        usuarioId: Int
+    ): Double
+
 }

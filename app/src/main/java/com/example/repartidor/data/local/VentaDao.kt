@@ -87,7 +87,8 @@ interface VentaDao {
     @Query("SELECT SUM(monto) FROM abono WHERE ventaId = :ventaId")
     suspend fun getTotalAbonosByVentaId(ventaId: Int): Double?
 
-    @Query("""
+    @Query(
+        """
     SELECT 
     v.*,
     c.nombre,
@@ -99,11 +100,13 @@ LEFT JOIN cliente c ON v.clienteId = c.id
 LEFT JOIN abono a ON a.ventaId = v.id
 WHERE v.tipoVenta = 'CREDITO'
 AND (v.estadoPago = 'PENDIENTE' OR v.estadoPago = 'PARCIAL')
-GROUP BY v.id""")
+GROUP BY v.id"""
+    )
     suspend fun getVentasCreditoPendientes(): List<VentaCredito>
 
 
-    @Query("""
+    @Query(
+        """
 SELECT 
     v.id,
     v.fecha,
@@ -124,17 +127,20 @@ LEFT JOIN abono a ON a.ventaId = v.id
 WHERE v.id = :ventaId
 
 GROUP BY v.id
-""")
+"""
+    )
     suspend fun getVentaInfo(ventaId: Int): VentaInfo
 
-    @Query("""
+    @Query(
+        """
 SELECT 
     nombreProducto AS nombre,
     cantidad,
     precioUnitario
 FROM venta_detalle
 WHERE ventaId = :ventaId
-""")
+"""
+    )
     suspend fun getProductosVenta(ventaId: Int): List<ProductoVenta>
 
     @Query("SELECT * FROM venta WHERE id = :ventaId")
@@ -142,4 +148,41 @@ WHERE ventaId = :ventaId
 
     @Update
     suspend fun updateVenta(venta: VentaEntity)
+
+    @Query("""
+    SELECT IFNULL(SUM(total), 0.0)
+    FROM venta
+    WHERE fecha BETWEEN :inicioDia AND :finDia
+    AND usuarioId = :usuarioId
+""")
+    suspend fun getTotalVentasDelDia(
+        inicioDia: Long,
+        finDia: Long,
+        usuarioId: Int
+    ): Double
+
+    @Query(
+        """
+    SELECT COUNT(*) 
+    FROM venta
+    WHERE saldoPendiente > 0
+    AND usuarioId = :usuarioId
+"""
+    )
+    suspend fun getCantidadCreditosPendientes(
+        usuarioId: Int
+    ): Int
+
+    @Query(
+        """
+    SELECT IFNULL(SUM(saldoPendiente), 0.0)
+    FROM venta
+    WHERE saldoPendiente > 0
+    AND usuarioId = :usuarioId
+"""
+    )
+    suspend fun getTotalSaldoPendiente(
+        usuarioId: Int
+    ): Double
+
 }

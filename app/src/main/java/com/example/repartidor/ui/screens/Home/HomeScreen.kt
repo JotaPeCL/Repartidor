@@ -45,6 +45,7 @@ fun HomeScreen(
     onIrVentasDia: () -> Unit,
     onIrDevoluciones: () -> Unit,
     onIrAbonos: () -> Unit,
+    onIrResumenDia:()-> Unit
 ) {
     val data = viewModel.homeData
 
@@ -164,7 +165,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 ResumenGeneralCard(
-                    onClick = { /* TODO: No programado aún */ }
+                    onClick = onIrResumenDia
                 )
 
                 Spacer(modifier = Modifier.height(28.dp))

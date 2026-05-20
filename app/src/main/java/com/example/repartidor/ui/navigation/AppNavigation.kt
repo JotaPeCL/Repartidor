@@ -79,11 +79,14 @@ import androidx.compose.animation.ExitTransition
 import com.example.repartidor.data.repository.AbonoRepository
 import com.example.repartidor.data.repository.AbonosFormRepository
 import com.example.repartidor.data.repository.AbonosRepository
+import com.example.repartidor.data.repository.ResumenDiaRepository
 import com.example.repartidor.ui.screens.Abonos.AbonosFormScreen
 import com.example.repartidor.ui.screens.Abonos.AbonosScreen
+import com.example.repartidor.ui.screens.Resumen.ResumenDiaScreen
 import com.example.repartidor.viewmodel.AbonoViewModel
 import com.example.repartidor.viewmodel.AbonosFormViewModel
 import com.example.repartidor.viewmodel.AbonosViewModel
+import com.example.repartidor.viewmodel.ResumenDiaViewModel
 
 @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -274,6 +277,23 @@ fun AppNavigation() {
         )
     }
 
+    val resumenDiaRepository = remember {
+        ResumenDiaRepository(
+            db.ventaDao(),
+            db.abonoDao(),
+            db.ventaDetalleDao(),
+            db.devolucionDetalleDao()
+        )
+    }
+
+    val resumenDiaViewModel = remember {
+        ResumenDiaViewModel(
+            resumenDiaRepository,
+            sessionManager,
+            inventarioRepository
+        )
+    }
+
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
 
@@ -391,6 +411,9 @@ fun AppNavigation() {
                 onIrAbonos = {
                     navController.navigate(Routes.Abonos.route)
                 },
+                onIrResumenDia = {
+                    navController.navigate(Routes.ResumenDia.route)
+                }
             )
         }
 
@@ -587,6 +610,18 @@ fun AppNavigation() {
                             inclusive = true
                         }
                     }
+                }
+            )
+        }
+
+        composable(Routes.ResumenDia.route) {
+            ResumenDiaScreen(
+                viewModel = resumenDiaViewModel,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onGoInventario = {
+                    navController.navigate(Routes.Inventario.route)
                 }
             )
         }

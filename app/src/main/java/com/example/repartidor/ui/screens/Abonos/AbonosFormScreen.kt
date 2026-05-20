@@ -61,32 +61,29 @@ fun AbonosFormScreen(
     var pendingAbono by remember { mutableStateOf(false) }
 
     LaunchedEffect(abonoResult) {
-        when (abonoResult) {
+
+        when (val result = abonoViewModel.abonoResult) {
+
             is AbonoResult.Success -> {
-
                 showLoadingDialog = false
+                showSuccessDialog = true
+                abonoViewModel.resetResult()
+            }
 
-                val print = abonoViewModel.printResult
-
-                if (print is PrintResult.Success) {
-                    showSuccessDialog = true
-                } else {
-                    // 🔥 error de impresora
-                    showPrinterErrorDialog = true
-                }
-
+            is AbonoResult.PrintError -> {
+                showLoadingDialog = false
+                showPrinterErrorDialog = true
                 abonoViewModel.resetResult()
             }
 
             is AbonoResult.Error -> {
                 showLoadingDialog = false
-                errorMessage = abonoResult.message
+                errorMessage = result.message
                 showErrorDialog = true
                 abonoViewModel.resetResult()
             }
 
             else -> {}
-
         }
     }
 
@@ -329,6 +326,7 @@ fun AbonosFormScreen(
                         // 🔥 seguir sin imprimir
                         showPrinterErrorDialog = false
                         showLoadingDialog = true
+                        //pendingAbono = true
 
                         scope.launch {
 
