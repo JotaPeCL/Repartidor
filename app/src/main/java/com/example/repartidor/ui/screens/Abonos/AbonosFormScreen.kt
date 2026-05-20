@@ -3,11 +3,13 @@ package com.example.repartidor.ui.screens.Abonos
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -28,11 +30,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.repartidor.data.local.SessionManager
+import com.example.repartidor.utils.PrintResult
 import com.example.repartidor.viewmodel.AbonoResult
 import com.example.repartidor.viewmodel.AbonoViewModel
 import com.example.repartidor.viewmodel.AbonosFormViewModel
 import kotlinx.coroutines.launch
-
+@androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @Composable
 fun AbonosFormScreen(
     ventaId: Int,
@@ -53,19 +56,37 @@ fun AbonosFormScreen(
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var showLoadingDialog by remember { mutableStateOf(false) }
+    var showPrinterErrorDialog by remember { mutableStateOf(false) }
+    var pendingAbono by remember { mutableStateOf(false) }
 
     LaunchedEffect(abonoResult) {
         when (abonoResult) {
             is AbonoResult.Success -> {
-                showSuccessDialog = true
+
+                showLoadingDialog = false
+
+                val print = abonoViewModel.printResult
+
+                if (print is PrintResult.Success) {
+                    showSuccessDialog = true
+                } else {
+                    // 🔥 error de impresora
+                    showPrinterErrorDialog = true
+                }
+
                 abonoViewModel.resetResult()
             }
+
             is AbonoResult.Error -> {
+                showLoadingDialog = false
                 errorMessage = abonoResult.message
                 showErrorDialog = true
                 abonoViewModel.resetResult()
             }
+
             else -> {}
+
         }
     }
 
@@ -179,9 +200,7 @@ fun AbonosFormScreen(
                 TextButton(
                     onClick = {
                         showDialog = false
-
                         scope.launch {
-
                             val usuarioId = sessionManager.getUserId() ?: 0
 
                             if (usuarioId == 0) {
@@ -190,13 +209,20 @@ fun AbonosFormScreen(
                                 return@launch
                             }
 
+                            showLoadingDialog = true
+                            pendingAbono = true
+
                             abonoViewModel.registrarAbono(
                                 ventaId = ventaId,
                                 monto = montoConfirmado,
-                                usuarioId = usuarioId
+                                usuarioId = usuarioId,
+                                clienteNombre = venta!!.info.clienteNombre,
+                                negocio = venta.info.clienteNegocio,
+                                total = venta.info.total,
+                                saldoAnterior = venta.info.saldoPendiente,
+                                imprimir = true
                             )
                         }
-
                     }
                 ) {
                     Text("Confirmar")
@@ -223,23 +249,34 @@ fun AbonosFormScreen(
         )
     }
     if (showSuccessDialog) {
+
+        val print = abonoViewModel.printResult
+
+        val mensaje = when (print) {
+            is PrintResult.Success -> "Abono registrado e impreso correctamente"
+            is PrintResult.NoPrinter -> "Abono registrado (sin impresora)"
+            is PrintResult.BluetoothOff -> "Abono registrado (Bluetooth apagado)"
+            is PrintResult.Error -> "Abono registrado pero error al imprimir"
+            else -> "Abono registrado correctamente"
+        }
+
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showSuccessDialog = false
-                        onSuccess() // 🔥 aquí navegas
+                        onSuccess()
                     }
                 ) {
                     Text("Aceptar")
                 }
             },
             title = {
-                Text("Éxito")
+                Text("Resultado")
             },
             text = {
-                Text("Abono registrado correctamente")
+                Text(mensaje)
             }
         )
     }
@@ -260,6 +297,88 @@ fun AbonosFormScreen(
             },
             text = {
                 Text(errorMessage)
+            }
+        )
+    }
+    if (showLoadingDialog) {
+        AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {},
+            title = {
+                Text("Procesando")
+            },
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text("Conectando con impresora...")
+                }
+            }
+        )
+    }
+
+    if (showPrinterErrorDialog) {
+
+        val print = abonoViewModel.printResult
+
+        AlertDialog(
+            onDismissRequest = { showPrinterErrorDialog = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // 🔥 seguir sin imprimir
+                        showPrinterErrorDialog = false
+                        showLoadingDialog = true
+
+                        scope.launch {
+
+                            val usuarioId = sessionManager.getUserId() ?: 0
+
+                            if (usuarioId == 0) {
+                                showLoadingDialog = false
+                                errorMessage = "Error: usuario no encontrado"
+                                showErrorDialog = true
+                                return@launch
+                            }
+
+                            abonoViewModel.registrarAbono(
+                                ventaId = ventaId,
+                                monto = montoConfirmado,
+                                usuarioId = usuarioId,
+                                clienteNombre = venta!!.info.clienteNombre,
+                                negocio = venta.info.clienteNegocio,
+                                total = venta.info.total,
+                                saldoAnterior = venta.info.saldoPendiente,
+                                imprimir = false // 🔥 clave
+                            )
+                        }
+                    }
+                ) {
+                    Text("Seguir sin imprimir")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        // 🔥 cancelar → regresa a la screen
+                        showPrinterErrorDialog = false
+                    }
+                ) {
+                    Text("Cancelar")
+                }
+            },
+            title = {
+                Text("Impresora no disponible")
+            },
+            text = {
+                Text(
+                    when (print) {
+                        is PrintResult.NoPrinter -> "No hay impresora configurada"
+                        is PrintResult.BluetoothOff -> "Bluetooth apagado"
+                        is PrintResult.Error -> "Error al conectar con impresora"
+                        else -> "No se pudo imprimir"
+                    }
+                )
             }
         )
     }

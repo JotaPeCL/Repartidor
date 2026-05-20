@@ -266,7 +266,12 @@ fun AppNavigation() {
     }
 
     val abonoViewModel = remember {
-        AbonoViewModel(abonoRepository)
+        AbonoViewModel(
+            abonoRepository,
+            printerRepository,
+            printerManager,
+            bluetoothAdapter
+        )
     }
 
     val navController = rememberNavController()

@@ -76,7 +76,6 @@ object TicketBuilder {
             sb.append("------------------------------\n")
             sb.append("PAGO INICIAL: $${String.format("%.2f", abonoInicial)}\n")
             sb.append("SALDO PENDIENTE: $${String.format("%.2f", restante)}\n")
-            sb.append("\n\n")
             sb.append("------------------------------\n")
             sb.append("\n\n")
             sb.append("______________________________\n")
