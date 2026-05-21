@@ -154,6 +154,7 @@ WHERE ventaId = :ventaId
     FROM venta
     WHERE fecha BETWEEN :inicioDia AND :finDia
     AND usuarioId = :usuarioId
+    AND tipoVenta = 'CONTADO'
 """)
     suspend fun getTotalVentasDelDia(
         inicioDia: Long,

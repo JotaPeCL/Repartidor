@@ -4,16 +4,22 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.repartidor.data.local.AbonoDao
 import com.example.repartidor.data.local.DevolucionDetalleDao
+import com.example.repartidor.data.local.RutaDao
+import com.example.repartidor.data.local.UsuarioDao
 import com.example.repartidor.data.local.VentaDao
 import com.example.repartidor.data.local.VentaDetalleDao
 import com.example.repartidor.data.model.ResumenDiaState
+import com.example.repartidor.data.model.RutaEntity
+import com.example.repartidor.data.model.UsuarioEntity
 import java.time.LocalDate
 
 class ResumenDiaRepository(
     private val ventaDao: VentaDao,
     private val abonoDao: AbonoDao,
     private val ventaDetalleDao: VentaDetalleDao,
-    private val devolucionDetalleDao: DevolucionDetalleDao
+    private val devolucionDetalleDao: DevolucionDetalleDao,
+    private val usuarioDao: UsuarioDao,      // 👈 NUEVO
+    private val rutaDao: RutaDao             // 👈 NUEVO
 ) {
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -44,5 +50,13 @@ class ResumenDiaRepository(
             productosVendidos = productosVendidos,
             productosDevueltos = productosDevueltos
         )
+    }
+
+    suspend fun getUsuarioByUsername(username: String): UsuarioEntity? {
+        return usuarioDao.getByUsername(username)
+    }
+
+    suspend fun getRutaByUsuarioId(usuarioId: Int): RutaEntity? {
+        return rutaDao.getByUsuarioId(usuarioId)
     }
 }

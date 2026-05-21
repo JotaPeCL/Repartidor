@@ -1,5 +1,6 @@
 package com.example.repartidor.viewmodel
 
+import android.bluetooth.BluetoothAdapter
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -12,8 +13,14 @@ import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.model.InventarioItem
 import com.example.repartidor.data.model.ResumenDiaState
 import com.example.repartidor.data.repository.InventarioRepository
+import com.example.repartidor.data.repository.PrinterRepository
 import com.example.repartidor.data.repository.ResumenDiaRepository
+import com.example.repartidor.utils.PrintResult
+import com.example.repartidor.utils.PrinterManager
+import com.example.repartidor.utils.ResumenTicketBuilder
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -67,4 +74,82 @@ class ResumenDiaViewModel(
 
         return inventarioRepository.obtenerInventario(username)
     }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun obtenerInfoEncabezado(): Triple<String, String, String> {
+
+        val username = sessionManager.getUser() ?: return Triple("-", "-", "-")
+
+        val usuario = repository.getUsuarioByUsername(username)
+            ?: return Triple("-", "-", "-")
+
+        val ruta = repository.getRutaByUsuarioId(usuario.id)
+
+        val nombreCompleto = "${usuario.firstName} ${usuario.lastName}"
+        val nombreRuta = ruta?.nombre ?: "Sin ruta"
+
+        val fecha = LocalDate.now().toString()
+
+        return Triple(nombreCompleto, nombreRuta, fecha)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun generarTicket(
+        imprimirProductos: Boolean,
+        imprimirDinero: Boolean,
+        imprimirInventario: Boolean,
+        imprimirDevoluciones: Boolean,
+        onResult: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+
+            // 🔹 encabezado
+            val (nombreUsuario, ruta, fecha) = obtenerInfoEncabezado()
+
+            // 🔹 inventario (solo si se necesita)
+            val inventario = if (imprimirInventario) {
+                obtenerInventarioParaImpresion()
+            } else {
+                emptyList()
+            }
+
+            // 🔹 construir ticket
+            val ticket = ResumenTicketBuilder.build(
+                state = state,
+                inventario = inventario,
+                nombreUsuario = nombreUsuario,
+                ruta = ruta,
+                fecha = fecha,
+                imprimirProductos = imprimirProductos,
+                imprimirDinero = imprimirDinero,
+                imprimirInventario = imprimirInventario,
+                imprimirDevoluciones = imprimirDevoluciones
+            )
+
+            onResult(ticket)
+        }
+    }
+
+    @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+    fun imprimirTicket(
+        ticket: String,
+        printerManager: PrinterManager,
+        printerRepository: PrinterRepository,
+        adapter: BluetoothAdapter?,
+        onResult: (PrintResult) -> Unit
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+
+            val device = adapter?.let {
+                printerRepository.getSavedPrinter(it)
+            }
+
+            val result = printerManager.print(device, ticket)
+
+            withContext(Dispatchers.Main) {
+                onResult(result)
+            }
+        }
+    }
+
 }

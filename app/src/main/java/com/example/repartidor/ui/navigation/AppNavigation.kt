@@ -282,7 +282,9 @@ fun AppNavigation() {
             db.ventaDao(),
             db.abonoDao(),
             db.ventaDetalleDao(),
-            db.devolucionDetalleDao()
+            db.devolucionDetalleDao(),
+            db.usuarioDao(),
+            db.rutaDao()
         )
     }
 
@@ -617,6 +619,9 @@ fun AppNavigation() {
         composable(Routes.ResumenDia.route) {
             ResumenDiaScreen(
                 viewModel = resumenDiaViewModel,
+                printerManager,
+                printerRepository,
+                bluetoothAdapter,
                 onBack = {
                     navController.popBackStack()
                 },
