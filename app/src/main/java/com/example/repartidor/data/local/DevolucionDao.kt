@@ -24,4 +24,20 @@ interface DevolucionDao {
 
     @Insert
     suspend fun insertarDetalles(detalles: List<DevolucionDetalleEntity>)
+
+    @Query("""
+    SELECT * FROM devoluciones 
+    WHERE sincronizado = 0 
+    AND fecha BETWEEN :inicio AND :fin
+""")
+    suspend fun getDevolucionesNoSincronizadas(inicio: Long, fin: Long): List<DevolucionEntity>
+
+    @Query("""
+        UPDATE devoluciones 
+        SET sincronizado = 1 
+        WHERE uuid = :uuid
+    """)
+    suspend fun marcarSincronizado(uuid: String)
+
+
 }

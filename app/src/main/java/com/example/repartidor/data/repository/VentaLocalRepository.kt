@@ -7,6 +7,9 @@ import com.example.repartidor.data.model.CarritoItem
 import com.example.repartidor.data.model.ClienteEntity
 import com.example.repartidor.data.model.VentaDetalleEntity
 import com.example.repartidor.data.model.VentaEntity
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 class VentaLocalRepository(
@@ -83,7 +86,7 @@ class VentaLocalRepository(
                 ventaUuid = ventaUuid,
                 usuarioId = usuarioId,
                 monto = abonoInicial,
-                fecha = System.currentTimeMillis().toString(),
+                fecha = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()),
                 sincronizado = false
             )
 

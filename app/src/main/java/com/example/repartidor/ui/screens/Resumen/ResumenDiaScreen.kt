@@ -26,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.example.repartidor.data.repository.PrinterRepository
 import com.example.repartidor.utils.PrintResult
 import com.example.repartidor.utils.PrinterManager
+import com.example.repartidor.viewmodel.CierreMiniBodegaViewModel
 import com.example.repartidor.viewmodel.ResumenDiaViewModel
 @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -49,6 +51,7 @@ import com.example.repartidor.viewmodel.ResumenDiaViewModel
 @Composable
 fun ResumenDiaScreen(
     viewModel: ResumenDiaViewModel,
+    cerrarMiniBodegaViewModel: CierreMiniBodegaViewModel,
     printerManager: PrinterManager,
     printerRepository: PrinterRepository,
     bluetoothAdapter: BluetoothAdapter?,
@@ -67,8 +70,62 @@ fun ResumenDiaScreen(
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showLoadingDialog by remember { mutableStateOf(false) }
     var showResultDialog by remember { mutableStateOf(false) }
-
+    var showCerrarDiaDialog by remember { mutableStateOf(false) }
+    var textoConfirmacion by remember { mutableStateOf("") }
+    var isClosing by remember { mutableStateOf(false) }
+    var errorCierre by remember { mutableStateOf<String?>(null) }
+    var successCierre by remember { mutableStateOf(false) }
     var mensajeResultado by remember { mutableStateOf("") }
+
+    fun getInicioDelDia6AM(): Long {
+        val now = java.time.ZonedDateTime.now()
+        val inicio = now
+            .withHour(6)
+            .withMinute(0)
+            .withSecond(0)
+            .withNano(0)
+
+        // Si aún no son las 6 AM, usar las 6 AM del día anterior
+        return if (now.isBefore(inicio)) {
+            inicio.minusDays(1).toInstant().toEpochMilli()
+        } else {
+            inicio.toInstant().toEpochMilli()
+        }
+    }
+    fun getFechaHoy(): String {
+        return java.time.LocalDate.now().toString() // yyyy-MM-dd
+    }
+    val inicioDia = remember { getInicioDelDia6AM() }
+    val fechaHoy = remember { getFechaHoy() }
+
+    fun ejecutarCierre() {
+        isClosing = true
+
+        viewModel.syncFinalDelDia(
+            inicio = inicioDia,
+            fin = System.currentTimeMillis(),
+            fechaHoy = fechaHoy,
+
+            onSuccess = {
+                cerrarMiniBodegaViewModel.cerrarMiniBodega(
+                    onSuccess = {
+                        isClosing = false
+                        successCierre = true
+                    },
+                    onError = { error ->
+                        isClosing = false
+                        errorCierre = error
+                    }
+                )
+            },
+
+            onError = { error ->
+                isClosing = false
+                errorCierre = error
+            }
+        )
+    }
+
 
     LaunchedEffect(Unit) {
         viewModel.cargarResumen()
@@ -229,6 +286,15 @@ fun ResumenDiaScreen(
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Button(
+                    onClick = { showCerrarDiaDialog = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Finalizar el día")
+                }
+
             }
         }
     }
@@ -325,6 +391,107 @@ fun ResumenDiaScreen(
             }
         )
     }
+    if (showCerrarDiaDialog) {
+        AlertDialog(
+            onDismissRequest = { showCerrarDiaDialog = false },
+            title = { Text("Cerrar día") },
+            text = {
+                Column {
+                    Text("Esta acción cerrará el día y ya no podrás realizar ventas, abonos ni devoluciones.")
 
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text("Escribe 'Aceptar' para confirmar:")
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = textoConfirmacion,
+                        onValueChange = { textoConfirmacion = it },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCerrarDiaDialog = false
+                        ejecutarCierre()
+
+                    },
+                    enabled = textoConfirmacion == "Aceptar"
+                ) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showCerrarDiaDialog = false
+                        textoConfirmacion = ""
+                    }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+    if (isClosing) {
+        AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {},
+            title = { Text("Cerrando mini bodega") },
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Enviando inventario...")
+                }
+            }
+        )
+    }
+    if (errorCierre != null) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Error al cerrar día") },
+            text = { Text(errorCierre!!) },
+
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        errorCierre = null
+                        ejecutarCierre() // 🔥 REINTENTAR
+                    }
+                ) {
+                    Text("Reintentar")
+                }
+            },
+
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        errorCierre = null
+                    }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+    if (successCierre) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Éxito") },
+            text = { Text("Inventario enviado correctamente") },
+            confirmButton = {
+                TextButton(onClick = {
+                    successCierre = false
+                    onBack()
+                }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 
 }

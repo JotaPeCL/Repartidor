@@ -186,4 +186,21 @@ WHERE ventaId = :ventaId
         usuarioId: Int
     ): Double
 
+    @Query("""
+    SELECT * FROM venta 
+    WHERE sincronizado = 0 
+    AND fecha BETWEEN :inicio AND :fin
+""")
+    suspend fun getVentasNoSincronizadas(inicio: Long, fin: Long): List<VentaEntity>
+
+    @Query("SELECT * FROM venta WHERE sincronizado = 0")
+    suspend fun obtenerVentasNoSincronizadas(): List<VentaEntity>
+
+    @Query("""
+        UPDATE venta 
+        SET sincronizado = 1 
+        WHERE uuid = :uuid
+    """)
+    suspend fun marcarSincronizado(uuid: String)
+
 }

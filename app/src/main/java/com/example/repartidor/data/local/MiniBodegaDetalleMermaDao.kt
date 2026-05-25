@@ -16,4 +16,10 @@ interface MiniBodegaDetalleMermaDao {
 
     @Insert
     suspend fun insertarMerma(merma: MiniBodegaDetalleMermaEntity)
+
+    @Query("""
+    SELECT * FROM mini_bodega_detalle_merma 
+    WHERE devolucionUuid IN (:uuids)
+""")
+    suspend fun getMermasByDevolucionUuids(uuids: List<String>): List<MiniBodegaDetalleMermaEntity>
 }

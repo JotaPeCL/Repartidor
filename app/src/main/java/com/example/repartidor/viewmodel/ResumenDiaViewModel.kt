@@ -15,6 +15,7 @@ import com.example.repartidor.data.model.ResumenDiaState
 import com.example.repartidor.data.repository.InventarioRepository
 import com.example.repartidor.data.repository.PrinterRepository
 import com.example.repartidor.data.repository.ResumenDiaRepository
+import com.example.repartidor.data.repository.SyncFinalRepository
 import com.example.repartidor.utils.PrintResult
 import com.example.repartidor.utils.PrinterManager
 import com.example.repartidor.utils.ResumenTicketBuilder
@@ -27,13 +28,17 @@ import java.time.ZoneId
 class ResumenDiaViewModel(
     private val repository: ResumenDiaRepository,
     private val sessionManager: SessionManager,
-    private val inventarioRepository: InventarioRepository
+    private val inventarioRepository: InventarioRepository,
+    private val syncFinalRepository: SyncFinalRepository
 ) : ViewModel() {
 
     var state by mutableStateOf(ResumenDiaState())
         private set
 
     var isLoading by mutableStateOf(false)
+        private set
+
+    var isSyncing by mutableStateOf(false)
         private set
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -149,6 +154,26 @@ class ResumenDiaViewModel(
             withContext(Dispatchers.Main) {
                 onResult(result)
             }
+        }
+    }
+
+    fun syncFinalDelDia(
+        inicio: Long,
+        fin: Long,
+        fechaHoy: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            isSyncing = true
+
+            val result = syncFinalRepository.syncTodo(inicio, fin, fechaHoy)
+
+            isSyncing = false
+
+            result
+                .onSuccess { onSuccess() }
+                .onFailure { onError(it.message ?: "Error en sync") }
         }
     }
 

@@ -31,15 +31,37 @@ interface AbonoDao {
     @Insert
     suspend fun insertAbono(abono: AbonoEntity)
 
-    @Query("""
+    @Query(
+        """
     SELECT IFNULL(SUM(monto), 0.0)
     FROM abono
     WHERE date(fecha) = date(:fecha)
     AND usuarioId = :usuarioId
-""")
+"""
+    )
     suspend fun getTotalAbonosDelDia(
         fecha: String,
         usuarioId: Int
     ): Double
+
+    @Query("""
+    SELECT * FROM abono 
+    WHERE sincronizado = 0 
+    AND fecha BETWEEN :inicio AND :fin
+""")
+    suspend fun getAbonosNoSincronizados(
+        inicio: String,
+        fin: String
+    ): List<AbonoEntity>
+
+
+    @Query(
+        """
+        UPDATE abono 
+        SET sincronizado = 1 
+        WHERE uuid = :uuid
+    """
+    )
+    suspend fun marcarSincronizado(uuid: String)
 
 }

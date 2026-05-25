@@ -15,7 +15,8 @@ interface DevolucionDetalleDao {
     @Query("SELECT * FROM devolucion_detalle WHERE devolucionId = :id")
     suspend fun getByDevolucion(id: Int): List<DevolucionDetalleEntity>
 
-    @Query("""
+    @Query(
+        """
     SELECT 
         (pt.nombre || ' ' || pp.nombre) as nombre,
         SUM(dd.cantidad) as cantidad
@@ -27,10 +28,20 @@ interface DevolucionDetalleDao {
     WHERE d.fecha BETWEEN :inicioDia AND :finDia
     AND d.usuarioId = :usuarioId
     GROUP BY dd.productoVariacionId
-""")
+"""
+    )
     suspend fun getProductosDevueltosDelDia(
         inicioDia: Long,
         finDia: Long,
         usuarioId: Int
     ): List<ProductoResumen>
+
+
+    @Query(
+        """
+    SELECT * FROM devolucion_detalle 
+    WHERE devolucionUuid IN (:uuids)
+"""
+    )
+    suspend fun getDetallesByDevolucionUuids(uuids: List<String>): List<DevolucionDetalleEntity>
 }

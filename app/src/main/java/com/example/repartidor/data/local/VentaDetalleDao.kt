@@ -33,4 +33,12 @@ interface VentaDetalleDao {
         finDia: Long,
         usuarioId: Int
     ): List<ProductoResumen>
+
+    @Query("""
+    SELECT * FROM venta_detalle 
+    WHERE ventaUuid IN (:uuids)
+""")
+    suspend fun getDetallesByVentaUuids(uuids: List<String>): List<VentaDetalleEntity>
+
+
 }

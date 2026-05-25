@@ -80,6 +80,7 @@ import com.example.repartidor.data.repository.AbonoRepository
 import com.example.repartidor.data.repository.AbonosFormRepository
 import com.example.repartidor.data.repository.AbonosRepository
 import com.example.repartidor.data.repository.ResumenDiaRepository
+import com.example.repartidor.data.repository.SyncFinalRepository
 import com.example.repartidor.ui.screens.Abonos.AbonosFormScreen
 import com.example.repartidor.ui.screens.Abonos.AbonosScreen
 import com.example.repartidor.ui.screens.Resumen.ResumenDiaScreen
@@ -287,12 +288,24 @@ fun AppNavigation() {
             db.rutaDao()
         )
     }
+    val syncFinalRepository = remember {
+        SyncFinalRepository(
+            db.ventaDao(),
+            db.ventaDetalleDao(),
+            db.abonoDao(),
+            db.devolucionDao(),
+            db.devolucionDetalleDao(),
+            db.mermaDao(),
+            sessionManager
+        )
+    }
 
     val resumenDiaViewModel = remember {
         ResumenDiaViewModel(
             resumenDiaRepository,
             sessionManager,
-            inventarioRepository
+            inventarioRepository,
+            syncFinalRepository
         )
     }
 
@@ -619,6 +632,7 @@ fun AppNavigation() {
         composable(Routes.ResumenDia.route) {
             ResumenDiaScreen(
                 viewModel = resumenDiaViewModel,
+                cerrarMiniBodegaViewModel = cierreMiniBodegaViewModel,
                 printerManager,
                 printerRepository,
                 bluetoothAdapter,
