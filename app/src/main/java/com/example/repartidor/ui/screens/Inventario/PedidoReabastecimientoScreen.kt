@@ -40,7 +40,6 @@ fun PedidoReabastecimientoScreen(
     carritoViewModel: ReabastecimientoCarritoViewModel,
     onVolver: () -> Unit,
     reabastecimientoProcesoViewModel: ReabastecimientoProcesoViewModel,
-    cierreMiniBodegaViewModel: CierreMiniBodegaViewModel,
     onPedidoCompleto: () -> Unit
 ) {
     var isLoading by remember { mutableStateOf(false) }
@@ -77,39 +76,14 @@ fun PedidoReabastecimientoScreen(
                 reabastecimientoProcesoViewModel.enviarPedido(
                     items = items,
                     onSuccess = {
-                        // 1. El pedido se envió con éxito. Ahora intentamos cerrar la bodega.
-                        cierreMiniBodegaViewModel.cerrarMiniBodega(
-                            onSuccess = {
-                                isLoading = false
-                                carritoViewModel.limpiar()
-                                successTitle = "¡Pedido Enviado!"
-                                successMessage =
-                                    "El pedido de reabastecimiento se ha enviado correctamente y la mini bodega ha sido cerrada."
-                                showSuccessDialog = true
-                            },
-                            onError = { error ->
-                                isLoading = false
-                                // 🔹 IMPORTANTE: Limpiamos el carrito porque el pedido SI se envió con éxito
-                                carritoViewModel.limpiar()
+                        isLoading = false
+                        carritoViewModel.limpiar()
 
-                                // 🔹 Verificamos si el error es porque ya estaba cerrada (Error 400)
-                                if (error.contains("400") || error.contains(
-                                        "ya está cerrada",
-                                        ignoreCase = true
-                                    )
-                                ) {
-                                    successTitle = "Pedido Enviado"
-                                    successMessage =
-                                        "Tu pedido se envió correctamente, pero la mini bodega ya se encontraba cerrada previamente."
-                                    showSuccessDialog =
-                                        true // Mostramos el diálogo de éxito parcial
-                                } else {
-                                    // Si es un error diferente (ej. sin internet al cerrar bodega)
-                                    errorMessage =
-                                        "El pedido se envió con éxito, pero hubo un problema al cerrar la bodega:\n$error"
-                                }
-                            }
-                        )
+                        successTitle = "¡Pedido Enviado!"
+                        successMessage =
+                            "El pedido de reabastecimiento se ha enviado correctamente."
+
+                        showSuccessDialog = true
                     },
                     onError = { error ->
                         // Si falla aquí, el pedido NO se envió.

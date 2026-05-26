@@ -13,5 +13,6 @@ data class MiniBodegaDetalleMermaEntity(
     val cantidad: Double,
     val devolucionId: Int?,
     val devolucionUuid: String?,
-    val createdAt: String
+    val createdAt: String,
+    val sincronizado: Boolean = false
 )

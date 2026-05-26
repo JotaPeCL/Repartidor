@@ -1,5 +1,6 @@
 package com.example.repartidor.ui.screens.Home
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,14 +48,15 @@ fun HomeScreen(
     onIrVentasDia: () -> Unit,
     onIrDevoluciones: () -> Unit,
     onIrAbonos: () -> Unit,
-    onIrResumenDia:()-> Unit
+    onIrResumenDia: () -> Unit
 ) {
     val data = viewModel.homeData
+    val context = LocalContext.current
 
     // ── Estado del diálogo ────────────────────────────────────────────────────
     var showLogoutDialog by remember { mutableStateOf(false) }
     // ─────────────────────────────────────────────────────────────────────────
-
+    val finalDia by sessionManager.finalDiaFlow.collectAsState(initial = false)
     LaunchedEffect(Unit) {
         val username = sessionManager.getUser()
         username?.let { viewModel.cargarDatosPorUsername(it) }
@@ -61,7 +65,7 @@ fun HomeScreen(
     // ── Diálogo de confirmación ───────────────────────────────────────────────
     if (showLogoutDialog) {
         LogoutConfirmDialog(
-            nombre   = data.usuario?.firstName,
+            nombre = data.usuario?.firstName,
             onDismiss = { showLogoutDialog = false },
             onConfirm = {
                 showLogoutDialog = false
@@ -82,9 +86,9 @@ fun HomeScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             HomeHeader(
-                nombre         = data.usuario?.firstName,
-                ruta           = data.ruta?.nombre,
-                vehiculo       = if (data.vehiculo != null)
+                nombre = data.usuario?.firstName,
+                ruta = data.ruta?.nombre,
+                vehiculo = if (data.vehiculo != null)
                     "${data.vehiculo.marca} · ${data.vehiculo.placa}" else null,
                 onCerrarSesion = { showLogoutDialog = true }
             )
@@ -103,7 +107,14 @@ fun HomeScreen(
                     icon = Icons.Default.PointOfSale,
                     accent = AccentIndigo,
                     accentBg = AccentIndigoSoft,
-                    onClick = onIrVenta
+                    onClick = {
+                        if (!finalDia) {
+                            onIrVenta()
+                        } else {
+                            Toast.makeText(context, "El día ya fue finalizado", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -114,7 +125,14 @@ fun HomeScreen(
                     icon = Icons.Default.PersonSearch,
                     accent = AccentBlue,
                     accentBg = AccentBlueSoft,
-                    onClick = onIrClientes
+                    onClick = {
+                        if (!finalDia) {
+                            onIrClientes()
+                        } else {
+                            Toast.makeText(context, "El día ya fue finalizado", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(28.dp))
@@ -128,22 +146,42 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     ActionCard(
-                        modifier  = Modifier.weight(1f),
-                        title     = "Recibir\nAbono",
-                        subtitle  = "Pago de crédito",
-                        icon      = Icons.Default.AttachMoney,
-                        accent    = AccentGreen,
-                        accentBg  = AccentGreenSoft,
-                        onClick   = onIrAbonos
+                        modifier = Modifier.weight(1f),
+                        title = "Recibir\nAbono",
+                        subtitle = "Pago de crédito",
+                        icon = Icons.Default.AttachMoney,
+                        accent = AccentGreen,
+                        accentBg = AccentGreenSoft,
+                        onClick = {
+                            if (!finalDia) {
+                                onIrAbonos()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "El día ya fue finalizado",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
                     )
                     ActionCard(
-                        modifier  = Modifier.weight(1f),
-                        title     = "Control\nDevolución",
-                        subtitle  = "Mermas / Retornos",
-                        icon      = Icons.AutoMirrored.Filled.KeyboardReturn,
-                        accent    = AccentRed,
-                        accentBg  = AccentRedSoft,
-                        onClick   = onIrDevoluciones
+                        modifier = Modifier.weight(1f),
+                        title = "Control\nDevolución",
+                        subtitle = "Mermas / Retornos",
+                        icon = Icons.AutoMirrored.Filled.KeyboardReturn,
+                        accent = AccentRed,
+                        accentBg = AccentRedSoft,
+                        onClick = {
+                            if (!finalDia) {
+                                onIrDevoluciones()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "El día ya fue finalizado",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
                     )
                 }
 
@@ -175,10 +213,10 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 FooterActionRow(
-                    icon     = Icons.Default.Print,
-                    label    = "Impresora Bluetooth",
+                    icon = Icons.Default.Print,
+                    label = "Impresora Bluetooth",
                     sublabel = "Configurar dispositivo",
-                    onClick  = onIrBluetooth
+                    onClick = onIrBluetooth
                 )
 
                 Spacer(modifier = Modifier.height(36.dp))
@@ -314,8 +352,8 @@ private fun LogoutConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = SurfaceWhite,
-        shape            = RoundedCornerShape(24.dp),
+        containerColor = SurfaceWhite,
+        shape = RoundedCornerShape(24.dp),
         icon = {
             Box(
                 modifier = Modifier
@@ -325,30 +363,30 @@ private fun LogoutConfirmDialog(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector        = Icons.Default.ExitToApp,
+                    imageVector = Icons.Default.ExitToApp,
                     contentDescription = null,
-                    tint               = ErrorRed,
-                    modifier           = Modifier.size(26.dp)
+                    tint = ErrorRed,
+                    modifier = Modifier.size(26.dp)
                 )
             }
         },
         title = {
             Text(
-                text       = "¿Cerrar sesión?",
+                text = "¿Cerrar sesión?",
                 fontWeight = FontWeight.Bold,
-                fontSize   = 18.sp,
-                color      = TextPrimary,
-                textAlign  = TextAlign.Center
+                fontSize = 18.sp,
+                color = TextPrimary,
+                textAlign = TextAlign.Center
             )
         },
         text = {
             Text(
-                text      = if (nombre != null)
+                text = if (nombre != null)
                     "Hola, $nombre. ¿Seguro que deseas salir?\nTendrás que iniciar sesión de nuevo."
                 else
                     "¿Seguro que deseas salir?\nTendrás que iniciar sesión de nuevo.",
-                fontSize  = 14.sp,
-                color     = TextMuted,
+                fontSize = 14.sp,
+                color = TextMuted,
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
             )
@@ -356,8 +394,8 @@ private fun LogoutConfirmDialog(
         dismissButton = {
             OutlinedButton(
                 onClick = onDismiss,
-                shape   = RoundedCornerShape(12.dp),
-                colors  = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Cancelar", fontWeight = FontWeight.SemiBold)
@@ -366,17 +404,17 @@ private fun LogoutConfirmDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
-                shape   = RoundedCornerShape(12.dp),
-                colors  = ButtonDefaults.buttonColors(
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
                     containerColor = ErrorRed,
-                    contentColor   = Color.White
+                    contentColor = Color.White
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
-                    imageVector        = Icons.Default.ExitToApp,
+                    imageVector = Icons.Default.ExitToApp,
                     contentDescription = null,
-                    modifier           = Modifier.size(16.dp)
+                    modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("Cerrar sesión", fontWeight = FontWeight.SemiBold)
@@ -411,19 +449,19 @@ private fun HomeHeader(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text       = nombre?.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                        color      = Color.White,
+                        text = nombre?.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                        color = Color.White,
                         fontWeight = FontWeight.Black,
-                        fontSize   = 22.sp
+                        fontSize = 22.sp
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text       = "Hola, ${nombre ?: "Cargando…"}",
-                        color      = Color.White,
+                        text = "Hola, ${nombre ?: "Cargando…"}",
+                        color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize   = 20.sp
+                        fontSize = 20.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -435,26 +473,26 @@ private fun HomeHeader(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text       = "Repartidor activo",
-                            color      = Color.White.copy(alpha = 0.85f),
-                            fontSize   = 13.sp,
+                            text = "Repartidor activo",
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
 
                 IconButton(
-                    onClick  = onCerrarSesion,
+                    onClick = onCerrarSesion,
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
                         .background(Color.White.copy(alpha = 0.15f))
                 ) {
                     Icon(
-                        imageVector        = Icons.Default.ExitToApp,
+                        imageVector = Icons.Default.ExitToApp,
                         contentDescription = "Cerrar sesión",
-                        tint               = Color.White,
-                        modifier           = Modifier.size(20.dp)
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -466,7 +504,11 @@ private fun HomeHeader(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 HeaderChip(Icons.Default.Map, ruta ?: "Sin ruta", Modifier.weight(1f))
-                HeaderChip(Icons.Default.LocalShipping, vehiculo ?: "Sin unidad", Modifier.weight(1f))
+                HeaderChip(
+                    Icons.Default.LocalShipping,
+                    vehiculo ?: "Sin unidad",
+                    Modifier.weight(1f)
+                )
             }
         }
     }
@@ -483,7 +525,13 @@ private fun HeaderChip(icon: ImageVector, label: String, modifier: Modifier = Mo
     ) {
         Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
         Spacer(modifier = Modifier.width(7.dp))
-        Text(text = label, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+        Text(
+            text = label,
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1
+        )
     }
 }
 
@@ -529,10 +577,21 @@ private fun ActionCard(
                     .background(accentBg),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = title, tint = accent, modifier = Modifier.size(22.dp))
+                Icon(
+                    icon,
+                    contentDescription = title,
+                    tint = accent,
+                    modifier = Modifier.size(22.dp)
+                )
             }
             Column {
-                Text(title, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp)
+                Text(
+                    title,
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp
+                )
                 Text(subtitle, color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
             }
         }
@@ -564,14 +623,29 @@ private fun InventoryCard(onClick: () -> Unit) {
                     .background(AccentTealSoft),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Inventory, contentDescription = null, tint = AccentTeal, modifier = Modifier.size(22.dp))
+                Icon(
+                    Icons.Default.Inventory,
+                    contentDescription = null,
+                    tint = AccentTeal,
+                    modifier = Modifier.size(22.dp)
+                )
             }
             Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text("Inventario de camioneta", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(
+                    "Inventario de camioneta",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
                 Text("Ver stock actual", color = TextMuted, fontSize = 12.sp)
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextMuted, modifier = Modifier.size(20.dp))
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
@@ -644,8 +718,8 @@ private fun FooterActionRow(
     onClick: () -> Unit,
     isDestructive: Boolean = false
 ) {
-    val iconColor  = if (isDestructive) ErrorRed else AccentBlue
-    val iconBg     = if (isDestructive) ErrorRedSoft else AccentBlueSoft
+    val iconColor = if (isDestructive) ErrorRed else AccentBlue
+    val iconBg = if (isDestructive) ErrorRedSoft else AccentBlueSoft
     val labelColor = if (isDestructive) ErrorRed else TextPrimary
 
     Card(
@@ -670,18 +744,29 @@ private fun FooterActionRow(
                     .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = label, tint = iconColor, modifier = Modifier.size(19.dp))
+                Icon(
+                    icon,
+                    contentDescription = label,
+                    tint = iconColor,
+                    modifier = Modifier.size(19.dp)
+                )
             }
             Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(label, color = labelColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 Text(sublabel, color = TextMuted, fontSize = 11.sp)
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp))
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFF4F6FB)
 @Composable
-fun HomeScreenPreview() {}
+fun HomeScreenPreview() {
+}

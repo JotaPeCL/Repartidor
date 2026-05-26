@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +48,7 @@ fun InventarioScreen(
 
     // Estado para la búsqueda
     var searchQuery by remember { mutableStateOf("") }
+    val finalDia by sessionManager.finalDiaFlow.collectAsState(initial = false)
 
     // Lista filtrada reactiva
     val filteredList by remember(searchQuery, lista) {
@@ -78,39 +80,42 @@ fun InventarioScreen(
             )
         },
         bottomBar = {
-            Surface(
-                color = SurfaceWhite,
-                shadowElevation = 8.dp,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 20.dp, vertical = 16.dp)
+            if (finalDia) {
+
+                Surface(
+                    color = SurfaceWhite,
+                    shadowElevation = 8.dp,
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ) {
-                    Button(
-                        onClick = onIrReabastecimiento,
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = AccentBlue,
-                            contentColor = Color.White
-                        )
+                            .navigationBarsPadding()
+                            .padding(horizontal = 20.dp, vertical = 16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.LocalShipping,
-                            contentDescription = "Reabastecer",
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "Ir a Reabastecimiento",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
-                        )
+                        Button(
+                            onClick = onIrReabastecimiento,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AccentBlue,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocalShipping,
+                                contentDescription = "Reabastecer",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Ir a Reabastecimiento",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp
+                            )
+                        }
                     }
                 }
             }
@@ -132,7 +137,11 @@ fun InventarioScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 12.dp),
                     placeholder = {
-                        Text("Buscar producto o presentación...", color = TextMuted, fontSize = 14.sp)
+                        Text(
+                            "Buscar producto o presentación...",
+                            color = TextMuted,
+                            fontSize = 14.sp
+                        )
                     },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = "Buscar", tint = TextMuted)
@@ -140,7 +149,11 @@ fun InventarioScreen(
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Borrar", tint = TextMuted)
+                                Icon(
+                                    Icons.Default.Clear,
+                                    contentDescription = "Borrar",
+                                    tint = TextMuted
+                                )
                             }
                         }
                     },
@@ -235,7 +248,12 @@ fun InventarioScreen(
                 // ── LISTA DE INVENTARIO FILTRADA ──
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
+                    contentPadding = PaddingValues(
+                        start = 20.dp,
+                        end = 20.dp,
+                        top = 8.dp,
+                        bottom = 24.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredList) { item ->

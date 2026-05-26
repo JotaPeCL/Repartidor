@@ -2,6 +2,7 @@ package com.example.repartidor.data.local
 
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -20,6 +21,7 @@ class SessionManager(private val context: Context) {
         val USERNAME_KEY = stringPreferencesKey("username")
         val MINIBODEGA_ID_KEY = intPreferencesKey("mini_bodega_id")
         val USER_ID_KEY = intPreferencesKey("user_id")
+        val FINAL_DIA_KEY = booleanPreferencesKey("final_dia")
     }
 
     // 🔹 Guardar usuario
@@ -32,6 +34,12 @@ class SessionManager(private val context: Context) {
     suspend fun saveUserId(id: Int) {
         context.dataStore.edit { prefs ->
             prefs[USER_ID_KEY] = id
+        }
+    }
+
+    suspend fun setFinalDia(valor: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[FINAL_DIA_KEY] = valor
         }
     }
 
@@ -61,6 +69,15 @@ class SessionManager(private val context: Context) {
         }
         .map { prefs ->
             prefs[MINIBODEGA_ID_KEY]
+        }
+
+    val finalDiaFlow: Flow<Boolean> = context.dataStore.data
+        .catch { e ->
+            println("❌ Error en DataStore finalDia: ${e.message}")
+            emit(emptyPreferences())
+        }
+        .map { prefs ->
+            prefs[FINAL_DIA_KEY] ?: false
         }
 
     // 🔹 OBTENER DIRECTO (IMPORTANTE)
@@ -98,6 +115,10 @@ class SessionManager(private val context: Context) {
 
     suspend fun getUser(): String? {
         return context.dataStore.data.first()[USERNAME_KEY]
+    }
+
+    suspend fun isFinalDia(): Boolean {
+        return context.dataStore.data.first()[FINAL_DIA_KEY] ?: false
     }
 
 }

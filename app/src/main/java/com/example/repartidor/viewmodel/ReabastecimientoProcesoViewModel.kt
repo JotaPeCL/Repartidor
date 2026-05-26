@@ -9,6 +9,7 @@ import com.example.repartidor.data.remote.PedidoReabastecimientoRequest
 import com.example.repartidor.data.remote.RetrofitClient
 import com.example.repartidor.data.repository.HomeRepository
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class ReabastecimientoProcesoViewModel(
     private val sessionManager: SessionManager,
@@ -46,9 +47,11 @@ class ReabastecimientoProcesoViewModel(
                         cantidad = it.cantidad
                     )
                 }
+                val uuid = UUID.randomUUID().toString()
 
                 // 🔹 Crear request
                 val request = PedidoReabastecimientoRequest(
+                    uuid = uuid,
                     ruta_id = rutaId,
                     productos = productos
                 )

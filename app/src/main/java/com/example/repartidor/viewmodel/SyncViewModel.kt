@@ -45,6 +45,8 @@ class SyncViewModel(
 
                     val today = LocalDate.now().toString()
                     sessionManager.saveLastSync(today)
+
+                    sessionManager.setFinalDia(false)
                 }
 
                 onFinish()
@@ -72,7 +74,7 @@ class SyncViewModel(
 
         val now = LocalDateTime.now()
 
-        // 🔥 Hora límite (5 AM)
+        //  Hora límite (5 AM)
         val todayReset = now.toLocalDate().atTime(5, 0)
 
         // Si aún no son las 5 AM, el "día" sigue siendo el de ayer

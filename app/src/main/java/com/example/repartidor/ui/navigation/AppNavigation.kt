@@ -535,7 +535,6 @@ fun AppNavigation() {
                     navController.popBackStack()
                 },
                 reabastecimientoProcesoViewModel = reabastecimientoProcesoViewModel,
-                cierreMiniBodegaViewModel = cierreMiniBodegaViewModel,
                 onPedidoCompleto = {
                     navController.navigate(Routes.Home.route) {
                         popUpTo(Routes.Home.route) {

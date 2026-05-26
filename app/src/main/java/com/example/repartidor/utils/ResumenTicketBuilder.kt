@@ -20,12 +20,12 @@ object ResumenTicketBuilder {
         val sb = StringBuilder()
 
         sb.append("\n")
-        sb.append("===== RESUMEN DEL DIA =====\n\n")
+        sb.append("===== RESUMEN DEL DIA =====\n")
         sb.append("Usuario: $nombreUsuario\n")
         sb.append("Ruta: $ruta\n")
         sb.append("Fecha: $fecha\n")
 
-        sb.append("\n--------------------------\n\n")
+        //sb.append("\n--------------------------\n\n")
 
         // 🔹 PRODUCTOS VENDIDOS
         if (imprimirProductos) {

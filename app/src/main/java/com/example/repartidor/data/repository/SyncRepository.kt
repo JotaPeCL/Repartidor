@@ -347,6 +347,12 @@ class SyncRepository(
                 { db.miniBodegaDetalleDao().insertAll(it) }
             )
             println("MINI BODEGA DETALLE OK")
+
+            //val eliminadas = db.mermaDao().deleteSincronizados()
+            //println("Mermas eliminadas: $eliminadas")
+            db.mermaDao().deleteSincronizados()
+
+            println("MERMAS SINCRONIZADAS ELIMINADAS")
         }
         /*
         // 🔹 PEDIDOS

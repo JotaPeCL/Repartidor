@@ -22,4 +22,17 @@ interface MiniBodegaDetalleMermaDao {
     WHERE devolucionUuid IN (:uuids)
 """)
     suspend fun getMermasByDevolucionUuids(uuids: List<String>): List<MiniBodegaDetalleMermaEntity>
+
+    @Query("""
+    UPDATE mini_bodega_detalle_merma
+    SET sincronizado = 1
+    WHERE uuid = :uuid
+""")
+    suspend fun marcarSincronizado(uuid: String)
+
+    @Query("""
+    DELETE FROM mini_bodega_detalle_merma
+    WHERE sincronizado = 1
+""")
+    suspend fun deleteSincronizados()
 }

@@ -192,11 +192,15 @@ class SyncFinalRepository(
                 devoluciones.forEach {
                     devolucionDao.marcarSincronizado(it.uuid)
                 }
+                mermas.forEach {
+                    mermaDao.marcarSincronizado(it.uuid)
+                }
             }
 
             // =========================
             // ✅ TODO OK
             // =========================
+            sessionManager.setFinalDia(true)
             Result.success(Unit)
 
         } catch (e: Exception) {

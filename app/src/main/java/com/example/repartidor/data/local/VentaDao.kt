@@ -149,13 +149,15 @@ WHERE ventaId = :ventaId
     @Update
     suspend fun updateVenta(venta: VentaEntity)
 
-    @Query("""
+    @Query(
+        """
     SELECT IFNULL(SUM(total), 0.0)
     FROM venta
     WHERE fecha BETWEEN :inicioDia AND :finDia
     AND usuarioId = :usuarioId
     AND tipoVenta = 'CONTADO'
-""")
+"""
+    )
     suspend fun getTotalVentasDelDia(
         inicioDia: Long,
         finDia: Long,
@@ -186,21 +188,25 @@ WHERE ventaId = :ventaId
         usuarioId: Int
     ): Double
 
-    @Query("""
+    @Query(
+        """
     SELECT * FROM venta 
     WHERE sincronizado = 0 
     AND fecha BETWEEN :inicio AND :fin
-""")
+"""
+    )
     suspend fun getVentasNoSincronizadas(inicio: Long, fin: Long): List<VentaEntity>
 
     @Query("SELECT * FROM venta WHERE sincronizado = 0")
     suspend fun obtenerVentasNoSincronizadas(): List<VentaEntity>
 
-    @Query("""
+    @Query(
+        """
         UPDATE venta 
         SET sincronizado = 1 
         WHERE uuid = :uuid
-    """)
+    """
+    )
     suspend fun marcarSincronizado(uuid: String)
 
 }
