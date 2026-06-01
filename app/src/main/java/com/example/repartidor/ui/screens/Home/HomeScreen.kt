@@ -242,8 +242,8 @@ private fun PrimaryActionCard(
             .fillMaxWidth()
             .height(96.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite), // Fondo blanco recuperado
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) // Un poquito más de elevación para destacar
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier

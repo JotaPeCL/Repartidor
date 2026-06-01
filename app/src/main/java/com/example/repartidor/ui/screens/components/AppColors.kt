@@ -18,13 +18,13 @@ val HeaderGradStart  = Color(0xFF3A6FD8)
 val HeaderGradEnd    = Color(0xFF5B4CF5)
 val WarningOrange    = Color(0xFFF59E0B)
 val WarningOrangeSoft= Color(0xFFFEF3C7)
-// ─────────────────────────────────────────────────────────────────────────────
 val SuccessGreen      = Color(0xFF10B981)
 val SuccessGreenSoft  = Color(0xFFD1FAE5)
-// --- Colores extra para el rediseño (Puedes moverlos a tu archivo de componentes luego) ---
 val AccentGreen = Color(0xFF4CAF50)
 val AccentGreenSoft = Color(0xFFE8F5E9)
 val AccentPurple = Color(0xFF8E24AA)
 val AccentPurpleSoft = Color(0xFFF3E5F5)
 val AccentRed = Color(0xFFD32F2F)
 val AccentRedSoft = Color(0xFFFFE5E5)
+
+val BorderLight = Color(0xFFE5E7EB) // Borde sólido

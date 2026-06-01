@@ -47,7 +47,7 @@ import com.example.repartidor.data.model.DevolucionDetalleEntity
         AbonoEntity::class,
 
     ],
-    version = 7 // IMPORTANTE
+    version = 8 // IMPORTANTE
 
 )
 abstract class AppDatabase : RoomDatabase() {

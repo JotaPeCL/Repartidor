@@ -76,6 +76,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.example.repartidor.data.repository.AbonoRepository
 import com.example.repartidor.data.repository.AbonosFormRepository
 import com.example.repartidor.data.repository.AbonosRepository
@@ -88,6 +90,23 @@ import com.example.repartidor.viewmodel.AbonoViewModel
 import com.example.repartidor.viewmodel.AbonosFormViewModel
 import com.example.repartidor.viewmodel.AbonosViewModel
 import com.example.repartidor.viewmodel.ResumenDiaViewModel
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CloudSync
+import androidx.compose.material.icons.rounded.LocalShipping
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -312,10 +331,26 @@ fun AppNavigation() {
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
 
+    // 🔒 1. ESTADO PARA CONTROLAR LA ANIMACIÓN DE CARGA INICIAL
+    var isAppReady by remember { mutableStateOf(false) }
+
     //estados
     val lastSync by sessionManager.lastSyncFlow.collectAsState(initial = null)
     val userSession by sessionManager.userFlow.collectAsState(initial = null)
     val miniBodegaId by sessionManager.miniBodegaFlow.collectAsState(initial = null)
+
+    // ⏱️ 2. EFECTO QUE ESPERA A QUE CARGUEN LOS DATOS (800ms)
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(800) // Tiempo perfecto para leer datos y mostrar tu animación
+        isAppReady = true
+    }
+
+    // 🛑 3. SI LA APP NO ESTÁ LISTA, MOSTRAMOS LA ANIMACIÓN Y CORTAMOS LA EJECUCIÓN
+    if (!isAppReady) {
+        AppSplashScreen()
+        return // ¡Magia! Esto evita que el NavHost se dibuje con datos vacíos
+    }
+
 
     LaunchedEffect(userSession) {
         println("USER SESSION CAMBIÓ: $userSession")
@@ -665,4 +700,73 @@ fun yaSincronizoHoy(lastSync: String?): Boolean {
     val last = LocalDate.parse(lastSync)
 
     return last == effectiveToday
+}
+
+@Composable
+fun AppSplashScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF4F6FB)), // BackgroundLight
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+
+            // Ícono principal temático (Doble círculo Flat Design)
+            Box(
+                modifier = Modifier
+                    .size(130.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFEBF0FC)), // AccentBlueSoft
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(96.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFFFFFFF)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.LocalShipping,
+                        contentDescription = "Camión de Reparto",
+                        modifier = Modifier.size(50.dp),
+                        tint = Color(0xFF3A6FD8) // AccentBlue
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(48.dp))
+            CircularProgressIndicator(
+                color = Color(0xFFF59E0B), // WarningOrange
+                trackColor = Color(0xFFFEF3C7), // WarningOrangeSoft
+                strokeWidth = 5.dp,
+                modifier = Modifier.size(50.dp)
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // Texto principal
+            Text(
+                text = "Preparando tu ruta...",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF111827) // TextPrimary
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Texto secundario enfocado en el producto
+            Text(
+                text = "Cargado todo lo,\nnecesario.",
+                fontSize = 15.sp,
+                color = Color(0xFF9CA3AF), // TextMuted
+                textAlign = TextAlign.Center,
+                lineHeight = 22.sp
+            )
+        }
+    }
 }
