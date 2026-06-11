@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.repartidor.R
-import com.example.repartidor.viewmodel.LoginViewModel
+import com.example.repartidor.viewmodel.Login.LoginViewModel
 import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
 
 

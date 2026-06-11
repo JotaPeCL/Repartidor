@@ -1,7 +1,7 @@
 package com.example.repartidor.utils
 
-import com.example.repartidor.data.model.InventarioItem
-import com.example.repartidor.data.model.ResumenDiaState
+import com.example.repartidor.data.model.dclass.InventarioItem
+import com.example.repartidor.data.model.dclass.ResumenDiaState
 
 object ResumenTicketBuilder {
 

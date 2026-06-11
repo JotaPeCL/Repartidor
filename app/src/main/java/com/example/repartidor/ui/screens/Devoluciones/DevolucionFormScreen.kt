@@ -40,13 +40,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.repartidor.data.model.CarritoItem
+import com.example.repartidor.data.model.dclass.CarritoItem
 import com.example.repartidor.ui.screens.Cliente.ClienteCard
 import com.example.repartidor.ui.screens.components.StandardTopBar
 import com.example.repartidor.utils.PrintResult
-import com.example.repartidor.viewmodel.CarritoDevolucionViewModel
-import com.example.repartidor.viewmodel.ClienteViewModel
-import com.example.repartidor.viewmodel.DevolucionViewModel
+import com.example.repartidor.viewmodel.Devoluciones.CarritoDevolucionViewModel
+import com.example.repartidor.viewmodel.Cliente.ClienteViewModel
+import com.example.repartidor.viewmodel.Devoluciones.DevolucionViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -513,7 +513,7 @@ fun DevolucionFormScreen(
 
                                 // ── 3. OBSERVACIÓN ──
                                 Text(
-                                    text = "Observación (opcional)",
+                                    text = "Observación",
                                     fontSize = 13.sp,
                                     color = TextMuted,
                                     modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)

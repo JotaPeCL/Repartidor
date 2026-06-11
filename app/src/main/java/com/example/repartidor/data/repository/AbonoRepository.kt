@@ -2,7 +2,7 @@ package com.example.repartidor.data.repository
 
 import androidx.room.withTransaction
 import com.example.repartidor.data.local.AppDatabase
-import com.example.repartidor.data.model.AbonoEntity
+import com.example.repartidor.data.model.entity.AbonoEntity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

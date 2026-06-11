@@ -1,9 +1,8 @@
 package com.example.repartidor.data.repository
 
 import com.example.repartidor.data.local.VentaDao
-import com.example.repartidor.data.model.DetalleVentaUI
-import com.example.repartidor.data.model.VentaUI
-import com.example.repartidor.utils.convertirFechaATimestamp
+import com.example.repartidor.data.model.dclass.DetalleVentaUI
+import com.example.repartidor.data.model.dclass.VentaUI
 
 class VentasDiaRepository(
     private val dao: VentaDao

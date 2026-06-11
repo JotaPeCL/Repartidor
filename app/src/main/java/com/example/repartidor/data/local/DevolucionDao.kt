@@ -4,8 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
-import com.example.repartidor.data.model.DevolucionDetalleEntity
-import com.example.repartidor.data.model.DevolucionEntity
+import com.example.repartidor.data.model.entity.DevolucionDetalleEntity
+import com.example.repartidor.data.model.entity.DevolucionEntity
 
 @Dao
 interface DevolucionDao {

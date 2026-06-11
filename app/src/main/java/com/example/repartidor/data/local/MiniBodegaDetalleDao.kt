@@ -4,9 +4,9 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.repartidor.data.model.MiniBodegaDetalleEntity
-import com.example.repartidor.data.model.ProductoConStock
-import com.example.repartidor.data.model.ProductoTerminadoEntity
+import com.example.repartidor.data.model.entity.MiniBodegaDetalleEntity
+import com.example.repartidor.data.model.dclass.ProductoConStock
+import com.example.repartidor.data.model.entity.ProductoTerminadoEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

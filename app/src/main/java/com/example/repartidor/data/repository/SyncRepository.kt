@@ -1,20 +1,20 @@
 package com.example.repartidor.data.repository
 
 import com.example.repartidor.data.local.AppDatabase
-import com.example.repartidor.data.model.CategoriaProductoEntity
-import com.example.repartidor.data.model.ClienteDiasVisitaEntity
-import com.example.repartidor.data.model.ClienteEntity
-import com.example.repartidor.data.model.MiniBodegaDetalleEntity
-import com.example.repartidor.data.model.MiniBodegaEntity
-import com.example.repartidor.data.model.PedidoReabastecimientoDetalleEntity
-import com.example.repartidor.data.model.PedidoReabastecimientoEntity
-import com.example.repartidor.data.model.PresentacionProductoTerminadoEntity
-import com.example.repartidor.data.model.ProductoTerminadoEntity
-import com.example.repartidor.data.model.ProductoVariacionEntity
-import com.example.repartidor.data.model.RolEntity
-import com.example.repartidor.data.model.RutaEntity
-import com.example.repartidor.data.model.UsuarioEntity
-import com.example.repartidor.data.model.VehiculoEntity
+import com.example.repartidor.data.model.entity.CategoriaProductoEntity
+import com.example.repartidor.data.model.entity.ClienteDiasVisitaEntity
+import com.example.repartidor.data.model.entity.ClienteEntity
+import com.example.repartidor.data.model.entity.MiniBodegaDetalleEntity
+import com.example.repartidor.data.model.entity.MiniBodegaEntity
+import com.example.repartidor.data.model.entity.PedidoReabastecimientoDetalleEntity
+import com.example.repartidor.data.model.entity.PedidoReabastecimientoEntity
+import com.example.repartidor.data.model.entity.PresentacionProductoTerminadoEntity
+import com.example.repartidor.data.model.entity.ProductoTerminadoEntity
+import com.example.repartidor.data.model.entity.ProductoVariacionEntity
+import com.example.repartidor.data.model.entity.RolEntity
+import com.example.repartidor.data.model.entity.RutaEntity
+import com.example.repartidor.data.model.entity.UsuarioEntity
+import com.example.repartidor.data.model.entity.VehiculoEntity
 import com.example.repartidor.data.remote.RetrofitClient
 import com.example.repartidor.utils.AppConfig
 

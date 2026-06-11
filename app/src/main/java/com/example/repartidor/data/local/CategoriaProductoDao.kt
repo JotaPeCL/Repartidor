@@ -1,7 +1,7 @@
 package com.example.repartidor.data.local
 
 import androidx.room.*
-import com.example.repartidor.data.model.CategoriaProductoEntity
+import com.example.repartidor.data.model.entity.CategoriaProductoEntity
 
 @Dao
 interface CategoriaProductoDao {

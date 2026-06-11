@@ -1,9 +1,5 @@
 package com.example.repartidor.ui.screens.Abonos
 
-import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -15,7 +11,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.ReceiptLong
@@ -38,9 +33,9 @@ import androidx.compose.ui.window.Dialog
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.ui.screens.components.StandardTopBar
 import com.example.repartidor.utils.PrintResult
-import com.example.repartidor.viewmodel.AbonoResult
-import com.example.repartidor.viewmodel.AbonoViewModel
-import com.example.repartidor.viewmodel.AbonosFormViewModel
+import com.example.repartidor.viewmodel.Abonos.AbonoResult
+import com.example.repartidor.viewmodel.Abonos.AbonoViewModel
+import com.example.repartidor.viewmodel.Abonos.AbonosFormViewModel
 import kotlinx.coroutines.delay // Importamos el delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat

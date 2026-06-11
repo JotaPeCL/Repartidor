@@ -3,10 +3,10 @@ package com.example.repartidor.data.repository
 import com.example.repartidor.data.local.DevolucionDao
 import com.example.repartidor.data.local.MiniBodegaDetalleDao
 import com.example.repartidor.data.local.MiniBodegaDetalleMermaDao
-import com.example.repartidor.data.model.CarritoItem
-import com.example.repartidor.data.model.DevolucionDetalleEntity
-import com.example.repartidor.data.model.DevolucionEntity
-import com.example.repartidor.data.model.MiniBodegaDetalleMermaEntity
+import com.example.repartidor.data.model.dclass.CarritoItem
+import com.example.repartidor.data.model.entity.DevolucionDetalleEntity
+import com.example.repartidor.data.model.entity.DevolucionEntity
+import com.example.repartidor.data.model.entity.MiniBodegaDetalleMermaEntity
 import java.util.UUID
 import kotlin.collections.map
 

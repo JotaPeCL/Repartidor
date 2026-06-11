@@ -32,11 +32,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.repartidor.data.model.ProductoTerminadoEntity
-import com.example.repartidor.data.model.ReabastecimientoItem
+import com.example.repartidor.data.model.entity.ProductoTerminadoEntity
+import com.example.repartidor.data.model.dclass.ReabastecimientoItem
 import com.example.repartidor.ui.screens.components.StandardTopBar
-import com.example.repartidor.viewmodel.ReabastecimientoCarritoViewModel
-import com.example.repartidor.viewmodel.ReabastecimientoViewModel
+import com.example.repartidor.viewmodel.Inventario.ReabastecimientoCarritoViewModel
+import com.example.repartidor.viewmodel.Inventario.ReabastecimientoViewModel
 import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
 
 @Composable
@@ -407,6 +407,8 @@ private fun VariacionesReabastecimientoDialog(
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
+
+                                    //ver que onda aqui
                                     text = "En Camioneta: ${variacion.stockActual}",
                                     fontSize = 13.sp,
                                     color = TextMuted,

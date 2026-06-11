@@ -1,6 +1,6 @@
 package com.example.repartidor.utils
 
-import com.example.repartidor.data.model.CarritoItem
+import com.example.repartidor.data.model.dclass.CarritoItem
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

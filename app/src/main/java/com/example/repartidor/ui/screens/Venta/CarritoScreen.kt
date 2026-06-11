@@ -40,9 +40,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.repartidor.data.model.dclass.CarritoItem
 import com.example.repartidor.ui.screens.components.StandardTopBar
-import com.example.repartidor.viewmodel.CarritoViewModel
-import com.example.repartidor.viewmodel.VentaProcesoViewModel
+import com.example.repartidor.viewmodel.Venta.CarritoViewModel
+import com.example.repartidor.viewmodel.Venta.VentaProcesoViewModel
 import com.example.repartidor.utils.PrintResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -628,7 +629,7 @@ private fun CarritoBottomBar(
 
 @Composable
 private fun CarritoItemCard(
-    item: com.example.repartidor.data.model.CarritoItem,
+    item: CarritoItem,
     viewModel: CarritoViewModel
 ) {
     Card(

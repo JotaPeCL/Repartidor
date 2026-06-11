@@ -32,7 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.example.repartidor.viewmodel.ClienteViewModel
+import com.example.repartidor.viewmodel.Cliente.ClienteViewModel
 import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
 
 @OptIn(ExperimentalMaterial3Api::class)

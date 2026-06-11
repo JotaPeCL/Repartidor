@@ -4,16 +4,16 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
-import com.example.repartidor.data.model.AbonoEntity
-import com.example.repartidor.data.model.ClienteEntity
-import com.example.repartidor.data.model.MiniBodegaDetalleEntity
-import com.example.repartidor.data.model.PresentacionProductoTerminadoEntity
-import com.example.repartidor.data.model.ProductoVariacionEntity
-import com.example.repartidor.data.model.ProductoVenta
-import com.example.repartidor.data.model.VentaCredito
-import com.example.repartidor.data.model.VentaDetalleEntity
-import com.example.repartidor.data.model.VentaEntity
-import com.example.repartidor.data.model.VentaInfo
+import com.example.repartidor.data.model.entity.AbonoEntity
+import com.example.repartidor.data.model.entity.ClienteEntity
+import com.example.repartidor.data.model.entity.MiniBodegaDetalleEntity
+import com.example.repartidor.data.model.entity.PresentacionProductoTerminadoEntity
+import com.example.repartidor.data.model.entity.ProductoVariacionEntity
+import com.example.repartidor.data.model.dclass.ProductoVenta
+import com.example.repartidor.data.model.dclass.VentaCredito
+import com.example.repartidor.data.model.entity.VentaDetalleEntity
+import com.example.repartidor.data.model.entity.VentaEntity
+import com.example.repartidor.data.model.dclass.VentaInfo
 
 @Dao
 interface VentaDao {

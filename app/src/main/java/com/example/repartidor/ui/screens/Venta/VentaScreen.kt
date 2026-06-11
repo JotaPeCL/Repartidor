@@ -33,12 +33,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.repartidor.data.model.CarritoItem
-import com.example.repartidor.data.model.ProductoTerminadoEntity
+import com.example.repartidor.data.model.dclass.CarritoItem
+import com.example.repartidor.data.model.entity.ProductoTerminadoEntity
 import com.example.repartidor.ui.screens.components.StandardTopBar
-import com.example.repartidor.viewmodel.CarritoViewModel
-import com.example.repartidor.viewmodel.VentaProcesoViewModel
-import com.example.repartidor.viewmodel.VentaViewModel
+import com.example.repartidor.viewmodel.Venta.CarritoViewModel
+import com.example.repartidor.viewmodel.Venta.VentaProcesoViewModel
+import com.example.repartidor.viewmodel.Venta.VentaViewModel
 import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
 
 @Composable

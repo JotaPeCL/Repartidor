@@ -1,8 +1,8 @@
 package com.example.repartidor.data.repository
 
 import com.example.repartidor.data.local.MiniBodegaDetalleDao
-import com.example.repartidor.data.model.ProductoConStock
-import com.example.repartidor.data.model.ProductoTerminadoEntity
+import com.example.repartidor.data.model.dclass.ProductoConStock
+import com.example.repartidor.data.model.entity.ProductoTerminadoEntity
 import kotlinx.coroutines.flow.Flow
 
 class DevolucionRepository(

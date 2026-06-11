@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.repartidor.viewmodel.SyncViewModel
+import com.example.repartidor.viewmodel.Login.SyncViewModel
 import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
 
 

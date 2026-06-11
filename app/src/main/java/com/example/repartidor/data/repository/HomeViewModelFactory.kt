@@ -2,7 +2,7 @@ package com.example.repartidor.data.repository
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.repartidor.viewmodel.HomeViewModel
+import com.example.repartidor.viewmodel.Home.HomeViewModel
 
 class HomeViewModelFactory(
     private val repository: HomeRepository

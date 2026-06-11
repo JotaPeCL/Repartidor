@@ -27,8 +27,8 @@ import androidx.compose.ui.window.Dialog
 import com.example.repartidor.data.repository.PrinterRepository
 import com.example.repartidor.utils.PrintResult
 import com.example.repartidor.utils.PrinterManager
-import com.example.repartidor.viewmodel.CierreMiniBodegaViewModel
-import com.example.repartidor.viewmodel.ResumenDiaViewModel
+import com.example.repartidor.viewmodel.Resumen.CierreMiniBodegaViewModel
+import com.example.repartidor.viewmodel.Resumen.ResumenDiaViewModel
 import com.example.repartidor.ui.screens.components.*
 import kotlinx.coroutines.delay
 

@@ -3,8 +3,8 @@ package com.example.repartidor.data.repository
 import com.example.repartidor.data.local.MiniBodegaDao
 import com.example.repartidor.data.local.MiniBodegaDetalleDao
 import com.example.repartidor.data.local.SessionManager
-import com.example.repartidor.data.remote.CerrarMiniBodegaRequest
-import com.example.repartidor.data.remote.MiniBodegaDetalleRequest
+import com.example.repartidor.data.remote.request.CerrarMiniBodegaRequest
+import com.example.repartidor.data.remote.request.MiniBodegaDetalleRequest
 import com.example.repartidor.data.remote.RetrofitClient
 
 class MiniBodegaRepository2(

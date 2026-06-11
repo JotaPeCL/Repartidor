@@ -3,8 +3,8 @@ package com.example.repartidor.data.local
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.example.repartidor.data.model.DevolucionDetalleEntity
-import com.example.repartidor.data.model.ProductoResumen
+import com.example.repartidor.data.model.entity.DevolucionDetalleEntity
+import com.example.repartidor.data.model.dclass.ProductoResumen
 
 @Dao
 interface DevolucionDetalleDao {

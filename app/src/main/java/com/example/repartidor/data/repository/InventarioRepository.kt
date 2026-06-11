@@ -1,7 +1,7 @@
 package com.example.repartidor.data.repository
 
 import com.example.repartidor.data.local.AppDatabase
-import com.example.repartidor.data.model.InventarioItem
+import com.example.repartidor.data.model.dclass.InventarioItem
 
 class InventarioRepository(private val db: AppDatabase) {
 

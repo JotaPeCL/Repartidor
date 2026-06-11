@@ -1,7 +1,7 @@
 package com.example.repartidor.data.repository
 
 import com.example.repartidor.data.local.ClienteDao
-import com.example.repartidor.data.model.ClienteEntity
+import com.example.repartidor.data.model.entity.ClienteEntity
 
 class ClienteRepository(
     private val clienteDao: ClienteDao

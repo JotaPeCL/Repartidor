@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.utils.PrinterManager
-import com.example.repartidor.viewmodel.VentasDiaViewModel
+import com.example.repartidor.viewmodel.VentasDia.VentasDiaViewModel
 
 class VentasDiaViewModelFactory(
     private val repository: VentasDiaRepository,

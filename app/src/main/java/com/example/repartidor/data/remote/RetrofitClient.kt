@@ -1,5 +1,24 @@
 package com.example.repartidor.data.remote
 
+import com.example.repartidor.data.remote.dto.CategoriaProductoDTO
+import com.example.repartidor.data.remote.dto.ClienteDiasVisitaDto
+import com.example.repartidor.data.remote.dto.ClienteDto
+import com.example.repartidor.data.remote.dto.MiniBodegaDetalleDto
+import com.example.repartidor.data.remote.dto.MiniBodegaDto
+import com.example.repartidor.data.remote.dto.PedidoReabastecimientoDetalleDto
+import com.example.repartidor.data.remote.dto.PedidoReabastecimientoDto
+import com.example.repartidor.data.remote.dto.PresentacionProductoTerminadoDTO
+import com.example.repartidor.data.remote.dto.ProductoTerminadoDTO
+import com.example.repartidor.data.remote.dto.ProductoVariacionDTO
+import com.example.repartidor.data.remote.dto.RolDto
+import com.example.repartidor.data.remote.dto.RutaDto
+import com.example.repartidor.data.remote.dto.UsuarioDto
+import com.example.repartidor.data.remote.dto.VehiculoDto
+import com.example.repartidor.data.remote.request.CerrarMiniBodegaRequest
+import com.example.repartidor.data.remote.request.PedidoReabastecimientoRequest
+import com.example.repartidor.data.remote.request.SyncAbonosRequest
+import com.example.repartidor.data.remote.request.SyncDevolucionesRequest
+import com.example.repartidor.data.remote.request.SyncVentasRequest
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

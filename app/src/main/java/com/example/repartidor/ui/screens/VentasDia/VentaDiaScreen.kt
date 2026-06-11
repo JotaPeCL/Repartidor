@@ -29,11 +29,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.repartidor.data.model.VentaUI
+import com.example.repartidor.data.model.dclass.DetalleVentaUI
+import com.example.repartidor.data.model.dclass.VentaUI
 import com.example.repartidor.ui.screens.components.StandardTopBar
 import com.example.repartidor.utils.PrintResult
 import com.example.repartidor.utils.formatearFechaHora
-import com.example.repartidor.viewmodel.VentasDiaViewModel
+import com.example.repartidor.viewmodel.VentasDia.VentasDiaViewModel
 import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
 
 @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
@@ -292,7 +293,7 @@ fun VentaCardRediseñada(
 @Composable
 private fun DetalleVentaDialog(
     venta: VentaUI,
-    detalle: List<com.example.repartidor.data.model.DetalleVentaUI>,
+    detalle: List<DetalleVentaUI>,
     totalAbonos: Double,
     onDismiss: () -> Unit,
     onPrintRequest: () -> Unit

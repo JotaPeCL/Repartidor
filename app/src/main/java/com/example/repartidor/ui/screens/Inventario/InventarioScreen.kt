@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.ui.screens.components.StandardTopBar
-import com.example.repartidor.viewmodel.InventarioViewModel
+import com.example.repartidor.viewmodel.Inventario.InventarioViewModel
 import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
 
 

@@ -3,7 +3,7 @@ package com.example.repartidor.data.local
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.example.repartidor.data.model.MiniBodegaDetalleMermaEntity
+import com.example.repartidor.data.model.entity.MiniBodegaDetalleMermaEntity
 
 @Dao
 interface MiniBodegaDetalleMermaDao {

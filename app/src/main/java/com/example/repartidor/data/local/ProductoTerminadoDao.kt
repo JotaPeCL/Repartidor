@@ -1,7 +1,7 @@
 package com.example.repartidor.data.local
 
 import androidx.room.*
-import com.example.repartidor.data.model.ProductoTerminadoEntity
+import com.example.repartidor.data.model.entity.ProductoTerminadoEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

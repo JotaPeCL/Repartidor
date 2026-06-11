@@ -7,7 +7,7 @@ import androidx.core.app.ActivityCompat
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothManager
-import com.example.repartidor.data.remote.BluetoothState
+import com.example.repartidor.data.remote.request.BluetoothState
 import androidx.core.content.edit
 
 fun guardarImpresora(context: Context, device: BluetoothDevice) {

@@ -1,7 +1,7 @@
 package com.example.repartidor.data.repository
 
 import com.example.repartidor.data.local.AppDatabase
-import com.example.repartidor.data.model.UsuarioEntity
+import com.example.repartidor.data.model.entity.UsuarioEntity
 
 class UsuarioRepository(private val db: AppDatabase) {
 

@@ -8,9 +8,9 @@ import com.example.repartidor.data.local.RutaDao
 import com.example.repartidor.data.local.UsuarioDao
 import com.example.repartidor.data.local.VentaDao
 import com.example.repartidor.data.local.VentaDetalleDao
-import com.example.repartidor.data.model.ResumenDiaState
-import com.example.repartidor.data.model.RutaEntity
-import com.example.repartidor.data.model.UsuarioEntity
+import com.example.repartidor.data.model.dclass.ResumenDiaState
+import com.example.repartidor.data.model.entity.RutaEntity
+import com.example.repartidor.data.model.entity.UsuarioEntity
 import java.time.LocalDate
 
 class ResumenDiaRepository(

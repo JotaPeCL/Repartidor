@@ -1,7 +1,7 @@
 package com.example.repartidor.data.repository
 
 import com.example.repartidor.data.local.VentaDao
-import com.example.repartidor.data.model.VentaDetalleCompleta
+import com.example.repartidor.data.model.dclass.VentaDetalleCompleta
 
 class AbonosFormRepository(
     private val ventaDao: VentaDao

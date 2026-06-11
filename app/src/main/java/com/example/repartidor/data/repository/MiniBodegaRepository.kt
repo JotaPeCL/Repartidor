@@ -1,7 +1,7 @@
 package com.example.repartidor.data.repository
 
 import com.example.repartidor.data.local.AppDatabase
-import com.example.repartidor.data.model.MiniBodegaEntity
+import com.example.repartidor.data.model.entity.MiniBodegaEntity
 
 class MiniBodegaRepository(private val db: AppDatabase) {
 

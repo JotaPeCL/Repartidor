@@ -25,8 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.repartidor.data.model.VentaCredito
-import com.example.repartidor.viewmodel.AbonosViewModel
+import com.example.repartidor.data.model.dclass.VentaCredito
+import com.example.repartidor.viewmodel.Abonos.AbonosViewModel
 import com.example.repartidor.ui.screens.components.StandardTopBar
 import com.example.repartidor.ui.screens.components.* // Colores del tema
 import kotlinx.coroutines.delay

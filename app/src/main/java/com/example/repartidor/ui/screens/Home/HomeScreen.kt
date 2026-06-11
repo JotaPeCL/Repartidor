@@ -31,7 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.repartidor.data.local.SessionManager
-import com.example.repartidor.viewmodel.HomeViewModel
+import com.example.repartidor.viewmodel.Home.HomeViewModel
 import com.example.repartidor.ui.screens.components.* // Aquí están los colores del tema
 
 // -----------------------------------------------------------------------------------------

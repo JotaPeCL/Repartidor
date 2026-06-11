@@ -2,11 +2,11 @@ package com.example.repartidor.data.repository
 
 import com.example.repartidor.data.local.ClienteDao
 import com.example.repartidor.data.local.VentaDao
-import com.example.repartidor.data.model.AbonoEntity
-import com.example.repartidor.data.model.CarritoItem
-import com.example.repartidor.data.model.ClienteEntity
-import com.example.repartidor.data.model.VentaDetalleEntity
-import com.example.repartidor.data.model.VentaEntity
+import com.example.repartidor.data.model.entity.AbonoEntity
+import com.example.repartidor.data.model.dclass.CarritoItem
+import com.example.repartidor.data.model.entity.ClienteEntity
+import com.example.repartidor.data.model.entity.VentaDetalleEntity
+import com.example.repartidor.data.model.entity.VentaEntity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

@@ -37,7 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
-import com.example.repartidor.data.remote.BluetoothState
+import com.example.repartidor.data.remote.request.BluetoothState
 import com.example.repartidor.utils.getBluetoothState
 import com.example.repartidor.utils.guardarImpresora
 import com.example.repartidor.utils.obtenerDispositivoGuardado
