@@ -6,9 +6,11 @@ import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.model.dclass.ProductoConStock
 import com.example.repartidor.data.model.entity.ProductoTerminadoEntity
 import com.example.repartidor.data.repository.ReabastecimientoRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
@@ -20,23 +22,31 @@ class ReabastecimientoViewModel(
     private val _productos = MutableStateFlow<List<ProductoTerminadoEntity>>(emptyList())
     val productos: StateFlow<List<ProductoTerminadoEntity>> = _productos
 
-    private var miniBodegaId: Int? = null
+    private val miniBodegaIdFlow = MutableStateFlow<Int?>(null)
 
     init {
+
+        // 🔹 Obtener miniBodegaId
         viewModelScope.launch {
+            miniBodegaIdFlow.value = sessionManager.getMiniBodegaId()
+        }
 
-            miniBodegaId = sessionManager.getMiniBodegaId()
-
+        // 🔹 Escuchar productos
+        viewModelScope.launch {
             repository.getProductos().collect {
                 _productos.value = it
             }
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun getVariaciones(productoId: Int): Flow<List<ProductoConStock>> {
-
-        val id = miniBodegaId ?: return flowOf(emptyList())
-
-        return repository.getVariaciones(productoId, id)
+        return miniBodegaIdFlow.flatMapLatest { id ->
+            if (id == null) {
+                flowOf(emptyList())
+            } else {
+                repository.getVariaciones(productoId, id)
+            }
+        }
     }
 }

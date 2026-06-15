@@ -100,7 +100,11 @@ class DevolucionViewModel(
                 // ─────────────────────────────
                 val ticket = TicketDevolucionBuilder.build(
                     items = carrito,
-                    clienteNombre = if (clienteNulo) "Venta rápida" else (clienteNombre ?: "Cliente"),
+                    clienteNombre = when {
+                        clienteNulo -> "Venta rápida"   // ✔ ventas sin cliente
+                        clienteNombre != null -> clienteNombre // ✔ cliente real
+                        else -> null // ❌ no mostrar nada
+                    },
                     motivo = motivo,
                     observacion = observacion,
                     usuario = usuarioNombre,
