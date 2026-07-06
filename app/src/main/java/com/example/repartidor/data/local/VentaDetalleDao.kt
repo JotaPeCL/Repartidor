@@ -40,5 +40,9 @@ interface VentaDetalleDao {
 """)
     suspend fun getDetallesByVentaUuids(uuids: List<String>): List<VentaDetalleEntity>
 
-
+    @Query("""
+DELETE FROM venta_detalle 
+WHERE ventaId IN (:ids)
+""")
+    suspend fun deleteDetallesByVentaIds(ids: List<Int>)
 }

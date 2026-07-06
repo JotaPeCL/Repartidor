@@ -29,8 +29,22 @@ interface ClienteDao {
     suspend fun getClienteById(id: Int): ClienteEntity?
 
     // ── NUEVA CONSULTA ─────────────────────────────────────────────
-    @Query("SELECT * FROM cliente WHERE CAST(id AS TEXT) = :query OR nombre LIKE '%' || :query || '%'")
-    suspend fun buscarPorIdONombre(query: String): List<ClienteEntity>
+    @Query(
+        """
+    SELECT * FROM cliente 
+    WHERE rutaId IN (
+        SELECT id FROM ruta WHERE usuarioId = :userId
+    )
+    AND (
+        CAST(cliente.id AS TEXT) = :query 
+        OR cliente.nombre LIKE '%' || :query || '%'
+    )
+"""
+    )
+    suspend fun buscarPorIdONombre(
+        query: String,
+        userId: Int
+    ): List<ClienteEntity>
 
     @Query("UPDATE cliente SET saldoAdeudo = :nuevoSaldo WHERE id = :clienteId")
     suspend fun actualizarSaldo(clienteId: Int, nuevoSaldo: Double)

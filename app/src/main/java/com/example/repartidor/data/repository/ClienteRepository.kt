@@ -12,7 +12,10 @@ class ClienteRepository(
     }
 
     // ── NUEVA FUNCIÓN ─────────────────────────────────────────────
-    suspend fun buscarClientes(query: String): List<ClienteEntity> {
-        return clienteDao.buscarPorIdONombre(query)
+    suspend fun buscarClientes(
+        query: String,
+        userId: Int
+    ): List<ClienteEntity> {
+        return clienteDao.buscarPorIdONombre(query, userId)
     }
 }

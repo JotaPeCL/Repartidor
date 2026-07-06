@@ -353,7 +353,31 @@ class SyncRepository(
             db.mermaDao().deleteSincronizados()
 
             println("MERMAS SINCRONIZADAS ELIMINADAS")
+
+
+            val limite = System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000)
+
+            // 🔥 VENTAS
+            val ventasIds = db.ventaDao().getVentasParaEliminar(limite)
+
+            if (ventasIds.isNotEmpty()) {
+                db.ventaDetalleDao().deleteDetallesByVentaIds(ventasIds)
+                db.abonoDao().deleteAbonosByVentaIds(ventasIds)
+                db.ventaDao().deleteVentasByIds(ventasIds)
+            }
+
+            // 🔥 DEVOLUCIONES
+            val devolucionesIds = db.devolucionDao().getDevolucionesParaEliminar()
+
+            if (devolucionesIds.isNotEmpty()) {
+                db.devolucionDetalleDao().deleteDetallesDevolucionByIds(devolucionesIds)
+                db.devolucionDao().deleteDevolucionesByIds(devolucionesIds)
+            }
+
+            println("LIMPIEZA DE DATOS ANTIGUOS COMPLETADA")
+
         }
+
         /*
         // 🔹 PEDIDOS
         val pedidosResponse = RetrofitClient.api.getPedidosReabastecimiento(updatedAfter)

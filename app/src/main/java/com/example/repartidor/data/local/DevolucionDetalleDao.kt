@@ -44,4 +44,10 @@ interface DevolucionDetalleDao {
 """
     )
     suspend fun getDetallesByDevolucionUuids(uuids: List<String>): List<DevolucionDetalleEntity>
+
+    @Query("""
+DELETE FROM devolucion_detalle 
+WHERE devolucionId IN (:ids)
+""")
+    suspend fun deleteDetallesDevolucionByIds(ids: List<Int>)
 }

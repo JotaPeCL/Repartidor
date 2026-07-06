@@ -148,7 +148,7 @@ fun AppNavigation() {
     val clienteRepository = remember { ClienteRepository(db.clienteDao()) }
 
     val clienteViewModel: ClienteViewModel = viewModel(
-        factory = ClienteViewModelFactory(clienteRepository)
+        factory = ClienteViewModelFactory(clienteRepository,sessionManager)
     )
     val ventaRepository = remember {
         VentaRepository(

@@ -64,4 +64,9 @@ interface AbonoDao {
     )
     suspend fun marcarSincronizado(uuid: String)
 
+    @Query("""
+DELETE FROM abono 
+WHERE ventaId IN (:ventaIds)
+""")
+    suspend fun deleteAbonosByVentaIds(ventaIds: List<Int>)
 }

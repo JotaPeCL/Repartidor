@@ -47,7 +47,15 @@ class MiniBodegaRepository2(
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Error ${response.code()}"))
+                val errorBody = response.errorBody()?.string()
+
+                val mensaje = if (errorBody != null && errorBody.contains("ya está cerrada")) {
+                    "La minibodega ya está cerrada y los datos ya fueron enviados."
+                } else {
+                    "Error ${response.code()}"
+                }
+
+                Result.failure(Exception(mensaje))
             }
 
         } catch (e: Exception) {

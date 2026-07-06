@@ -5,12 +5,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.model.entity.ClienteEntity
 import com.example.repartidor.data.repository.ClienteRepository
 import kotlinx.coroutines.launch
 
 class ClienteViewModel(
-    private val repository: ClienteRepository
+    private val repository: ClienteRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     var cliente by mutableStateOf<ClienteEntity?>(null)
@@ -26,7 +28,10 @@ class ClienteViewModel(
         if (query.isBlank()) return
 
         viewModelScope.launch {
-            val res = repository.buscarClientes(query.trim())
+
+            val userId = sessionManager.getUserId() ?: return@launch
+
+            val res = repository.buscarClientes(query.trim(), userId)
 
             when {
                 res.isEmpty() -> {
@@ -35,8 +40,6 @@ class ClienteViewModel(
                     error = "Cliente no encontrado"
                 }
                 res.size == 1 -> {
-                    // Seleccionamos automáticamente y también guardamos en resultados
-                    // para que la tarjeta permanezca visible en la pantalla
                     cliente = res.first()
                     resultados = res
                     error = null

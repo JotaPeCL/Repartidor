@@ -39,5 +39,13 @@ interface DevolucionDao {
     """)
     suspend fun marcarSincronizado(uuid: String)
 
+    @Query("""
+SELECT id FROM devoluciones
+WHERE sincronizado = 1
+AND datetime(createdAt) < datetime('now', '-30 day')
+""")
+    suspend fun getDevolucionesParaEliminar(): List<Int>
 
+    @Query("DELETE FROM devoluciones WHERE id IN (:ids)")
+    suspend fun deleteDevolucionesByIds(ids: List<Int>)
 }

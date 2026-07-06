@@ -209,4 +209,17 @@ WHERE ventaId = :ventaId
     )
     suspend fun marcarSincronizado(uuid: String)
 
+    @Query("""
+SELECT id FROM venta
+WHERE sincronizado = 1
+AND CAST(fecha AS INTEGER) < :fechaLimite
+AND NOT (
+    tipoVenta = 'CREDITO' 
+    AND estadoPago != 'PAGADO'
+)
+""")
+    suspend fun getVentasParaEliminar(fechaLimite: Long): List<Int>
+
+    @Query("DELETE FROM venta WHERE id IN (:ids)")
+    suspend fun deleteVentasByIds(ids: List<Int>)
 }
