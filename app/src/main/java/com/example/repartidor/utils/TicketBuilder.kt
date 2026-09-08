@@ -51,9 +51,11 @@ object TicketBuilder {
         items.forEach { item ->
 
             val sub = item.cantidad * item.precioUnitario
+            val precioUnitario = String.format("%.2f", item.precioUnitario)
+            val subtotalStr = String.format("%.2f", sub)
 
-            sb.append("${item.cantidad}x ${item.nombre} - ${item.presentacion}\n")
-            sb.append("    Subtotal: $${String.format("%.2f", sub)}\n")
+            sb.append("${item.cantidad} x ${item.nombre} (${item.presentacion})\n")
+            sb.append("  $$precioUnitario x ${item.cantidad} = $$subtotalStr\n")
         }
 
         sb.append("------------------------------\n")
