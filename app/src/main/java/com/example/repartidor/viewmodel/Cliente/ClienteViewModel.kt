@@ -9,6 +9,7 @@ import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.model.entity.ClienteEntity
 import com.example.repartidor.data.repository.ClienteRepository
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 class ClienteViewModel(
     private val repository: ClienteRepository,
@@ -24,6 +25,19 @@ class ClienteViewModel(
     var error by mutableStateOf<String?>(null)
         private set
 
+    private fun obtenerDiaActual(): String {
+        return when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> "lunes"
+            Calendar.TUESDAY -> "martes"
+            Calendar.WEDNESDAY -> "miercoles"
+            Calendar.THURSDAY -> "jueves"
+            Calendar.FRIDAY -> "viernes"
+            Calendar.SATURDAY -> "sabado"
+            Calendar.SUNDAY -> "domingo"
+            else -> ""
+        }
+    }
+
     fun buscarCliente(query: String) {
         if (query.isBlank()) return
 
@@ -31,19 +45,27 @@ class ClienteViewModel(
 
             val userId = sessionManager.getUserId() ?: return@launch
 
-            val res = repository.buscarClientes(query.trim(), userId)
+            val diaActual = obtenerDiaActual()
+
+            val res = repository.buscarClientes(
+                query = query.trim(),
+                userId = userId,
+                diaSemana = diaActual
+            )
 
             when {
                 res.isEmpty() -> {
                     cliente = null
                     resultados = emptyList()
-                    error = "Cliente no encontrado"
+                    error = "Cliente no encontrado para hoy"
                 }
+
                 res.size == 1 -> {
                     cliente = res.first()
                     resultados = res
                     error = null
                 }
+
                 else -> {
                     cliente = null
                     resultados = res

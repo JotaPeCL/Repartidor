@@ -14,8 +14,13 @@ class ClienteRepository(
     // ── NUEVA FUNCIÓN ─────────────────────────────────────────────
     suspend fun buscarClientes(
         query: String,
-        userId: Int
+        userId: Int,
+        diaSemana: String
     ): List<ClienteEntity> {
-        return clienteDao.buscarPorIdONombre(query, userId)
+        return clienteDao.buscarPorIdNombreYDia(
+            query = query,
+            userId = userId,
+            diaSemana = diaSemana
+        )
     }
 }

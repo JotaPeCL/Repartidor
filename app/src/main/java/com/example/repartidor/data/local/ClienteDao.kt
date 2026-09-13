@@ -31,19 +31,28 @@ interface ClienteDao {
     // ── NUEVA CONSULTA ─────────────────────────────────────────────
     @Query(
         """
-    SELECT * FROM cliente 
-    WHERE rutaId IN (
-        SELECT id FROM ruta WHERE usuarioId = :userId
+    SELECT DISTINCT cliente.*
+    FROM cliente
+    INNER JOIN cliente_dias_visita
+        ON cliente_dias_visita.clienteId = cliente.id
+    WHERE cliente.rutaId IN (
+        SELECT id 
+        FROM ruta 
+        WHERE usuarioId = :userId
     )
+    AND cliente_dias_visita.diaSemana = :diaSemana
     AND (
-        CAST(cliente.id AS TEXT) = :query 
+        CAST(cliente.id AS TEXT) = :query
         OR cliente.nombre LIKE '%' || :query || '%'
+        OR cliente.nombreNegocio LIKE '%' || :query || '%'
     )
-"""
+    ORDER BY cliente.nombre ASC
+    """
     )
-    suspend fun buscarPorIdONombre(
+    suspend fun buscarPorIdNombreYDia(
         query: String,
-        userId: Int
+        userId: Int,
+        diaSemana: String
     ): List<ClienteEntity>
 
     @Query("UPDATE cliente SET saldoAdeudo = :nuevoSaldo WHERE id = :clienteId")
