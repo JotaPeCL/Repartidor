@@ -105,6 +105,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.repartidor.data.repository.DispositivoRepository
+import com.example.repartidor.ui.screens.login.DispositivoScreen
+import com.example.repartidor.viewmodel.Login.DispositivoViewModel
 
 @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -124,6 +127,15 @@ fun AppNavigation() {
     val syncViewModel = remember {
         SyncViewModel(repository, sessionManager)
     }
+
+    val dispositivoRepository = remember {
+        DispositivoRepository()
+    }
+
+    val dispositivoViewModel = remember {
+        DispositivoViewModel(dispositivoRepository)
+    }
+
     val usuarioRepository = remember { UsuarioRepository(db) }
     val miniBodegaRepository = remember { MiniBodegaRepository(db) }
 
@@ -336,6 +348,8 @@ fun AppNavigation() {
     val lastSync by sessionManager.lastSyncFlow.collectAsState(initial = null)
     val userSession by sessionManager.userFlow.collectAsState(initial = null)
     val miniBodegaId by sessionManager.miniBodegaFlow.collectAsState(initial = null)
+    val dispositivoActivado by sessionManager.dispositivoActivadoFlow
+        .collectAsState(initial = false)
 
     // ⏱️ 2. EFECTO QUE ESPERA A QUE CARGUEN LOS DATOS (800ms)
     LaunchedEffect(Unit) {
@@ -355,21 +369,41 @@ fun AppNavigation() {
         println("ultima sincronizacion: $lastSync")
         println("MINI BODEGA ID: $miniBodegaId")
     }
+    LaunchedEffect(dispositivoActivado) {
+        println(
+            "📱 DISPOSITIVO ACTIVADO: $dispositivoActivado"
+        )
+    }
     LaunchedEffect(navController) {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             println("📍 Pantalla actual: ${destination.route}")
         }
     }
 
-    val startDestination = remember(lastSync, userSession) {
+    val startDestination = remember(
+        dispositivoActivado,
+        lastSync,
+        userSession
+    ) {
         when {
+            !dispositivoActivado -> Routes.Dispositivo.route
             !yaSincronizoHoy(lastSync) -> Routes.Sync.route
             userSession.isNullOrEmpty() -> Routes.Login.route
             else -> Routes.Home.route
         }
     }
-    LaunchedEffect(lastSync, userSession) {
+    LaunchedEffect(
+        dispositivoActivado,
+        lastSync,
+        userSession
+    ) {
         when {
+            !dispositivoActivado -> {
+                navController.navigate(Routes.Dispositivo.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+
             !yaSincronizoHoy(lastSync) -> {
                 navController.navigate(Routes.Sync.route) {
                     popUpTo(0) { inclusive = true }
@@ -401,6 +435,20 @@ fun AppNavigation() {
         popExitTransition = { ExitTransition.None }
 
     ) {
+
+        composable(Routes.Dispositivo.route) {
+            DispositivoScreen(
+                viewModel = dispositivoViewModel,
+                sessionManager=sessionManager,
+                onActivacionExitosa = {
+                    navController.navigate(Routes.Sync.route) {
+                        popUpTo(Routes.Dispositivo.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
+        }
 
         composable(Routes.Sync.route) {
             SyncScreen(

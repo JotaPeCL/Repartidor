@@ -1,5 +1,6 @@
 package com.example.repartidor.data.remote
 
+import android.content.Context
 import com.example.repartidor.data.remote.dto.CategoriaProductoDTO
 import com.example.repartidor.data.remote.dto.ClienteDiasVisitaDto
 import com.example.repartidor.data.remote.dto.ClienteDto
@@ -15,6 +16,8 @@ import com.example.repartidor.data.remote.dto.RutaDto
 import com.example.repartidor.data.remote.dto.UsuarioDto
 import com.example.repartidor.data.remote.dto.VehiculoDto
 import com.example.repartidor.data.remote.request.CerrarMiniBodegaRequest
+import com.example.repartidor.data.remote.request.DispositivoActivacionRequest
+import com.example.repartidor.data.remote.request.DispositivoActivacionResponse
 import com.example.repartidor.data.remote.request.PedidoReabastecimientoRequest
 import com.example.repartidor.data.remote.request.SyncAbonosRequest
 import com.example.repartidor.data.remote.request.SyncDevolucionesRequest
@@ -26,19 +29,35 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
+import okhttp3.OkHttpClient
 
 object RetrofitClient {
 
-    private const val BASE_URL = "https://osmit.up.railway.app/movil/"
-    //"http://192.168.1.139:8000/movil/"
+    private const val BASE_URL = //"https://osmit.up.railway.app/movil/"
+    "http://192.168.1.139:8000/movil/"
     //"http://10.0.2.2:8000/movil/"
 
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
+    private lateinit var retrofit: Retrofit
 
-    val api: Api = retrofit.create(Api::class.java)
+    lateinit var api: Api
+        private set
+
+    fun inicializar(context: Context) {
+
+        val client = OkHttpClient.Builder()
+            .addInterceptor(
+                DispositivoAuthInterceptor(context.applicationContext)
+            )
+            .build()
+
+        retrofit = Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        api = retrofit.create(Api::class.java)
+    }
 
     interface Api {
 
@@ -136,6 +155,11 @@ object RetrofitClient {
         suspend fun syncDevoluciones(
             @Body request: SyncDevolucionesRequest
         ): Response<Unit>
+
+        @POST("dispositivos/activar/")
+        suspend fun activarDispositivo(
+            @Body request: DispositivoActivacionRequest
+        ): Response<DispositivoActivacionResponse>
 
     }
 

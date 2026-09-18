@@ -22,6 +22,8 @@ class SessionManager(private val context: Context) {
         val MINIBODEGA_ID_KEY = intPreferencesKey("mini_bodega_id")
         val USER_ID_KEY = intPreferencesKey("user_id")
         val FINAL_DIA_KEY = booleanPreferencesKey("final_dia")
+        val DISPOSITIVO_ACTIVADO_KEY = booleanPreferencesKey("dispositivo_activado")
+        val DISPOSITIVO_CODIGO_KEY = stringPreferencesKey("dispositivo_codigo")
     }
 
     // 🔹 Guardar usuario
@@ -80,10 +82,20 @@ class SessionManager(private val context: Context) {
             prefs[FINAL_DIA_KEY] ?: false
         }
 
+    val dispositivoActivadoFlow: Flow<Boolean> = context.dataStore.data
+        .catch { e ->
+            println("❌ Error en DataStore dispositivo: ${e.message}")
+            emit(emptyPreferences())
+        }
+        .map { prefs ->
+            prefs[DISPOSITIVO_ACTIVADO_KEY] ?: false
+        }
+
     // 🔹 OBTENER DIRECTO (IMPORTANTE)
     suspend fun getMiniBodegaId(): Int? {
         return context.dataStore.data.first()[MINIBODEGA_ID_KEY]
     }
+
     suspend fun getUserId(): Int? {
         return context.dataStore.data.first()[USER_ID_KEY]
     }
@@ -120,5 +132,22 @@ class SessionManager(private val context: Context) {
     suspend fun isFinalDia(): Boolean {
         return context.dataStore.data.first()[FINAL_DIA_KEY] ?: false
     }
+
+    suspend fun guardarDispositivoActivado() {
+        context.dataStore.edit { prefs ->
+            prefs[DISPOSITIVO_ACTIVADO_KEY] = true
+        }
+    }
+
+    suspend fun guardarCodigoDispositivo(codigo: String) {
+        context.dataStore.edit { prefs ->
+            prefs[DISPOSITIVO_CODIGO_KEY] = codigo
+        }
+    }
+
+    suspend fun getCodigoDispositivo(): String? {
+        return context.dataStore.data.first()[DISPOSITIVO_CODIGO_KEY]
+    }
+
 
 }
