@@ -74,6 +74,7 @@ fun ReabastecimientoScreen(
         VariacionesReabastecimientoDialog(
             producto = productoSeleccionado!!,
             viewModel = viewModel,
+            items = items,
             onDismiss = { showDialog = false },
             onAgregar = { seleccionados ->
                 seleccionados.forEach { item ->
@@ -336,11 +337,28 @@ private fun BottomPedidoBar(
 private fun VariacionesReabastecimientoDialog(
     producto: ProductoTerminadoEntity,
     viewModel: ReabastecimientoViewModel,
+    items: List<ReabastecimientoItem>,
     onDismiss: () -> Unit,
     onAgregar: (List<ReabastecimientoItem>) -> Unit
 ) {
-    val variaciones by viewModel.getVariaciones(producto.id).collectAsState(initial = emptyList())
-    val cantidades = remember { mutableStateMapOf<Int, String>() }
+    val variaciones by viewModel
+        .getVariaciones(producto.id)
+        .collectAsState(initial = emptyList())
+
+    // Cargar las cantidades que ya existen en el pedido
+    val cantidades = remember(variaciones, items) {
+        mutableStateMapOf<Int, String>().apply {
+            variaciones.forEach { variacion ->
+                val itemPedido = items.find {
+                    it.productoVariacionId == variacion.id
+                }
+
+                if (itemPedido != null) {
+                    this[variacion.id] = itemPedido.cantidad.toString()
+                }
+            }
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -351,6 +369,7 @@ private fun VariacionesReabastecimientoDialog(
             Column(
                 modifier = Modifier.padding(24.dp)
             ) {
+
                 // Header del diálogo
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -364,6 +383,7 @@ private fun VariacionesReabastecimientoDialog(
                         color = TextPrimary,
                         modifier = Modifier.weight(1f)
                     )
+
                     IconButton(
                         onClick = onDismiss,
                         modifier = Modifier
@@ -371,7 +391,12 @@ private fun VariacionesReabastecimientoDialog(
                             .clip(CircleShape)
                             .background(BackgroundLight)
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = TextMuted, modifier = Modifier.size(16.dp))
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Cerrar",
+                            tint = TextMuted,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
 
@@ -385,15 +410,23 @@ private fun VariacionesReabastecimientoDialog(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     variaciones.forEach { variacion ->
+
                         val cantidad = cantidades[variacion.id] ?: ""
 
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = BackgroundLight),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                            colors = CardDefaults.cardColors(
+                                containerColor = BackgroundLight
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 0.dp
+                            )
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
@@ -405,28 +438,43 @@ private fun VariacionesReabastecimientoDialog(
                                         color = TextPrimary
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
 
-                                    //ver que onda aqui
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
                                     text = "En Camioneta: ${variacion.stockActual}",
                                     fontSize = 13.sp,
                                     color = TextMuted,
                                     fontWeight = FontWeight.Medium
                                 )
+
                                 Spacer(modifier = Modifier.height(12.dp))
 
-                                // Input de cantidad estilizado
                                 OutlinedTextField(
                                     value = cantidad,
                                     onValueChange = { nuevo ->
-                                        if (nuevo.isEmpty() || nuevo.all { it.isDigit() }) {
+                                        if (
+                                            nuevo.isEmpty() ||
+                                            nuevo.all { it.isDigit() }
+                                        ) {
                                             cantidades[variacion.id] = nuevo
                                         }
                                     },
-                                    placeholder = { Text("0", color = TextMuted) },
-                                    label = { Text("Cantidad a pedir", color = TextMuted) },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    placeholder = {
+                                        Text(
+                                            "0",
+                                            color = TextMuted
+                                        )
+                                    },
+                                    label = {
+                                        Text(
+                                            "Cantidad a pedir",
+                                            color = TextMuted
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number
+                                    ),
                                     singleLine = true,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -446,20 +494,31 @@ private fun VariacionesReabastecimientoDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Botón de agregar
+                // Botón de agregar / actualizar
                 Button(
                     onClick = {
-                        val productosSeleccionados = variaciones.mapNotNull { variacion ->
-                            val cantidad = cantidades[variacion.id]?.toIntOrNull() ?: 0
-                            if (cantidad > 0) {
-                                ReabastecimientoItem(
-                                    productoVariacionId = variacion.id,
-                                    productoNombre = producto.nombre,
-                                    presentacionNombre = variacion.presentacionNombre,
-                                    cantidad = cantidad
-                                )
-                            } else null
-                        }
+
+                        val productosSeleccionados =
+                            variaciones.mapNotNull { variacion ->
+
+                                val cantidad =
+                                    cantidades[variacion.id]
+                                        ?.toIntOrNull()
+                                        ?: 0
+
+                                if (cantidad > 0) {
+                                    ReabastecimientoItem(
+                                        productoVariacionId = variacion.id,
+                                        productoNombre = producto.nombre,
+                                        presentacionNombre =
+                                            variacion.presentacionNombre,
+                                        cantidad = cantidad
+                                    )
+                                } else {
+                                    null
+                                }
+                            }
+
                         onAgregar(productosSeleccionados)
                     },
                     modifier = Modifier
@@ -471,7 +530,11 @@ private fun VariacionesReabastecimientoDialog(
                         contentColor = Color.White
                     )
                 ) {
-                    Text("Agregar al pedido", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(
+                        "Agregar al pedido",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
                 }
             }
         }

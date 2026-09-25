@@ -20,13 +20,10 @@ class ReabastecimientoCarritoViewModel : ViewModel() {
         }
 
         if (index >= 0) {
-            // 🔥 Ya existe → sumar cantidad
-            val existente = listaActual[index]
-            listaActual[index] = existente.copy(
-                cantidad = existente.cantidad + nuevo.cantidad
-            )
+            // Ya existe → reemplazar cantidad
+            listaActual[index] = nuevo
         } else {
-            // 🔥 Nuevo item
+            // Nuevo item
             listaActual.add(nuevo)
         }
 

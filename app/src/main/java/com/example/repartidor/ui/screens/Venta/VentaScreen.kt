@@ -92,6 +92,7 @@ fun VentaScreen(
         VariacionesDialog(
             producto = productoSeleccionado!!,
             viewModel = viewModel,
+            carrito = carrito,
             onDismiss = { showDialog = false },
             onAgregar = { seleccionados ->
                 carritoViewModel.agregarProductos(seleccionados)
@@ -369,11 +370,28 @@ private fun BottomCartBar(
 private fun VariacionesDialog(
     producto: ProductoTerminadoEntity,
     viewModel: VentaViewModel,
+    carrito: List<CarritoItem>,
     onDismiss: () -> Unit,
     onAgregar: (List<CarritoItem>) -> Unit
 ) {
-    val variaciones by viewModel.getVariaciones(producto.id).collectAsState(initial = emptyList())
-    val cantidades = remember { mutableStateMapOf<Int, String>() }
+    val variaciones by viewModel
+        .getVariaciones(producto.id)
+        .collectAsState(initial = emptyList())
+
+    // Cargar las cantidades actuales del carrito al abrir la modal
+    val cantidades = remember(variaciones, carrito) {
+        mutableStateMapOf<Int, String>().apply {
+            variaciones.forEach { variacion ->
+                val itemCarrito = carrito.find {
+                    it.productoVariacionId == variacion.id
+                }
+
+                if (itemCarrito != null) {
+                    this[variacion.id] = itemCarrito.cantidad.toString()
+                }
+            }
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -384,6 +402,7 @@ private fun VariacionesDialog(
             Column(
                 modifier = Modifier.padding(24.dp)
             ) {
+
                 // Header del diálogo
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -397,6 +416,7 @@ private fun VariacionesDialog(
                         color = TextPrimary,
                         modifier = Modifier.weight(1f)
                     )
+
                     IconButton(
                         onClick = onDismiss,
                         modifier = Modifier
@@ -404,7 +424,12 @@ private fun VariacionesDialog(
                             .clip(CircleShape)
                             .background(BackgroundLight)
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = TextMuted, modifier = Modifier.size(16.dp))
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Cerrar",
+                            tint = TextMuted,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
 
@@ -418,15 +443,23 @@ private fun VariacionesDialog(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     variaciones.forEach { variacion ->
+
                         val cantidad = cantidades[variacion.id] ?: ""
 
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = BackgroundLight),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                            colors = CardDefaults.cardColors(
+                                containerColor = BackgroundLight
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 0.dp
+                            )
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
@@ -437,6 +470,7 @@ private fun VariacionesDialog(
                                         fontSize = 15.sp,
                                         color = TextPrimary
                                     )
+
                                     Text(
                                         text = "$${variacion.precio}",
                                         fontWeight = FontWeight.Bold,
@@ -444,25 +478,38 @@ private fun VariacionesDialog(
                                         color = AccentTeal
                                     )
                                 }
+
                                 Spacer(modifier = Modifier.height(4.dp))
+
                                 Text(
                                     text = "Stock: ${variacion.stockActual}",
                                     fontSize = 12.sp,
                                     color = TextMuted,
                                     fontWeight = FontWeight.Medium
                                 )
+
                                 Spacer(modifier = Modifier.height(12.dp))
 
-                                // Input de cantidad estilizado
+                                // Input de cantidad
                                 OutlinedTextField(
                                     value = cantidad,
                                     onValueChange = { nuevo ->
-                                        if (nuevo.isEmpty() || nuevo.all { it.isDigit() }) {
+                                        if (
+                                            nuevo.isEmpty() ||
+                                            nuevo.all { it.isDigit() }
+                                        ) {
                                             cantidades[variacion.id] = nuevo
                                         }
                                     },
-                                    placeholder = { Text("0", color = TextMuted) },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    placeholder = {
+                                        Text(
+                                            "0",
+                                            color = TextMuted
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number
+                                    ),
                                     singleLine = true,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -482,11 +529,15 @@ private fun VariacionesDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Botón de agregar
+                // Botón de agregar / actualizar
                 Button(
                     onClick = {
+
                         val productosSeleccionados = variaciones.mapNotNull { variacion ->
-                            val cantidad = cantidades[variacion.id]?.toIntOrNull() ?: 0
+
+                            val cantidad =
+                                cantidades[variacion.id]?.toIntOrNull() ?: 0
+
                             if (cantidad > 0) {
                                 CarritoItem(
                                     productoVariacionId = variacion.id,
@@ -495,8 +546,11 @@ private fun VariacionesDialog(
                                     precio = variacion.precio,
                                     cantidad = cantidad
                                 )
-                            } else null
+                            } else {
+                                null
+                            }
                         }
+
                         onAgregar(productosSeleccionados)
                     },
                     modifier = Modifier
@@ -508,12 +562,17 @@ private fun VariacionesDialog(
                         contentColor = Color.White
                     )
                 ) {
-                    Text("Agregar al carrito", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(
+                        "Agregar al carrito",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
                 }
             }
         }
     }
 }
+
 
 // ── DIÁLOGO DE SALIDA (Estilo Logout) ─────────────────────────────────────────
 @Composable

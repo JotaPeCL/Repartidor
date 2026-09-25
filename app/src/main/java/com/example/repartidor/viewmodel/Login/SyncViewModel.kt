@@ -51,7 +51,27 @@ class SyncViewModel(
 
             } catch (e: Exception) {
 
-                errorMensaje = "No se pudo sincronizar. Verifica tu conexión."
+                errorMensaje = when {
+                    e.message?.startsWith("HTTP_403") == true ->
+                        "El dispositivo se encuentra desactivado."
+
+                    e.message?.startsWith("HTTP_401") == true ->
+                        "Las credenciales del dispositivo no son válidas."
+
+                    e.message?.startsWith("HTTP_404") == true ->
+                        "No se encontró el recurso solicitado."
+
+                    e.message?.startsWith("HTTP_500") == true ->
+                        "El servidor presentó un error. Inténtalo nuevamente."
+
+                    e is java.net.UnknownHostException ||
+                            e is java.net.ConnectException ||
+                            e is java.net.SocketTimeoutException ->
+                        "No se pudo conectar con el servidor. Verifica tu conexión."
+
+                    else ->
+                        "No se pudo completar la sincronización. Inténtalo nuevamente."
+                }
 
             } finally {
                 isLoading = false

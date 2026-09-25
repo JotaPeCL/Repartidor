@@ -19,11 +19,10 @@ class CarritoDevolucionViewModel : ViewModel() {
             }
 
             if (index >= 0) {
-                val existente = actual[index]
-                actual[index] = existente.copy(
-                    cantidad = existente.cantidad + nuevo.cantidad
-                )
+                // Ya existe → reemplazar cantidad
+                actual[index] = nuevo
             } else {
+                // No existe → agregar
                 actual.add(nuevo)
             }
         }
