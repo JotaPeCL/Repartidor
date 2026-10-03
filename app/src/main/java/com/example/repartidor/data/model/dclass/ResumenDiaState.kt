@@ -10,6 +10,7 @@ data class ResumenDiaState(
     val totalPendiente: Double = 0.0,
 
     val productosVendidos: List<ProductoResumen> = emptyList(),
-    val productosDevueltos: List<ProductoResumen> = emptyList()
+    val productosDevueltos: List<ProductoResumen> = emptyList(),
+    val totalDevoluciones: Double = 0.0
 
 )

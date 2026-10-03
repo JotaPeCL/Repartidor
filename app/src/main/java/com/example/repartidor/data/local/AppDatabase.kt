@@ -22,6 +22,8 @@ import com.example.repartidor.data.model.entity.VentaEntity
 import com.example.repartidor.data.model.entity.VentaDetalleEntity
 import com.example.repartidor.data.model.entity.DevolucionEntity
 import com.example.repartidor.data.model.entity.DevolucionDetalleEntity
+import com.example.repartidor.data.model.entity.CancelacionVentaEntity
+import com.example.repartidor.data.model.entity.CancelacionVentaDetalleEntity
 
 @Database(
     entities = [
@@ -45,9 +47,11 @@ import com.example.repartidor.data.model.entity.DevolucionDetalleEntity
         DevolucionDetalleEntity::class,
         MiniBodegaDetalleMermaEntity::class,
         AbonoEntity::class,
+        CancelacionVentaEntity::class,
+        CancelacionVentaDetalleEntity::class,
 
     ],
-    version = 8 // IMPORTANTE
+    version = 9 // IMPORTANTE
 
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -72,4 +76,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun devolucionDetalleDao(): DevolucionDetalleDao
     abstract fun mermaDao(): MiniBodegaDetalleMermaDao
     abstract fun abonoDao(): AbonoDao
+    abstract fun cancelacionVentaDao(): CancelacionVentaDao
 }

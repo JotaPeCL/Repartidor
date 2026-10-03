@@ -64,6 +64,8 @@ object ResumenTicketBuilder {
                 sb.append("${it.nombre}: ${it.cantidad}\n")
             }
 
+            sb.append("Total devoluciones: %.2f\n".format(state.totalDevoluciones))
+
             sb.append("\n")
         }
 

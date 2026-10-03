@@ -3,6 +3,7 @@ package com.example.repartidor.data.repository
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.repartidor.data.local.AbonoDao
+import com.example.repartidor.data.local.CancelacionVentaDao
 import com.example.repartidor.data.local.DevolucionDao
 import com.example.repartidor.data.local.DevolucionDetalleDao
 import com.example.repartidor.data.local.MiniBodegaDetalleMermaDao
@@ -14,7 +15,10 @@ import com.example.repartidor.data.remote.request.DevolucionDetalleRequest
 import com.example.repartidor.data.remote.request.DevolucionRequest
 import com.example.repartidor.data.remote.request.MermaRequest
 import com.example.repartidor.data.remote.RetrofitClient
+import com.example.repartidor.data.remote.request.CancelacionVentaDetalleRequest
+import com.example.repartidor.data.remote.request.CancelacionVentaRequest
 import com.example.repartidor.data.remote.request.SyncAbonosRequest
+import com.example.repartidor.data.remote.request.SyncCancelacionesRequest
 import com.example.repartidor.data.remote.request.SyncDevolucionesRequest
 import com.example.repartidor.data.remote.request.SyncVentasRequest
 import com.example.repartidor.data.remote.request.VentaDetalleRequest
@@ -31,6 +35,7 @@ class SyncFinalRepository(
     private val devolucionDao: DevolucionDao,
     private val devolucionDetalleDao: DevolucionDetalleDao,
     private val mermaDao: MiniBodegaDetalleMermaDao,
+    private val cancelacionVentaDao: CancelacionVentaDao,
     private val sessionManager: SessionManager
 ) {
 
@@ -194,6 +199,58 @@ class SyncFinalRepository(
                 }
                 mermas.forEach {
                     mermaDao.marcarSincronizado(it.uuid)
+                }
+            }
+
+            // =========================
+            // 🔥 CANCELACIONES
+            // =========================
+            val cancelaciones = cancelacionVentaDao.obtenerNoSincronizadas()
+
+            if (cancelaciones.isNotEmpty()) {
+
+                val detalles = cancelacionVentaDao.obtenerDetallesNoSincronizados(
+                    cancelaciones.map { it.uuid }
+                )
+
+                val cancelacionesRequest = cancelaciones.map {
+                    CancelacionVentaRequest(
+                        uuid = it.uuid,
+                        venta_uuid = it.ventaUuid,
+                        usuario_id = usuarioId,
+                        mini_bodega_id = miniBodegaId,
+                        fecha = normalizarFecha(it.fecha),
+                        total = it.total,
+                        motivo = it.motivo
+                    )
+                }
+
+                val detallesRequest = detalles.map {
+                    CancelacionVentaDetalleRequest(
+                        uuid = it.uuid,
+                        cancelacion_uuid = it.cancelacionVentaUuid,
+                        producto_variacion_id = it.productoVariacionId,
+                        nombre_producto = it.nombreProducto,
+                        cantidad = it.cantidad,
+                        precio_unitario = it.precioUnitario
+                    )
+                }
+
+                val response = RetrofitClient.api.syncCancelaciones(
+                    SyncCancelacionesRequest(
+                        cancelaciones = cancelacionesRequest,
+                        detalles = detallesRequest
+                    )
+                )
+
+                if (!response.isSuccessful) {
+                    return Result.failure(
+                        Exception("Error cancelaciones ${response.code()}")
+                    )
+                }
+
+                cancelaciones.forEach {
+                    cancelacionVentaDao.marcarSincronizado(it.uuid)
                 }
             }
 

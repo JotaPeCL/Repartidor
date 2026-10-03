@@ -121,4 +121,19 @@ interface MiniBodegaDetalleDao {
         productoId: Int,
         cantidad: Double
     )
+
+
+    @Query(
+        """
+    UPDATE mini_bodega_detalle
+    SET cantidadActual = cantidadActual + :cantidad
+    WHERE miniBodegaId = :miniBodegaId
+    AND productoVariacionId = :productoId
+    """
+    )
+    suspend fun aumentarStock(
+        miniBodegaId: Int,
+        productoId: Int,
+        cantidad: Double
+    )
 }

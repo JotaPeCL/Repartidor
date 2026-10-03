@@ -36,6 +36,22 @@ interface DevolucionDetalleDao {
         usuarioId: Int
     ): List<ProductoResumen>
 
+    @Query(
+        """
+    SELECT COALESCE(SUM(dd.cantidad * pv.precio), 0)
+    FROM devolucion_detalle dd
+    INNER JOIN devoluciones d ON d.id = dd.devolucionId
+    INNER JOIN producto_variacion pv ON pv.id = dd.productoVariacionId
+    WHERE d.fecha BETWEEN :inicioDia AND :finDia
+    AND d.usuarioId = :usuarioId
+"""
+    )
+    suspend fun getTotalDevolucionesDelDia(
+        inicioDia: Long,
+        finDia: Long,
+        usuarioId: Int
+    ): Double
+
 
     @Query(
         """

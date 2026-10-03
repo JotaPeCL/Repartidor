@@ -411,6 +411,12 @@ fun ResumenDiaScreen(
                         state.productosDevueltos.forEach {
                             InfoRow(it.nombre, "${it.cantidad} un.")
                         }
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        InfoRow(
+                            "Total devoluciones",
+                            "$${"%.2f".format(state.totalDevoluciones)}"
+                        )
                     }
                 }
 

@@ -10,7 +10,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.model.dclass.DetalleVentaUI
+import com.example.repartidor.data.model.dclass.ResultadoCancelacion
 import com.example.repartidor.data.model.dclass.VentaUI
+import com.example.repartidor.data.repository.CancelacionVentaRepository
 import com.example.repartidor.data.repository.PrinterRepository
 import com.example.repartidor.data.repository.VentasDiaRepository
 import com.example.repartidor.utils.PrintResult
@@ -21,8 +23,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+
+
 class VentasDiaViewModel(
     private val repository: VentasDiaRepository,
+    private val cancelacionVentaRepository: CancelacionVentaRepository,
     private val printerRepository: PrinterRepository,
     private val printerManager: PrinterManager,
     private val bluetoothAdapter: BluetoothAdapter?,
@@ -44,6 +49,11 @@ class VentasDiaViewModel(
     var totalAbonos by mutableStateOf(0.0)
         private set
 
+    var cancelandoVenta by mutableStateOf(false)
+        private set
+
+    var resultadoCancelacion by mutableStateOf<ResultadoCancelacion?>(null)
+        private set
 
     fun cargarVentas() {
         viewModelScope.launch {
@@ -55,7 +65,6 @@ class VentasDiaViewModel(
             ventas = data
         }
     }
-
 
     fun seleccionarVenta(venta: VentaUI) {
         viewModelScope.launch {
@@ -71,11 +80,64 @@ class VentasDiaViewModel(
         }
     }
 
-
     fun cerrarDialogo() {
         mostrarDialogo = false
         ventaSeleccionada = null
         detalleVenta = emptyList()
+        totalAbonos = 0.0
+    }
+
+    fun cancelarVenta(
+        motivo: String = ""
+    ) {
+        if (cancelandoVenta) return
+
+        viewModelScope.launch {
+
+            val venta = ventaSeleccionada ?: return@launch
+            val usuarioId = sessionManager.getUserId()
+                ?: return@launch
+            val miniBodegaId = sessionManager.getMiniBodegaId()
+                ?: return@launch
+
+            cancelandoVenta = true
+            resultadoCancelacion = null
+
+            try {
+
+                withContext(Dispatchers.IO) {
+                    cancelacionVentaRepository.cancelarVenta(
+                        ventaId = venta.id,
+                        usuarioId = usuarioId,
+                        miniBodegaId = miniBodegaId,
+                        motivo = motivo
+                    )
+                }
+
+                ventas = repository.getVentasDelDia(usuarioId)
+
+                cerrarDialogo()
+
+                resultadoCancelacion = ResultadoCancelacion(
+                    exitoso = true,
+                    mensaje = "Venta cancelada correctamente"
+                )
+
+            } catch (e: Exception) {
+
+                resultadoCancelacion = ResultadoCancelacion(
+                    exitoso = false,
+                    mensaje = e.message ?: "No se pudo cancelar la venta"
+                )
+
+            } finally {
+                cancelandoVenta = false
+            }
+        }
+    }
+
+    fun limpiarResultadoCancelacion() {
+        resultadoCancelacion = null
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
@@ -91,7 +153,7 @@ class VentasDiaViewModel(
                 val ticketItems = detalleVenta.map {
                     TicketItem(
                         nombre = it.nombreCompleto,
-                        presentacion = "", // si no tienes separado no pasa nada
+                        presentacion = "",
                         cantidad = it.cantidad.toInt(),
                         precioUnitario = it.precioUnitario
                     )
@@ -106,7 +168,7 @@ class VentasDiaViewModel(
                     clienteNombre = venta.nombreCliente,
                     clienteNegocio = venta.nombreNegocio,
                     subtotal = subtotal,
-                    porcentajeDescuento = 0.0, // si no lo tienes guardado
+                    porcentajeDescuento = 0.0,
                     descuento = descuento,
                     totalFinal = total,
                     fecha = venta.fecha,
@@ -125,7 +187,11 @@ class VentasDiaViewModel(
                 onResult(result)
 
             } catch (e: Exception) {
-                onResult(PrintResult.Error(e.message ?: "Error al imprimir"))
+                onResult(
+                    PrintResult.Error(
+                        e.message ?: "Error al imprimir"
+                    )
+                )
             }
         }
     }

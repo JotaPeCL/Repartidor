@@ -105,6 +105,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.repartidor.data.repository.CancelacionVentaRepository
 import com.example.repartidor.data.repository.DispositivoRepository
 import com.example.repartidor.ui.screens.login.DispositivoScreen
 import com.example.repartidor.viewmodel.Login.DispositivoViewModel
@@ -238,13 +239,24 @@ fun AppNavigation() {
     val ventasDiaRepository = remember {
         VentasDiaRepository(db.ventaDao())
     }
+    val cancelacionVentaRepository = remember {
+        CancelacionVentaRepository(
+            database = db,
+            ventaDao = db.ventaDao(),
+            clienteDao = db.clienteDao(),
+            miniBodegaDetalleDao = db.miniBodegaDetalleDao(),
+            cancelacionVentaDao = db.cancelacionVentaDao()
+        )
+    }
+
     val ventasDiaViewModel: VentasDiaViewModel = viewModel(
         factory = VentasDiaViewModelFactory(
             repository = ventasDiaRepository,
+            cancelacionVentaRepository = cancelacionVentaRepository,
             printerRepository = printerRepository,
             printerManager = printerManager,
             bluetoothAdapter = bluetoothAdapter,
-            sessionManager=sessionManager
+            sessionManager = sessionManager
         )
     )
     val devolucionRepository = remember {
@@ -325,6 +337,7 @@ fun AppNavigation() {
             db.devolucionDao(),
             db.devolucionDetalleDao(),
             db.mermaDao(),
+            db.cancelacionVentaDao(),
             sessionManager
         )
     }
@@ -639,7 +652,8 @@ fun AppNavigation() {
                 onBack = {
                     navController.popBackStack()
                 },
-                viewModel = ventasDiaViewModel
+                viewModel = ventasDiaViewModel,
+                sessionManager = sessionManager
             )
         }
 

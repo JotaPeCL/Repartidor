@@ -222,4 +222,15 @@ AND NOT (
 
     @Query("DELETE FROM venta WHERE id IN (:ids)")
     suspend fun deleteVentasByIds(ids: List<Int>)
+
+
+
+    @Query("DELETE FROM venta_detalle WHERE ventaId = :ventaId")
+    suspend fun deleteDetallesByVentaId(ventaId: Int)
+
+    @Query("DELETE FROM abono WHERE ventaId = :ventaId")
+    suspend fun deleteAbonosByVentaId(ventaId: Int)
+
+    @Query("DELETE FROM venta WHERE id = :ventaId")
+    suspend fun deleteVentaById(ventaId: Int)
 }

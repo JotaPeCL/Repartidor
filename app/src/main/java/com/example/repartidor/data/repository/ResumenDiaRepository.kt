@@ -40,6 +40,8 @@ class ResumenDiaRepository(
 
         val productosDevueltos =
             devolucionDetalleDao.getProductosDevueltosDelDia(inicioDia, finDia, usuarioId)
+        val totalDevoluciones =
+            devolucionDetalleDao.getTotalDevolucionesDelDia(inicioDia, finDia, usuarioId)
 
         return ResumenDiaState(
             efectivoVentas = ventas,
@@ -48,7 +50,8 @@ class ResumenDiaRepository(
             cantidadCreditos = cantidadCreditos,
             totalPendiente = totalPendiente,
             productosVendidos = productosVendidos,
-            productosDevueltos = productosDevueltos
+            productosDevueltos = productosDevueltos,
+            totalDevoluciones = totalDevoluciones
         )
     }
 

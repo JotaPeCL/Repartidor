@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.model.dclass.DetalleVentaUI
 import com.example.repartidor.data.model.dclass.VentaUI
 import com.example.repartidor.ui.screens.components.StandardTopBar
@@ -41,13 +42,16 @@ import com.example.repartidor.ui.screens.components.* //Aqui estan los colores d
 @Composable
 fun VentaDiaScreen(
     onBack: () -> Unit,
-    viewModel: VentasDiaViewModel
+    viewModel: VentasDiaViewModel,
+    sessionManager: SessionManager
 ) {
     val ventas = viewModel.ventas
     val mostrarDialogo = viewModel.mostrarDialogo
     val detalle = viewModel.detalleVenta
     val ventaSeleccionada = viewModel.ventaSeleccionada
     val totalAbonos = viewModel.totalAbonos
+    val cancelandoVenta = viewModel.cancelandoVenta
+    val finalDia by sessionManager.finalDiaFlow.collectAsState(initial = false)
 
     var showConfirmPrint by remember { mutableStateOf(false) }
     var showResultDialog by remember { mutableStateOf(false) }
@@ -55,8 +59,21 @@ fun VentaDiaScreen(
     var isPrinting by remember { mutableStateOf(false) }
     var isSuccessPrint by remember { mutableStateOf(false) }
 
+    var showConfirmCancel by remember { mutableStateOf(false) }
+    var showResultCancel by remember { mutableStateOf(false) }
+    var mensajeCancelacion by remember { mutableStateOf("") }
+    var isSuccessCancel by remember { mutableStateOf(false) }
+    var motivoCancelacion by remember { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
         viewModel.cargarVentas()
+    }
+    LaunchedEffect(viewModel.resultadoCancelacion) {
+        viewModel.resultadoCancelacion?.let { resultado ->
+            mensajeCancelacion = resultado.mensaje
+            isSuccessCancel = resultado.exitoso
+            showResultCancel = true
+        }
     }
 
     // ── DIÁLOGO DE DETALLE DE VENTA ──
@@ -65,8 +82,13 @@ fun VentaDiaScreen(
             venta = ventaSeleccionada,
             detalle = detalle,
             totalAbonos = totalAbonos,
+            finalDia = finalDia,
             onDismiss = { viewModel.cerrarDialogo() },
-            onPrintRequest = { showConfirmPrint = true }
+            onPrintRequest = { showConfirmPrint = true },
+            onCancelRequest = {
+                motivoCancelacion = ""
+                showConfirmCancel = true
+            }
         )
     }
 
@@ -106,6 +128,27 @@ fun VentaDiaScreen(
             }
         )
     }
+    if (showConfirmCancel) {
+        CancelarVentaDialog(
+            motivo = motivoCancelacion,
+            onMotivoChange = { motivoCancelacion = it },
+            cancelandoVenta = cancelandoVenta,
+            onDismiss = {
+                if (!cancelandoVenta) {
+                    showConfirmCancel = false
+                }
+            },
+            onConfirm = {
+                if (motivoCancelacion.isNotBlank()) {
+                    showConfirmCancel = false
+                    viewModel.cancelarVenta(
+                        motivo = motivoCancelacion.trim()
+                    )
+                }
+            }
+        )
+    }
+
 
     // ── DIÁLOGO RESULTADO IMPRESIÓN ──
     if (showResultDialog) {
@@ -114,6 +157,18 @@ fun VentaDiaScreen(
             message = mensajeResultado,
             isSuccess = isSuccessPrint,
             onDismiss = { showResultDialog = false }
+        )
+    }
+
+    if (showResultCancel) {
+        ResultDialog(
+            title = if (isSuccessCancel) "Venta cancelada" else "Error",
+            message = mensajeCancelacion,
+            isSuccess = isSuccessCancel,
+            onDismiss = {
+                showResultCancel = false
+                viewModel.limpiarResultadoCancelacion()
+            }
         )
     }
 
@@ -295,8 +350,10 @@ private fun DetalleVentaDialog(
     venta: VentaUI,
     detalle: List<DetalleVentaUI>,
     totalAbonos: Double,
+    finalDia: Boolean,
     onDismiss: () -> Unit,
-    onPrintRequest: () -> Unit
+    onPrintRequest: () -> Unit,
+    onCancelRequest: () -> Unit
 ) {
     val subtotal = detalle.sumOf { it.subtotal }
     val totalFinal = venta.total
@@ -335,7 +392,12 @@ private fun DetalleVentaDialog(
                             .clip(CircleShape)
                             .background(BackgroundLight)
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = TextMuted, modifier = Modifier.size(16.dp))
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Cerrar",
+                            tint = TextMuted,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
 
@@ -349,13 +411,24 @@ private fun DetalleVentaDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        Text(text = venta.nombreCliente, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        Text(
+                            text = venta.nombreCliente,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
                         if (!venta.nombreNegocio.isNullOrBlank()) {
                             Text(text = venta.nombreNegocio, fontSize = 13.sp, color = TextMuted)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = formatearFechaHora(venta.fecha), fontSize = 12.sp, color = TextMuted)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = formatearFechaHora(venta.fecha),
+                                fontSize = 12.sp,
+                                color = TextMuted
+                            )
                             Text(
                                 text = venta.tipoVenta.uppercase(),
                                 fontSize = 12.sp,
@@ -375,14 +448,32 @@ private fun DetalleVentaDialog(
                         .verticalScroll(rememberScrollState())
                 ) {
                     detalle.forEach { item ->
-                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                            Text(text = item.nombreCompleto, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
+                        Column(modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp)) {
+                            Text(
+                                text = item.nombreCompleto,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = TextPrimary
+                            )
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 2.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("${item.cantidad} x $${item.precioUnitario}", fontSize = 13.sp, color = TextMuted)
-                                Text("$${"%.2f".format(item.subtotal)}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                Text(
+                                    "${item.cantidad} x $${item.precioUnitario}",
+                                    fontSize = 13.sp,
+                                    color = TextMuted
+                                )
+                                Text(
+                                    "$${"%.2f".format(item.subtotal)}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
                             }
                         }
                         HorizontalDivider(color = BackgroundLight)
@@ -393,31 +484,69 @@ private fun DetalleVentaDialog(
 
                 // ── TOTALES ──
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Text("Subtotal", fontSize = 14.sp, color = TextMuted)
                         Text("$${"%.2f".format(subtotal)}", fontSize = 14.sp, color = TextPrimary)
                     }
                     if (descuento > 0) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text("Descuento", fontSize = 14.sp, color = TextMuted)
-                            Text("-$${"%.2f".format(descuento)}", fontSize = 14.sp, color = ErrorRed)
+                            Text(
+                                "-$${"%.2f".format(descuento)}",
+                                fontSize = 14.sp,
+                                color = ErrorRed
+                            )
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Total", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                        Text("$${"%.2f".format(totalFinal)}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = AccentTeal)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            "Total",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            "$${"%.2f".format(totalFinal)}",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AccentTeal
+                        )
                     }
 
                     // SALDOS SI ES CRÉDITO
                     if (isCredito) {
                         val saldoPendiente = totalFinal - totalAbonos
                         Spacer(modifier = Modifier.height(8.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text("Abonado", fontSize = 14.sp, color = TextMuted)
-                            Text("$${"%.2f".format(totalAbonos)}", fontSize = 14.sp, color = SuccessGreen, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "$${"%.2f".format(totalAbonos)}",
+                                fontSize = 14.sp,
+                                color = SuccessGreen,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
-                        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text("Saldo Pendiente", fontSize = 14.sp, color = TextMuted)
                             Text(
                                 text = "$${"%.2f".format(saldoPendiente)}",
@@ -434,14 +563,51 @@ private fun DetalleVentaDialog(
                 // ── BOTÓN IMPRIMIR ──
                 Button(
                     onClick = onPrintRequest,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentBlue, contentColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentBlue,
+                        contentColor = Color.White
+                    )
                 ) {
-                    Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(
+                        Icons.Default.Print,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Imprimir Ticket", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                if (!finalDia) {
+                    OutlinedButton(
+                        onClick = onCancelRequest,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = ErrorRed
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Cancelar Venta",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
+                    }
+                }
+
             }
         }
     }
@@ -466,17 +632,37 @@ private fun ConfirmActionDialog(
         shape = RoundedCornerShape(24.dp),
         icon = {
             Box(
-                modifier = Modifier.size(56.dp).clip(CircleShape).background(iconBgColor),
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(iconBgColor),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(26.dp))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(26.dp)
+                )
             }
         },
         title = {
-            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary, textAlign = TextAlign.Center)
+            Text(
+                text = title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = TextPrimary,
+                textAlign = TextAlign.Center
+            )
         },
         text = {
-            Text(text = message, fontSize = 14.sp, color = TextMuted, textAlign = TextAlign.Center, lineHeight = 20.sp)
+            Text(
+                text = message,
+                fontSize = 14.sp,
+                color = TextMuted,
+                textAlign = TextAlign.Center,
+                lineHeight = 20.sp
+            )
         },
         dismissButton = {
             OutlinedButton(
@@ -492,7 +678,10 @@ private fun ConfirmActionDialog(
             Button(
                 onClick = onConfirm,
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AccentBlue, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AccentBlue,
+                    contentColor = Color.White
+                ),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(confirmText, fontWeight = FontWeight.SemiBold)
@@ -500,6 +689,138 @@ private fun ConfirmActionDialog(
         }
     )
 }
+
+@Composable
+private fun CancelarVentaDialog(
+    motivo: String,
+    onMotivoChange: (String) -> Unit,
+    cancelandoVenta: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = {
+            if (!cancelandoVenta) {
+                onDismiss()
+            }
+        },
+        containerColor = SurfaceWhite,
+        shape = RoundedCornerShape(24.dp),
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(ErrorRedSoft),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    tint = ErrorRed,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+        },
+        title = {
+            Text(
+                text = "Cancelar venta",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = TextPrimary,
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "¿Estás seguro de cancelar esta venta? Los productos regresarán a la MiniBodega y se revertirá el saldo correspondiente del cliente.",
+                    fontSize = 14.sp,
+                    color = TextMuted,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = motivo,
+                    onValueChange = onMotivoChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text("Motivo de cancelación")
+                    },
+                    placeholder = {
+                        Text("Escribe el motivo...")
+                    },
+                    minLines = 3,
+                    maxLines = 4,
+                    enabled = !cancelandoVenta,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ErrorRed,
+                        focusedLabelColor = ErrorRed,
+                        cursorColor = ErrorRed
+                    )
+                )
+
+                if (motivo.isBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "El motivo es obligatorio.",
+                        fontSize = 12.sp,
+                        color = ErrorRed
+                    )
+                }
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                enabled = !cancelandoVenta,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = TextPrimary
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Regresar",
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                enabled = motivo.isNotBlank() && !cancelandoVenta,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ErrorRed,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (cancelandoVenta) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
+                Text(
+                    if (cancelandoVenta) "Cancelando..." else "Sí, cancelar",
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    )
+}
+
+
 
 @Composable
 private fun ResultDialog(
@@ -518,23 +839,46 @@ private fun ResultDialog(
         shape = RoundedCornerShape(24.dp),
         icon = {
             Box(
-                modifier = Modifier.size(56.dp).clip(CircleShape).background(iconBgColor),
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(iconBgColor),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(26.dp))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(26.dp)
+                )
             }
         },
         title = {
-            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary, textAlign = TextAlign.Center)
+            Text(
+                text = title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = TextPrimary,
+                textAlign = TextAlign.Center
+            )
         },
         text = {
-            Text(text = message, fontSize = 14.sp, color = TextMuted, textAlign = TextAlign.Center, lineHeight = 20.sp)
+            Text(
+                text = message,
+                fontSize = 14.sp,
+                color = TextMuted,
+                textAlign = TextAlign.Center,
+                lineHeight = 20.sp
+            )
         },
         confirmButton = {
             Button(
                 onClick = onDismiss,
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AccentBlue, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AccentBlue,
+                    contentColor = Color.White
+                ),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Aceptar", fontWeight = FontWeight.SemiBold)
@@ -556,7 +900,12 @@ private fun LoadingDialog(mensaje: String) {
             ) {
                 CircularProgressIndicator(color = AccentBlue, modifier = Modifier.size(28.dp))
                 Spacer(modifier = Modifier.width(16.dp))
-                Text(text = mensaje, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
+                Text(
+                    text = mensaje,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextPrimary
+                )
             }
         }
     }
