@@ -273,8 +273,10 @@ fun AppNavigation() {
     val devolucionFormRepository = remember {
         DevolucionInventarioRepository(
             db.devolucionDao(),
+            db.devolucionSustitucionDao(),
             db.miniBodegaDetalleDao(),
-            db.mermaDao()
+            db.mermaDao(),
+
         )
     }
 
@@ -338,6 +340,7 @@ fun AppNavigation() {
             db.devolucionDetalleDao(),
             db.mermaDao(),
             db.cancelacionVentaDao(),
+            db.devolucionSustitucionDao(),
             sessionManager
         )
     }

@@ -10,6 +10,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.model.dclass.CarritoItem
+import com.example.repartidor.data.model.dclass.ProductoSustitucion
+import com.example.repartidor.data.model.dclass.SustitucionSeleccionada
 import com.example.repartidor.data.model.entity.DevolucionEntity
 import com.example.repartidor.data.repository.DevolucionInventarioRepository
 import com.example.repartidor.data.repository.PrinterRepository
@@ -17,6 +19,8 @@ import com.example.repartidor.utils.PrintResult
 import com.example.repartidor.utils.PrinterManager
 import com.example.repartidor.utils.TicketDevolucionBuilder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -41,6 +45,21 @@ class DevolucionViewModel(
     var printResult by mutableStateOf<PrintResult?>(null)
         private set
 
+    fun getVariacionesDisponiblesParaSustitucion(): Flow<List<ProductoSustitucion>> {
+        return kotlinx.coroutines.flow.flow {
+            val miniBodegaId = sessionManager.getMiniBodegaId()
+
+            if (miniBodegaId == null) {
+                emit(emptyList())
+                return@flow
+            }
+
+            emitAll(
+                repository.getVariacionesDisponiblesParaSustitucion(miniBodegaId)
+            )
+        }
+    }
+
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     fun registrarDevolucion(
         clienteId: Int?,
@@ -49,6 +68,7 @@ class DevolucionViewModel(
         motivo: String,
         observacion: String,
         carrito: List<CarritoItem>,
+        sustitucionesPorProducto: Map<Int, List<SustitucionSeleccionada>>,
         imprimir: Boolean,
     ) {
 
@@ -93,17 +113,20 @@ class DevolucionViewModel(
 
                 repository.registrarDevolucion(
                     devolucion = devolucion,
-                    carrito = carrito
+                    carrito = carrito,
+                    sustitucionesPorProducto = sustitucionesPorProducto
                 )
+
                 // ─────────────────────────────
                 // 2. GENERAR TICKET
                 // ─────────────────────────────
                 val ticket = TicketDevolucionBuilder.build(
                     items = carrito,
+                    sustitucionesPorProducto = sustitucionesPorProducto,
                     clienteNombre = when {
-                        clienteNulo -> "Venta rápida"   // ✔ ventas sin cliente
-                        clienteNombre != null -> clienteNombre // ✔ cliente real
-                        else -> null // ❌ no mostrar nada
+                        clienteNulo -> "Venta rápida"
+                        clienteNombre != null -> clienteNombre
+                        else -> null
                     },
                     motivo = motivo,
                     observacion = observacion,
@@ -122,12 +145,12 @@ class DevolucionViewModel(
                     withContext(Dispatchers.IO) {
 
                         val firstPrint =
-                            printerManager.print(device, ticket) // 👈 ESTO (primera impresión)
+                            printerManager.print(device, ticket)
 
                         if (firstPrint is PrintResult.Success) {
-                            printerManager.print(device, ticket) // 👈 ESTO (segunda impresión)
+                            printerManager.print(device, ticket)
                         } else {
-                            firstPrint // 👈 ESTO (si falla, no intenta segunda)
+                            firstPrint
                         }
                     }
                 } else {
@@ -149,7 +172,6 @@ class DevolucionViewModel(
         success = false
         isLoading = false
     }
-
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     fun verificarImpresora(): PrintResult {

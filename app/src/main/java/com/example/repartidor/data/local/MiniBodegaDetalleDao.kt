@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.repartidor.data.model.entity.MiniBodegaDetalleEntity
 import com.example.repartidor.data.model.dclass.ProductoConStock
+import com.example.repartidor.data.model.dclass.ProductoSustitucion
 import com.example.repartidor.data.model.entity.ProductoTerminadoEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -136,4 +137,92 @@ interface MiniBodegaDetalleDao {
         productoId: Int,
         cantidad: Double
     )
+
+
+
+    @Query(
+        """
+    SELECT 
+        pv.id,
+        pv.producto as productoId,
+        pt.nombre as nombreProducto,
+        pp.nombre as presentacionNombre,
+        pv.precio,
+        mbd.cantidadActual as stockActual
+    FROM mini_bodega_detalle mbd
+    INNER JOIN producto_variacion pv
+        ON pv.id = mbd.productoVariacionId
+    INNER JOIN producto_terminado pt
+        ON pv.producto = pt.id
+    INNER JOIN presentacion_producto pp
+        ON pv.presentacion = pp.id
+    WHERE mbd.miniBodegaId = :miniBodegaId
+    AND mbd.cantidadActual > 0
+    AND pt.estado = 1
+"""
+    )
+    fun getVariacionesDisponiblesParaSustitucion(
+        miniBodegaId: Int
+    ): Flow<List<ProductoSustitucion>>
+
+    @Query(
+        """
+    SELECT DISTINCT pt.*
+    FROM producto_terminado pt
+    INNER JOIN producto_variacion pv
+        ON pv.producto = pt.id
+    INNER JOIN mini_bodega_detalle mbd
+        ON mbd.productoVariacionId = pv.id
+    WHERE mbd.miniBodegaId = :miniBodegaId
+    AND pt.estado = 1
+"""
+    )
+    fun getProductosParaDevolucion(
+        miniBodegaId: Int
+    ): Flow<List<ProductoTerminadoEntity>>
+
+
+    @Query(
+        """
+    SELECT 
+        pv.id,
+        pv.producto as productoId,
+        pv.precio,
+        mbd.cantidadActual as stockActual,
+        pp.nombre as presentacionNombre
+    FROM mini_bodega_detalle mbd
+    INNER JOIN producto_variacion pv
+        ON pv.id = mbd.productoVariacionId
+    INNER JOIN presentacion_producto pp
+        ON pv.presentacion = pp.id
+    WHERE pv.producto = :productoId
+    AND mbd.miniBodegaId = :miniBodegaId
+"""
+    )
+    fun getVariacionesParaDevolucion(
+        productoId: Int,
+        miniBodegaId: Int
+    ): Flow<List<ProductoConStock>>
+
+    @Query(
+        """
+    SELECT 
+        pv.id,
+        pv.producto as productoId,
+        pv.precio,
+        mbd.cantidadActual as stockActual,
+        pp.nombre as presentacionNombre
+    FROM mini_bodega_detalle mbd
+    INNER JOIN producto_variacion pv
+        ON pv.id = mbd.productoVariacionId
+    INNER JOIN presentacion_producto pp
+        ON pv.presentacion = pp.id
+    WHERE mbd.miniBodegaId = :miniBodegaId
+    AND mbd.cantidadActual > 0
+"""
+    )
+    fun getVariacionesParaSustitucion(
+        miniBodegaId: Int
+    ): Flow<List<ProductoConStock>>
+
 }

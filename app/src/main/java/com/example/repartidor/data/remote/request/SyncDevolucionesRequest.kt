@@ -3,7 +3,8 @@ package com.example.repartidor.data.remote.request
 data class SyncDevolucionesRequest(
     val devoluciones: List<DevolucionRequest>,
     val detalles: List<DevolucionDetalleRequest>,
-    val mermas: List<MermaRequest>
+    val mermas: List<MermaRequest>,
+    val sustituciones: List<SustitucionRequest>
 )
 
 data class DevolucionRequest(

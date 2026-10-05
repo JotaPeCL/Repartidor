@@ -7,6 +7,7 @@ import com.example.repartidor.data.local.CancelacionVentaDao
 import com.example.repartidor.data.local.DevolucionDao
 import com.example.repartidor.data.local.DevolucionDetalleDao
 import com.example.repartidor.data.local.MiniBodegaDetalleMermaDao
+import com.example.repartidor.data.local.DevolucionSustitucionDao
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.local.VentaDao
 import com.example.repartidor.data.local.VentaDetalleDao
@@ -17,6 +18,7 @@ import com.example.repartidor.data.remote.request.MermaRequest
 import com.example.repartidor.data.remote.RetrofitClient
 import com.example.repartidor.data.remote.request.CancelacionVentaDetalleRequest
 import com.example.repartidor.data.remote.request.CancelacionVentaRequest
+import com.example.repartidor.data.remote.request.SustitucionRequest
 import com.example.repartidor.data.remote.request.SyncAbonosRequest
 import com.example.repartidor.data.remote.request.SyncCancelacionesRequest
 import com.example.repartidor.data.remote.request.SyncDevolucionesRequest
@@ -36,6 +38,7 @@ class SyncFinalRepository(
     private val devolucionDetalleDao: DevolucionDetalleDao,
     private val mermaDao: MiniBodegaDetalleMermaDao,
     private val cancelacionVentaDao: CancelacionVentaDao,
+    private val devolucionSustitucionDao: DevolucionSustitucionDao,
     private val sessionManager: SessionManager
 ) {
 
@@ -150,6 +153,10 @@ class SyncFinalRepository(
                     devoluciones.map { it.uuid }
                 )
 
+                val sustituciones = devolucionSustitucionDao.getSustitucionesByDevolucionUuids(
+                    devoluciones.map { it.uuid }
+                )
+
                 val devolucionesRequest = devoluciones.map {
                     DevolucionRequest(
                         uuid = it.uuid,
@@ -182,11 +189,30 @@ class SyncFinalRepository(
                     )
                 }
 
+                val detallesPorId = detalles.associateBy { it.id }
+
+                val sustitucionesRequest = sustituciones.map { s ->
+                    val detalle = detallesPorId[s.devolucionDetalleId]
+                        ?: throw Exception(
+                            "Detalle de devolución no encontrado para sustitución ${s.uuid}"
+                        )
+
+                    SustitucionRequest(
+                        uuid = s.uuid,
+                        devolucion_uuid = s.devolucionUuid,
+                        devolucion_detalle_uuid = detalle.uuid,
+                        producto_variacion_id = s.productoVariacionId,
+                        cantidad = s.cantidad,
+                        precio_unitario = s.precioUnitario
+                    )
+                }
+
                 val response = RetrofitClient.api.syncDevoluciones(
                     SyncDevolucionesRequest(
                         devolucionesRequest,
                         detallesRequest,
-                        mermasRequest
+                        mermasRequest,
+                        sustitucionesRequest
                     )
                 )
 
@@ -199,6 +225,9 @@ class SyncFinalRepository(
                 }
                 mermas.forEach {
                     mermaDao.marcarSincronizado(it.uuid)
+                }
+                sustituciones.forEach {
+                    devolucionSustitucionDao.marcarSincronizado(it.uuid)
                 }
             }
 

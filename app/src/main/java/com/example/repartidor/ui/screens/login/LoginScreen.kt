@@ -221,7 +221,7 @@ fun LoginScreen(
 
             // Pie de página
             Text(
-                text = "Sistema de Reparto v1.0",
+                text = "Sistema de Reparto v2.2",
                 fontSize = 12.sp,
                 color = TextMuted,
                 fontWeight = FontWeight.Medium,

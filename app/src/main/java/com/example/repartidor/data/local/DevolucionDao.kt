@@ -23,7 +23,7 @@ interface DevolucionDao {
     suspend fun insertarDevolucion(devolucion: DevolucionEntity): Long
 
     @Insert
-    suspend fun insertarDetalles(detalles: List<DevolucionDetalleEntity>)
+    suspend fun insertarDetalles(detalles: List<DevolucionDetalleEntity>): List<Long>
 
     @Query("""
     SELECT * FROM devoluciones 

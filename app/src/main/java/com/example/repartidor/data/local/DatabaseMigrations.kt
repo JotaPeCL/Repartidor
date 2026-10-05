@@ -34,3 +34,23 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
         """.trimIndent())
     }
 }
+
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS devolucion_sustitucion (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                uuid TEXT NOT NULL,
+                devolucionId INTEGER NOT NULL,
+                devolucionUuid TEXT NOT NULL,
+                devolucionDetalleId INTEGER NOT NULL,
+                productoVariacionId INTEGER NOT NULL,
+                nombreProducto TEXT NOT NULL,
+                cantidad REAL NOT NULL,
+                precioUnitario REAL NOT NULL,
+                createdAt TEXT NOT NULL,
+                sincronizado INTEGER NOT NULL
+            )
+        """.trimIndent())
+    }
+}

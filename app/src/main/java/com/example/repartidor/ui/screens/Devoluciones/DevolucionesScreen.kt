@@ -354,7 +354,7 @@ fun VariacionesDialogDevolucion(
     onAgregar: (List<CarritoItem>) -> Unit
 ) {
     val variaciones by viewModel
-        .getVariaciones(producto.id)
+        .getVariacionesParaDevolucion(producto.id)
         .collectAsState(initial = emptyList())
 
     // Cargar las cantidades que ya existen en el carrito
@@ -476,7 +476,11 @@ fun VariacionesDialogDevolucion(
                                     Spacer(modifier = Modifier.height(4.dp))
 
                                     Text(
-                                        text = "Stock: ${variacion.stockActual}",
+                                        text = if (variacion.stockActual > 0) {
+                                            "Stock: ${variacion.stockActual}"
+                                        } else {
+                                            "Sin stock"
+                                        },
                                         fontSize = 12.sp,
                                         color = TextMuted,
                                         fontWeight = FontWeight.Medium
