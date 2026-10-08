@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.repartidor.data.model.dclass.CarritoItem
 import com.example.repartidor.data.model.entity.ProductoTerminadoEntity
 import com.example.repartidor.ui.screens.components.StandardTopBar
@@ -164,7 +165,11 @@ fun VentaScreen(
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Borrar", tint = TextMuted)
+                                Icon(
+                                    Icons.Default.Clear,
+                                    contentDescription = "Borrar",
+                                    tint = TextMuted
+                                )
                             }
                         }
                     },
@@ -251,7 +256,12 @@ fun VentaScreen(
                 // ── LISTA DE PRODUCTOS FILTRADA ──
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
+                    contentPadding = PaddingValues(
+                        start = 20.dp,
+                        end = 20.dp,
+                        top = 8.dp,
+                        bottom = 24.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredProductos) { producto ->
@@ -393,7 +403,13 @@ private fun VariacionesDialog(
         }
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = {},
+        properties = DialogProperties(
+            dismissOnClickOutside = false,
+            dismissOnBackPress = false
+        )
+    ) {
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = SurfaceWhite,
@@ -582,8 +598,8 @@ private fun ExitConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = SurfaceWhite,
-        shape            = RoundedCornerShape(24.dp),
+        containerColor = SurfaceWhite,
+        shape = RoundedCornerShape(24.dp),
         icon = {
             Box(
                 modifier = Modifier
@@ -593,36 +609,36 @@ private fun ExitConfirmDialog(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector        = Icons.Default.Warning,
+                    imageVector = Icons.Default.Warning,
                     contentDescription = null,
-                    tint               = ErrorRed,
-                    modifier           = Modifier.size(26.dp)
+                    tint = ErrorRed,
+                    modifier = Modifier.size(26.dp)
                 )
             }
         },
         title = {
             Text(
-                text       = "¿Salir de la venta?",
+                text = "¿Salir de la venta?",
                 fontWeight = FontWeight.Bold,
-                fontSize   = 18.sp,
-                color      = TextPrimary,
-                textAlign  = TextAlign.Center
+                fontSize = 18.sp,
+                color = TextPrimary,
+                textAlign = TextAlign.Center
             )
         },
         text = {
             Text(
-                text       = "Si sales ahora, se perderán los productos que tienes actualmente en tu carrito.",
-                fontSize   = 14.sp,
-                color      = TextMuted,
-                textAlign  = TextAlign.Center,
+                text = "Si sales ahora, se perderán los productos que tienes actualmente en tu carrito.",
+                fontSize = 14.sp,
+                color = TextMuted,
+                textAlign = TextAlign.Center,
                 lineHeight = 20.sp
             )
         },
         dismissButton = {
             OutlinedButton(
-                onClick  = onDismiss,
-                shape    = RoundedCornerShape(12.dp),
-                colors   = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Continuar", fontWeight = FontWeight.SemiBold)
@@ -630,11 +646,11 @@ private fun ExitConfirmDialog(
         },
         confirmButton = {
             Button(
-                onClick  = onConfirm,
-                shape    = RoundedCornerShape(12.dp),
-                colors   = ButtonDefaults.buttonColors(
+                onClick = onConfirm,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
                     containerColor = ErrorRed,
-                    contentColor   = Color.White
+                    contentColor = Color.White
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {

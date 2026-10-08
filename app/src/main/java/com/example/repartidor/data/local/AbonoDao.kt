@@ -44,11 +44,13 @@ interface AbonoDao {
         usuarioId: Int
     ): Double
 
-    @Query("""
+    @Query(
+        """
     SELECT * FROM abono 
     WHERE sincronizado = 0 
     AND fecha BETWEEN :inicio AND :fin
-""")
+"""
+    )
     suspend fun getAbonosNoSincronizados(
         inicio: String,
         fin: String
@@ -64,9 +66,11 @@ interface AbonoDao {
     )
     suspend fun marcarSincronizado(uuid: String)
 
-    @Query("""
+    @Query(
+        """
 DELETE FROM abono 
 WHERE ventaId IN (:ventaIds)
-""")
+"""
+    )
     suspend fun deleteAbonosByVentaIds(ventaIds: List<Int>)
 }

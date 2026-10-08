@@ -21,4 +21,5 @@ sealed class Routes(val route: String) {
         fun createRoute(ventaId: Int) = "abono_form/$ventaId"
     }
     object ResumenDia: Routes("resumen_dia")
+    object DevolucionesDia : Routes("devoluciones_dia")
 }

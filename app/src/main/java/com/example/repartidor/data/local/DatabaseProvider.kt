@@ -15,8 +15,11 @@ object DatabaseProvider {
                 AppDatabase::class.java,
                 "app_database"
             )
-                .addMigrations(MIGRATION_8_9,
-                    MIGRATION_9_10)
+                .addMigrations(
+                    MIGRATION_8_9,
+                    MIGRATION_9_10,
+                    MIGRATION_10_11
+                )
                 .build()
 
             INSTANCE = instance

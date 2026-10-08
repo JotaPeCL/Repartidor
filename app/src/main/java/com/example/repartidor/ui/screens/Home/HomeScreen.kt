@@ -47,6 +47,7 @@ fun HomeScreen(
     onIrBluetooth: () -> Unit,
     onIrVentasDia: () -> Unit,
     onIrDevoluciones: () -> Unit,
+    onIrDevolucionesDia: () -> Unit,
     onIrAbonos: () -> Unit,
     onIrResumenDia: () -> Unit
 ) {
@@ -192,9 +193,14 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 InventoryCard(onClick = onIrInventarios)
+
                 Spacer(modifier = Modifier.height(12.dp))
 
                 VentasDiaCard(onClick = onIrVentasDia)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                DevolucionesDiaCard(onClick = onIrDevolucionesDia)
 
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -761,6 +767,65 @@ private fun FooterActionRow(
                 contentDescription = null,
                 tint = TextMuted,
                 modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DevolucionesDiaCard(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(78.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(AccentRedSoft),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.History,
+                    contentDescription = null,
+                    tint = AccentRed,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Devoluciones del día",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
+                Text(
+                    "Ver, reimprimir o cancelar",
+                    color = TextMuted,
+                    fontSize = 12.sp
+                )
+            }
+
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier.size(20.dp)
             )
         }
     }

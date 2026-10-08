@@ -105,9 +105,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.repartidor.data.repository.CancelacionDevolucionRepository
 import com.example.repartidor.data.repository.CancelacionVentaRepository
+import com.example.repartidor.data.repository.DevolucionesDiaRepository
+import com.example.repartidor.data.repository.DevolucionesDiaViewModelFactory
 import com.example.repartidor.data.repository.DispositivoRepository
+import com.example.repartidor.ui.screens.DevolucionesDia.DevolucionesDiaScreen
 import com.example.repartidor.ui.screens.login.DispositivoScreen
+import com.example.repartidor.viewmodel.Devoluciones.DevolucionesDiaViewModel
 import com.example.repartidor.viewmodel.Login.DispositivoViewModel
 
 @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
@@ -321,6 +326,41 @@ fun AppNavigation() {
         )
     }
 
+    val devolucionesDiaRepository = remember {
+        DevolucionesDiaRepository(
+            devolucionDao = db.devolucionDao(),
+            devolucionDetalleDao = db.devolucionDetalleDao(),
+            devolucionSustitucionDao = db.devolucionSustitucionDao(),
+            clienteDao = db.clienteDao(),
+            productoVariacionDao = db.variacionDao(),
+            presentacionDao = db.presentacionDao()
+        )
+    }
+
+    val cancelacionDevolucionRepository = remember {
+        CancelacionDevolucionRepository(
+            database = db,
+            devolucionDao = db.devolucionDao(),
+            devolucionDetalleDao = db.devolucionDetalleDao(),
+            devolucionSustitucionDao = db.devolucionSustitucionDao(),
+            miniBodegaDetalleDao = db.miniBodegaDetalleDao(),
+            mermaDao = db.mermaDao(),
+            cancelacionDevolucionDao = db.cancelacionDevolucionDao()
+        )
+    }
+
+    val devolucionesDiaViewModel: DevolucionesDiaViewModel = viewModel(
+        factory = DevolucionesDiaViewModelFactory(
+            repository = devolucionesDiaRepository,
+            cancelacionDevolucionRepository = cancelacionDevolucionRepository,
+            printerRepository = printerRepository,
+            printerManager = printerManager,
+            bluetoothAdapter = bluetoothAdapter,
+            sessionManager = sessionManager
+        )
+    )
+
+
     val resumenDiaRepository = remember {
         ResumenDiaRepository(
             db.ventaDao(),
@@ -341,6 +381,7 @@ fun AppNavigation() {
             db.mermaDao(),
             db.cancelacionVentaDao(),
             db.devolucionSustitucionDao(),
+            db.cancelacionDevolucionDao(),
             sessionManager
         )
     }
@@ -519,6 +560,9 @@ fun AppNavigation() {
                 },
                 onIrDevoluciones = {
                     navController.navigate(Routes.Devolucion.route)
+                },
+                onIrDevolucionesDia = {
+                    navController.navigate(Routes.DevolucionesDia.route)
                 },
                 onIrAbonos = {
                     navController.navigate(Routes.Abonos.route)
@@ -741,6 +785,17 @@ fun AppNavigation() {
                 }
             )
         }
+        composable(Routes.DevolucionesDia.route) {
+            DevolucionesDiaScreen(
+                onBack = {
+                    navController.popBackStack()
+                },
+                viewModel = devolucionesDiaViewModel,
+                sessionManager = sessionManager
+            )
+        }
+
+
     }
 }
 

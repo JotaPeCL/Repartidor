@@ -48,4 +48,29 @@ AND datetime(createdAt) < datetime('now', '-30 day')
 
     @Query("DELETE FROM devoluciones WHERE id IN (:ids)")
     suspend fun deleteDevolucionesByIds(ids: List<Int>)
+
+
+    @Query("""
+    SELECT * FROM devoluciones
+    WHERE id = :id
+""")
+    suspend fun getById(id: Int): DevolucionEntity?
+
+    @Query("""
+    DELETE FROM devoluciones
+    WHERE id = :id
+""")
+    suspend fun deleteById(id: Int)
+
+    @Query("""
+    SELECT * FROM devoluciones
+    WHERE fecha BETWEEN :inicio AND :fin
+    AND usuarioId = :usuarioId
+    ORDER BY fecha DESC
+""")
+    suspend fun getDevolucionesDelDia(
+        inicio: Long,
+        fin: Long,
+        usuarioId: Int
+    ): List<DevolucionEntity>
 }

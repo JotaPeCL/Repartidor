@@ -35,4 +35,21 @@ interface MiniBodegaDetalleMermaDao {
     WHERE sincronizado = 1
 """)
     suspend fun deleteSincronizados()
+
+
+    @Query("""
+    DELETE FROM mini_bodega_detalle_merma
+    WHERE devolucionId = :devolucionId
+""")
+    suspend fun eliminarPorDevolucionId(
+        devolucionId: Int
+    )
+
+    @Query("""
+    DELETE FROM mini_bodega_detalle_merma
+    WHERE devolucionUuid = :devolucionUuid
+""")
+    suspend fun eliminarPorDevolucionUuid(
+        devolucionUuid: String
+    )
 }

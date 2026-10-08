@@ -44,4 +44,23 @@ interface DevolucionSustitucionDao {
     suspend fun marcarSincronizado(
         uuid: String
     )
+
+    @Query("""
+    DELETE FROM devolucion_sustitucion
+    WHERE devolucionId = :devolucionId
+""")
+    suspend fun eliminarPorDevolucion(
+        devolucionId: Int
+    )
+
+    @Query("""
+    SELECT * FROM devolucion_sustitucion
+    WHERE devolucionUuid = :devolucionUuid
+""")
+    suspend fun obtenerPorDevolucionUuid(
+        devolucionUuid: String
+    ): List<DevolucionSustitucionEntity>
+
+
+
 }

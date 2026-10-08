@@ -3,6 +3,7 @@ package com.example.repartidor.data.repository
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.repartidor.data.local.AbonoDao
+import com.example.repartidor.data.local.CancelacionDevolucionDao
 import com.example.repartidor.data.local.CancelacionVentaDao
 import com.example.repartidor.data.local.DevolucionDao
 import com.example.repartidor.data.local.DevolucionDetalleDao
@@ -16,10 +17,14 @@ import com.example.repartidor.data.remote.request.DevolucionDetalleRequest
 import com.example.repartidor.data.remote.request.DevolucionRequest
 import com.example.repartidor.data.remote.request.MermaRequest
 import com.example.repartidor.data.remote.RetrofitClient
+import com.example.repartidor.data.remote.request.CancelacionDevolucionDetalleRequest
+import com.example.repartidor.data.remote.request.CancelacionDevolucionRequest
+import com.example.repartidor.data.remote.request.CancelacionDevolucionSustitucionRequest
 import com.example.repartidor.data.remote.request.CancelacionVentaDetalleRequest
 import com.example.repartidor.data.remote.request.CancelacionVentaRequest
 import com.example.repartidor.data.remote.request.SustitucionRequest
 import com.example.repartidor.data.remote.request.SyncAbonosRequest
+import com.example.repartidor.data.remote.request.SyncCancelacionesDevolucionesRequest
 import com.example.repartidor.data.remote.request.SyncCancelacionesRequest
 import com.example.repartidor.data.remote.request.SyncDevolucionesRequest
 import com.example.repartidor.data.remote.request.SyncVentasRequest
@@ -39,6 +44,7 @@ class SyncFinalRepository(
     private val mermaDao: MiniBodegaDetalleMermaDao,
     private val cancelacionVentaDao: CancelacionVentaDao,
     private val devolucionSustitucionDao: DevolucionSustitucionDao,
+    private val cancelacionDevolucionDao: CancelacionDevolucionDao,
     private val sessionManager: SessionManager
 ) {
 
@@ -280,6 +286,78 @@ class SyncFinalRepository(
 
                 cancelaciones.forEach {
                     cancelacionVentaDao.marcarSincronizado(it.uuid)
+                }
+            }
+
+            // =========================
+            // 🔥 CANCELACIONES DE DEVOLUCIONES
+            // =========================
+            val cancelacionesDevoluciones =
+                cancelacionDevolucionDao.obtenerNoSincronizadas()
+
+            if (cancelacionesDevoluciones.isNotEmpty()) {
+
+                val detalles = cancelacionDevolucionDao.obtenerDetallesNoSincronizados(
+                    cancelacionesDevoluciones.map { it.uuid }
+                )
+
+                val sustituciones =
+                    cancelacionDevolucionDao.obtenerSustitucionesNoSincronizadas(
+                        cancelacionesDevoluciones.map { it.uuid }
+                    )
+
+                val cancelacionesRequest = cancelacionesDevoluciones.map {
+                    CancelacionDevolucionRequest(
+                        uuid = it.uuid,
+                        devolucion_uuid = it.devolucionUuid,
+                        usuario_id = usuarioId,
+                        mini_bodega_id = miniBodegaId,
+                        fecha = normalizarFecha(it.fecha),
+                        total = it.total,
+                        motivo = it.motivo
+                    )
+                }
+
+                val detallesRequest = detalles.map {
+                    CancelacionDevolucionDetalleRequest(
+                        uuid = it.uuid,
+                        cancelacion_uuid = it.cancelacionDevolucionUuid,
+                        producto_variacion_id = it.productoVariacionId,
+                        nombre_producto = it.nombreProducto,
+                        cantidad = it.cantidad,
+                        precio_unitario = it.precioUnitario
+                    )
+                }
+
+                val sustitucionesRequest = sustituciones.map {
+                    CancelacionDevolucionSustitucionRequest(
+                        uuid = it.uuid,
+                        cancelacion_uuid = it.cancelacionDevolucionUuid,
+                        producto_variacion_id = it.productoVariacionId,
+                        nombre_producto = it.nombreProducto,
+                        cantidad = it.cantidad,
+                        precio_unitario = it.precioUnitario
+                    )
+                }
+
+                val response = RetrofitClient.api.syncCancelacionesDevoluciones(
+                    SyncCancelacionesDevolucionesRequest(
+                        cancelaciones = cancelacionesRequest,
+                        detalles = detallesRequest,
+                        sustituciones = sustitucionesRequest
+                    )
+                )
+
+                if (!response.isSuccessful) {
+                    return Result.failure(
+                        Exception(
+                            "Error cancelaciones devoluciones ${response.code()}"
+                        )
+                    )
+                }
+
+                cancelacionesDevoluciones.forEach {
+                    cancelacionDevolucionDao.marcarSincronizado(it.uuid)
                 }
             }
 
