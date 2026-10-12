@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
@@ -310,7 +311,7 @@ fun AbonosFormScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = AccentBlue)
+                            Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = AccentBlue)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Resumen de artículos", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextPrimary)
                         }

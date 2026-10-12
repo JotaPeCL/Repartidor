@@ -13,7 +13,7 @@ class ReabastecimientoRepository(
 ) {
 
     fun getProductos(): Flow<List<ProductoTerminadoEntity>> {
-        return productoDao.getAllP()
+        return productoDao.getProductosParaReabastecimiento()
     }
 
     fun getVariaciones(

@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.viewmodel.Home.HomeViewModel
-import com.example.repartidor.ui.screens.components.* // Aquí están los colores del tema
+import com.example.repartidor.ui.screens.components.*
 
 // -----------------------------------------------------------------------------------------
 
@@ -49,21 +49,20 @@ fun HomeScreen(
     onIrDevoluciones: () -> Unit,
     onIrDevolucionesDia: () -> Unit,
     onIrAbonos: () -> Unit,
-    onIrResumenDia: () -> Unit
+    onIrResumenDia: () -> Unit,
+    onIrRotacion: () -> Unit
 ) {
     val data = viewModel.homeData
     val context = LocalContext.current
 
-    // ── Estado del diálogo ────────────────────────────────────────────────────
     var showLogoutDialog by remember { mutableStateOf(false) }
-    // ─────────────────────────────────────────────────────────────────────────
     val finalDia by sessionManager.finalDiaFlow.collectAsState(initial = false)
+
     LaunchedEffect(Unit) {
         val username = sessionManager.getUser()
         username?.let { viewModel.cargarDatosPorUsername(it) }
     }
 
-    // ── Diálogo de confirmación ───────────────────────────────────────────────
     if (showLogoutDialog) {
         LogoutConfirmDialog(
             nombre = data.usuario?.firstName,
@@ -74,12 +73,11 @@ fun HomeScreen(
             }
         )
     }
-    // ─────────────────────────────────────────────────────────────────────────
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundLight) // Tu color de fondo base
+            .background(BackgroundLight)
     ) {
         Column(
             modifier = Modifier
@@ -94,13 +92,13 @@ fun HomeScreen(
                 onCerrarSesion = { showLogoutDialog = true }
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
 
-                // ── SECCIÓN: VENTAS (Énfasis Principal en blanco) ─────────────────
-                SectionLabel("Generar Venta")
-                Spacer(modifier = Modifier.height(12.dp))
+                // ── BLOQUE 1: VENTAS PRINCIPALES ─────────────────────────────
+                SectionLabel("Acciones Principales")
+                Spacer(modifier = Modifier.height(10.dp))
 
                 PrimaryActionCard(
                     title = "Venta Rápida",
@@ -108,17 +106,10 @@ fun HomeScreen(
                     icon = Icons.Default.PointOfSale,
                     accent = AccentIndigo,
                     accentBg = AccentIndigoSoft,
-                    onClick = {
-                        if (!finalDia) {
-                            onIrVenta()
-                        } else {
-                            Toast.makeText(context, "El día ya fue finalizado", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                    }
+                    onClick = { if (!finalDia) onIrVenta() else showFinalizadoToast(context) }
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 PrimaryActionCard(
                     title = "Venta por Cliente",
@@ -126,102 +117,80 @@ fun HomeScreen(
                     icon = Icons.Default.PersonSearch,
                     accent = AccentBlue,
                     accentBg = AccentBlueSoft,
-                    onClick = {
-                        if (!finalDia) {
-                            onIrClientes()
-                        } else {
-                            Toast.makeText(context, "El día ya fue finalizado", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                    }
+                    onClick = { if (!finalDia) onIrClientes() else showFinalizadoToast(context) }
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                // ── SECCIÓN: OTRAS OPERACIONES (Abonos y Devoluciones) ────────
+                // ── BLOQUE 2: OTRAS OPERACIONES ──────────────────────────────
                 SectionLabel("Otras Operaciones")
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    ActionCard(
+                    ActionCardCompact(
                         modifier = Modifier.weight(1f),
-                        title = "Recibir\nAbono",
+                        title = "Recibir Abono",
                         subtitle = "Pago de crédito",
                         icon = Icons.Default.AttachMoney,
                         accent = AccentGreen,
                         accentBg = AccentGreenSoft,
-                        onClick = {
-                            if (!finalDia) {
-                                onIrAbonos()
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "El día ya fue finalizado",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
+                        onClick = { if (!finalDia) onIrAbonos() else showFinalizadoToast(context) }
                     )
-                    ActionCard(
+                    ActionCardCompact(
                         modifier = Modifier.weight(1f),
-                        title = "Control\nDevolución",
+                        title = "Control Devolución",
                         subtitle = "Mermas / Retornos",
                         icon = Icons.AutoMirrored.Filled.KeyboardReturn,
                         accent = AccentRed,
                         accentBg = AccentRedSoft,
-                        onClick = {
-                            if (!finalDia) {
-                                onIrDevoluciones()
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "El día ya fue finalizado",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
+                        onClick = { if (!finalDia) onIrDevoluciones() else showFinalizadoToast(context) }
                     )
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // ── SECCIÓN: GESTIÓN DE RUTA ──────────────────────────────────
-                SectionLabel("Gestión de ruta")
-                Spacer(modifier = Modifier.height(12.dp))
-
-                InventoryCard(onClick = onIrInventarios)
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                VentasDiaCard(onClick = onIrVentasDia)
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                DevolucionesDiaCard(onClick = onIrDevolucionesDia)
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // ── SECCIÓN DE RENDIMIENTO ────────────────────────────────────
-                SectionLabel("Mi Rendimiento")
-                Spacer(modifier = Modifier.height(12.dp))
-
-                ResumenGeneralCard(
-                    onClick = onIrResumenDia
+                ActionCardFullWidth(
+                    title = "Rotación de productos",
+                    subtitle = "Realizar cambios directos con clientes",
+                    icon = Icons.Default.SwapHoriz,
+                    accent = AccentPurple,
+                    accentBg = AccentPurpleSoft,
+                    onClick = { if (!finalDia) onIrRotacion() else showFinalizadoToast(context) }
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                // ── SECCIÓN: CONFIGURACIÓN ────────────────────────────────────
+                // ── BLOQUE 3: GESTIÓN DE RUTA ────────────────────────────────
+                SectionLabel("Gestión de Ruta")
+                Spacer(modifier = Modifier.height(10.dp))
+
+                InventoryCard(onClick = onIrInventarios)
+                Spacer(modifier = Modifier.height(10.dp))
+                VentasDiaCard(onClick = onIrVentasDia)
+                Spacer(modifier = Modifier.height(10.dp))
+                DevolucionesDiaCard(onClick = onIrDevolucionesDia)
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // ── BLOQUE 4: MI RENDIMIENTO ─────────────────────────────────
+                SectionLabel("Mi Rendimiento")
+                Spacer(modifier = Modifier.height(10.dp))
+
+                ResumenGeneralCard(onClick = onIrResumenDia)
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // ── BLOQUE 5: CONFIGURACIÓN ──────────────────────────────────
                 SectionLabel("Configuración")
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 FooterActionRow(
                     icon = Icons.Default.Print,
                     label = "Impresora Bluetooth",
-                    sublabel = "Configurar dispositivo",
+                    sublabel = "Configurar dispositivo MPT-II",
                     onClick = onIrBluetooth
                 )
 
@@ -231,7 +200,13 @@ fun HomeScreen(
     }
 }
 
-// ── NUEVO COMPONENTE: PRIMARY ACTION CARD (Blanco con acentos) ───────────────
+// Función auxiliar para notificar día finalizado
+private fun showFinalizadoToast(context: android.content.Context) {
+    Toast.makeText(context, "El día ya fue finalizado", Toast.LENGTH_SHORT).show()
+}
+
+// ── COMPONENTES RE DISEÑADOS PARA MÁXIMA LIMPIEZA ────────────────────────────
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PrimaryActionCard(
@@ -246,21 +221,21 @@ private fun PrimaryActionCard(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(96.dp),
-        shape = RoundedCornerShape(20.dp),
+            .height(86.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(54.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(14.dp))
                     .background(accentBg),
                 contentAlignment = Alignment.Center
             ) {
@@ -268,15 +243,15 @@ private fun PrimaryActionCard(
                     imageVector = icon,
                     contentDescription = title,
                     tint = accent,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(26.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     color = TextPrimary,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 )
                 Text(
@@ -290,271 +265,15 @@ private fun PrimaryActionCard(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
                 tint = TextMuted,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
     }
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ── COMPONENTE: RESUMEN GENERAL ──────────────────────────────────────────────
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ResumenGeneralCard(onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(90.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Resumen general",
-                    color = TextPrimary,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 15.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    "Métricas, saldos y cobranza del día",
-                    color = TextMuted,
-                    fontSize = 12.sp
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(54.dp)
-                    .clip(CircleShape)
-                    .background(AccentPurpleSoft),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Default.TrendingUp,
-                    contentDescription = "Resumen General",
-                    tint = AccentPurple,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-        }
-    }
-}
-
-// ── DIÁLOGO DE CIERRE DE SESIÓN ───────────────────────────────────────────────
-@Composable
-private fun LogoutConfirmDialog(
-    nombre: String?,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = SurfaceWhite,
-        shape = RoundedCornerShape(24.dp),
-        icon = {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(ErrorRedSoft),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ExitToApp,
-                    contentDescription = null,
-                    tint = ErrorRed,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        },
-        title = {
-            Text(
-                text = "¿Cerrar sesión?",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = TextPrimary,
-                textAlign = TextAlign.Center
-            )
-        },
-        text = {
-            Text(
-                text = if (nombre != null)
-                    "Hola, $nombre. ¿Seguro que deseas salir?\nTendrás que iniciar sesión de nuevo."
-                else
-                    "¿Seguro que deseas salir?\nTendrás que iniciar sesión de nuevo.",
-                fontSize = 14.sp,
-                color = TextMuted,
-                textAlign = TextAlign.Center,
-                lineHeight = 20.sp
-            )
-        },
-        dismissButton = {
-            OutlinedButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Cancelar", fontWeight = FontWeight.SemiBold)
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = ErrorRed,
-                    contentColor = Color.White
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ExitToApp,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Cerrar sesión", fontWeight = FontWeight.SemiBold)
-            }
-        }
-    )
-}
-
-// ── HEADER ────────────────────────────────────────────────────────────────────
-@Composable
-private fun HomeHeader(
-    nombre: String?,
-    ruta: String?,
-    vehiculo: String?,
-    onCerrarSesion: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Brush.linearGradient(listOf(HeaderGradStart, HeaderGradEnd))
-            )
-            .padding(top = 56.dp, bottom = 32.dp, start = 20.dp, end = 20.dp)
-    ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(54.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = nombre?.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                        color = Color.White,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 22.sp
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Hola, ${nombre ?: "Cargando…"}",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(7.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF6EF0B0))
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Repartidor activo",
-                            color = Color.White.copy(alpha = 0.85f),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-
-                IconButton(
-                    onClick = onCerrarSesion,
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.15f))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ExitToApp,
-                        contentDescription = "Cerrar sesión",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                HeaderChip(Icons.Default.Map, ruta ?: "Sin ruta", Modifier.weight(1f))
-                HeaderChip(
-                    Icons.Default.LocalShipping,
-                    vehiculo ?: "Sin unidad",
-                    Modifier.weight(1f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeaderChip(icon: ImageVector, label: String, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.White.copy(alpha = 0.18f))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
-        Spacer(modifier = Modifier.width(7.dp))
-        Text(
-            text = label,
-            color = Color.White,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1
-        )
-    }
-}
-
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text = text.uppercase(),
-        color = TextMuted,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Bold,
-        letterSpacing = 1.4.sp
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ActionCard(
+private fun ActionCardCompact(
     modifier: Modifier = Modifier,
     title: String,
     subtitle: String,
@@ -565,20 +284,79 @@ private fun ActionCard(
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier.height(136.dp),
-        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.height(110.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(14.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(accentBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = title,
+                    tint = accent,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Column {
+                Text(
+                    title,
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    lineHeight = 17.sp,
+                    maxLines = 1
+                )
+                Text(
+                    subtitle,
+                    color = TextMuted,
+                    fontSize = 11.sp,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ActionCardFullWidth(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    accent: Color,
+    accentBg: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(74.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(accentBg),
                 contentAlignment = Alignment.Center
@@ -590,16 +368,26 @@ private fun ActionCard(
                     modifier = Modifier.size(22.dp)
                 )
             }
-            Column {
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
                     color = TextPrimary,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp
+                    fontSize = 14.sp
                 )
-                Text(subtitle, color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    subtitle,
+                    color = TextMuted,
+                    fontSize = 11.sp
+                )
             }
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
@@ -607,133 +395,58 @@ private fun ActionCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun InventoryCard(onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(78.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(AccentTealSoft),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Default.Inventory,
-                    contentDescription = null,
-                    tint = AccentTeal,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Inventario de camioneta",
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                )
-                Text("Ver stock actual", color = TextMuted, fontSize = 12.sp)
-            }
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = TextMuted,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    }
+    StandardRouteCard(
+        title = "Inventario de camioneta",
+        subtitle = "Ver stock actual disponible",
+        icon = Icons.Default.Inventory,
+        accent = AccentTeal,
+        accentBg = AccentTealSoft,
+        onClick = onClick
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun VentasDiaCard(onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(78.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(AccentIndigoSoft),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Default.Receipt,
-                    contentDescription = null,
-                    tint = AccentIndigo,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Ventas del día",
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                )
-                Text(
-                    "Ver y reimprimir tickets",
-                    color = TextMuted,
-                    fontSize = 12.sp
-                )
-            }
-
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = TextMuted,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    }
+    StandardRouteCard(
+        title = "Ventas del día",
+        subtitle = "Ver y reimprimir tickets de cobro",
+        icon = Icons.Default.Receipt,
+        accent = AccentIndigo,
+        accentBg = AccentIndigoSoft,
+        onClick = onClick
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FooterActionRow(
-    icon: ImageVector,
-    label: String,
-    sublabel: String,
-    onClick: () -> Unit,
-    isDestructive: Boolean = false
-) {
-    val iconColor = if (isDestructive) ErrorRed else AccentBlue
-    val iconBg = if (isDestructive) ErrorRedSoft else AccentBlueSoft
-    val labelColor = if (isDestructive) ErrorRed else TextPrimary
+private fun DevolucionesDiaCard(onClick: () -> Unit) {
+    StandardRouteCard(
+        title = "Devoluciones del día",
+        subtitle = "Historial, estatus y cancelaciones",
+        icon = Icons.Default.History,
+        accent = AccentRed,
+        accentBg = AccentRedSoft,
+        onClick = onClick
+    )
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StandardRouteCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    accent: Color,
+    accentBg: Color,
+    onClick: () -> Unit
+) {
     Card(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(68.dp),
-        shape = RoundedCornerShape(16.dp),
+            .height(72.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -747,91 +460,220 @@ private fun FooterActionRow(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(iconBg),
+                    .background(accentBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     icon,
-                    contentDescription = label,
-                    tint = iconColor,
-                    modifier = Modifier.size(19.dp)
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(20.dp)
                 )
             }
             Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(label, color = labelColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                Text(sublabel, color = TextMuted, fontSize = 11.sp)
+                Text(title, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(subtitle, color = TextMuted, fontSize = 11.sp)
             }
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = TextMuted,
-                modifier = Modifier.size(18.dp)
-            )
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp))
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DevolucionesDiaCard(onClick: () -> Unit) {
+private fun ResumenGeneralCard(onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .height(78.dp),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 18.dp),
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Resumen general", color = TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text("Métricas, saldos y cobranza acumulada", color = TextMuted, fontSize = 11.sp)
+            }
             Box(
                 modifier = Modifier
                     .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(AccentRedSoft),
+                    .clip(CircleShape)
+                    .background(AccentPurpleSoft),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Default.History,
-                    contentDescription = null,
-                    tint = AccentRed,
-                    modifier = Modifier.size(22.dp)
-                )
+                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = AccentPurple, modifier = Modifier.size(22.dp))
             }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Devoluciones del día",
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                )
-                Text(
-                    "Ver, reimprimir o cancelar",
-                    color = TextMuted,
-                    fontSize = 12.sp
-                )
-            }
-
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = TextMuted,
-                modifier = Modifier.size(20.dp)
-            )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FooterActionRow(
+    icon: ImageVector,
+    label: String,
+    sublabel: String,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AccentBlueSoft),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = label, tint = AccentBlue, modifier = Modifier.size(18.dp))
+            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(label, color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                Text(sublabel, color = TextMuted, fontSize = 11.sp)
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+// ── COMPONENTES COMPLEMENTARIOS (HEADER Y DIÁLOGOS) ──────────────────────────
+
+@Composable
+private fun LogoutConfirmDialog(
+    nombre: String?,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = SurfaceWhite,
+        shape = RoundedCornerShape(24.dp),
+        icon = {
+            Box(
+                modifier = Modifier.size(56.dp).clip(CircleShape).background(ErrorRedSoft),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(imageVector = Icons.Default.ExitToApp, contentDescription = null, tint = ErrorRed, modifier = Modifier.size(26.dp))
+            }
+        },
+        title = { Text(text = "¿Cerrar sesión?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary, textAlign = TextAlign.Center) },
+        text = {
+            Text(
+                text = if (nombre != null) "Hola, $nombre. ¿Seguro que deseas salir?\nTendrás que iniciar sesión de nuevo."
+                else "¿Seguro que deseas salir?\nTendrás que iniciar sesión de nuevo.",
+                fontSize = 14.sp, color = TextMuted, textAlign = TextAlign.Center, lineHeight = 20.sp
+            )
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                Text("Cancelar", fontWeight = FontWeight.SemiBold)
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = ErrorRed, contentColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+                Icon(imageVector = Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Cerrar sesión", fontWeight = FontWeight.SemiBold)
+            }
+        }
+    )
+}
+
+@Composable
+private fun HomeHeader(
+    nombre: String?,
+    ruta: String?,
+    vehiculo: String?,
+    onCerrarSesion: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Brush.linearGradient(listOf(HeaderGradStart, HeaderGradEnd)))
+            .padding(top = 52.dp, bottom = 28.dp, start = 20.dp, end = 20.dp)
+    ) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(50.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = nombre?.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                        color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp
+                    )
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "Hola, ${nombre ?: "Cargando…"}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF6EF0B0)))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = "Repartidor activo", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+                IconButton(
+                    onClick = onCerrarSesion,
+                    modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.15f))
+                ) {
+                    Icon(imageVector = Icons.Default.ExitToApp, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                }
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                HeaderChip(Icons.Default.Map, ruta ?: "Sin ruta", Modifier.weight(1f))
+                HeaderChip(Icons.Default.LocalShipping, vehiculo ?: "Sin unidad", Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeaderChip(icon: ImageVector, label: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.18f)).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(text = label, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text.uppercase(),
+        color = TextMuted,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.2.sp
+    )
+}
+
 @Preview(showBackground = true, backgroundColor = 0xFFF4F6FB)
 @Composable
-fun HomeScreenPreview() {
-}
+fun HomeScreenPreview() {}

@@ -30,4 +30,18 @@ interface ProductoTerminadoDao {
 
     @Query("SELECT * FROM producto_terminado")
     fun getAllP(): Flow<List<ProductoTerminadoEntity>>
+
+    @Query("""
+    SELECT *
+    FROM producto_terminado
+    WHERE estado = 1
+    AND nombre NOT LIKE 'ML %'
+    AND nombre NOT LIKE 'Y %'
+    AND nombre NOT LIKE 'YML %'
+    AND nombre NOT LIKE 'YV %'
+    AND nombre NOT LIKE 'JP %'
+    AND nombre NOT LIKE 'N %'
+    ORDER BY nombre ASC
+""")
+    fun getProductosParaReabastecimiento(): Flow<List<ProductoTerminadoEntity>>
 }

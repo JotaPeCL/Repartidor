@@ -967,6 +967,7 @@ fun DevolucionFormScreen(
                                             id = it.id,
                                             negocio =
                                                 it.nombreNegocio,
+                                            direccion = it.direccion,
                                             seleccionado = true,
                                             onClick = {}
                                         )
@@ -993,6 +994,7 @@ fun DevolucionFormScreen(
                                                 seleccionado =
                                                     cliente?.id ==
                                                             resultado.id,
+                                                direccion = resultado.direccion,
                                                 onClick = {
 
                                                     clienteViewModel
@@ -1232,10 +1234,12 @@ fun CarritoItemDevolucionCard(
 
                     Text(
                         text =
-                            "$${String.format(
-                                "%.2f",
-                                item.precio
-                            )} c/u",
+                            "$${
+                                String.format(
+                                    "%.2f",
+                                    item.precio
+                                )
+                            } c/u",
                         fontSize = 12.sp,
                         color = TextMuted
                     )
@@ -1385,10 +1389,12 @@ fun CarritoItemDevolucionCard(
                             "${sustitucion.cantidad} × " +
                                     "${sustitucion.nombreProducto} " +
                                     "(${sustitucion.presentacionNombre}) " +
-                                    "— $${String.format(
-                                        "%.2f",
-                                        sustitucion.precio
-                                    )}",
+                                    "— $${
+                                        String.format(
+                                            "%.2f",
+                                            sustitucion.precio
+                                        )
+                                    }",
                         fontSize = 11.sp,
                         color = TextMuted
                     )
@@ -1663,10 +1669,12 @@ fun CambioProductoDialog(
 
                                         Text(
                                             text =
-                                                "$${String.format(
-                                                    "%.2f",
-                                                    seleccion.precio
-                                                )} c/u",
+                                                "$${
+                                                    String.format(
+                                                        "%.2f",
+                                                        seleccion.precio
+                                                    )
+                                                } c/u",
                                             fontSize = 11.sp,
                                             color = TextMuted
                                         )
@@ -1864,10 +1872,12 @@ fun CambioProductoDialog(
 
                                             Text(
                                                 text =
-                                                    "$${String.format(
-                                                        "%.2f",
-                                                        variacion.precio
-                                                    )} • Stock: " +
+                                                    "$${
+                                                        String.format(
+                                                            "%.2f",
+                                                            variacion.precio
+                                                        )
+                                                    } • Stock: " +
                                                             "${variacion.stockActual}",
                                                 fontSize = 11.sp,
                                                 color = AccentBlue

@@ -437,7 +437,7 @@ class SyncRepository(
 
         println("MERMAS SINCRONIZADAS ELIMINADAS")
 
-
+        /*
         val limite =
             System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000)
 
@@ -465,6 +465,7 @@ class SyncRepository(
         }
 
         println("LIMPIEZA DE DATOS ANTIGUOS COMPLETADA")
+        */
 
 
         /*

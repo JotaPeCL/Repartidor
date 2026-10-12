@@ -9,6 +9,9 @@ import com.example.repartidor.data.local.DevolucionDao
 import com.example.repartidor.data.local.DevolucionDetalleDao
 import com.example.repartidor.data.local.MiniBodegaDetalleMermaDao
 import com.example.repartidor.data.local.DevolucionSustitucionDao
+import com.example.repartidor.data.local.RotacionDao
+import com.example.repartidor.data.local.RotacionDetalleDao
+import com.example.repartidor.data.local.RotacionSustitucionDao
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.local.VentaDao
 import com.example.repartidor.data.local.VentaDetalleDao
@@ -22,11 +25,15 @@ import com.example.repartidor.data.remote.request.CancelacionDevolucionRequest
 import com.example.repartidor.data.remote.request.CancelacionDevolucionSustitucionRequest
 import com.example.repartidor.data.remote.request.CancelacionVentaDetalleRequest
 import com.example.repartidor.data.remote.request.CancelacionVentaRequest
+import com.example.repartidor.data.remote.request.RotacionDetalleRequest
+import com.example.repartidor.data.remote.request.RotacionRequest
+import com.example.repartidor.data.remote.request.RotacionSustitucionRequest
 import com.example.repartidor.data.remote.request.SustitucionRequest
 import com.example.repartidor.data.remote.request.SyncAbonosRequest
 import com.example.repartidor.data.remote.request.SyncCancelacionesDevolucionesRequest
 import com.example.repartidor.data.remote.request.SyncCancelacionesRequest
 import com.example.repartidor.data.remote.request.SyncDevolucionesRequest
+import com.example.repartidor.data.remote.request.SyncRotacionesRequest
 import com.example.repartidor.data.remote.request.SyncVentasRequest
 import com.example.repartidor.data.remote.request.VentaDetalleRequest
 import com.example.repartidor.data.remote.request.VentaRequest
@@ -45,6 +52,9 @@ class SyncFinalRepository(
     private val cancelacionVentaDao: CancelacionVentaDao,
     private val devolucionSustitucionDao: DevolucionSustitucionDao,
     private val cancelacionDevolucionDao: CancelacionDevolucionDao,
+    private val rotacionDao: RotacionDao,
+    private val rotacionDetalleDao: RotacionDetalleDao,
+    private val rotacionSustitucionDao: RotacionSustitucionDao,
     private val sessionManager: SessionManager
 ) {
 
@@ -361,6 +371,88 @@ class SyncFinalRepository(
                 }
             }
 
+
+            // =========================
+            // 🔥 ROTACIONES + DETALLES + SUSTITUCIONES
+            // =========================
+            val rotaciones = rotacionDao.getPendientes()
+
+            if (rotaciones.isNotEmpty()) {
+
+                val detalles = rotaciones.flatMap {
+                    rotacionDetalleDao.obtenerPorRotacionUuid(it.uuid)
+                }
+
+                val sustituciones = rotacionSustitucionDao.getPendientesPorRotaciones(
+                    rotaciones.map { it.uuid }
+                )
+
+                val rotacionesRequest = rotaciones.map {
+                    RotacionRequest(
+                        uuid = it.uuid,
+                        cliente_id = it.clienteId,
+                        usuario_id = usuarioId,
+                        mini_bodega_id = miniBodegaId,
+                        fecha = fechaRotacionISO(it.fecha),
+                        descripcion = it.descripcion,
+                        created_at = fechaRotacionISO(it.createdAt)
+                    )
+                }
+
+                val detallesRequest = detalles.map {
+                    RotacionDetalleRequest(
+                        uuid = it.uuid,
+                        rotacion_uuid = it.rotacionUuid,
+                        producto_variacion_id = it.productoVariacionId,
+                        nombre_producto = it.nombreProducto,
+                        cantidad = it.cantidad,
+                        precio_unitario = it.precioUnitario
+                    )
+                }
+
+                val detallesPorId = detalles.associateBy { it.id }
+
+                val sustitucionesRequest = sustituciones.map { s ->
+                    val detalle = detallesPorId[s.rotacionDetalleId]
+                        ?: throw Exception(
+                            "Detalle de rotación no encontrado para sustitución ${s.uuid}"
+                        )
+
+                    RotacionSustitucionRequest(
+                        uuid = s.uuid,
+                        rotacion_uuid = s.rotacionUuid,
+                        rotacion_detalle_uuid = detalle.uuid,
+                        producto_variacion_id = s.productoVariacionId,
+                        nombre_producto = s.nombreProducto,
+                        cantidad = s.cantidad,
+                        precio_unitario = s.precioUnitario,
+                        created_at = fechaRotacionISO(s.createdAt)
+                    )
+                }
+
+                val response = RetrofitClient.api.syncRotaciones(
+                    SyncRotacionesRequest(
+                        rotaciones = rotacionesRequest,
+                        detalles = detallesRequest,
+                        sustituciones = sustitucionesRequest
+                    )
+                )
+
+                if (!response.isSuccessful) {
+                    return Result.failure(
+                        Exception("Error rotaciones ${response.code()}")
+                    )
+                }
+
+                rotaciones.forEach {
+                    rotacionDao.marcarSincronizado(it.uuid)
+                }
+
+                sustituciones.forEach {
+                    rotacionSustitucionDao.marcarSincronizado(it.uuid)
+                }
+            }
+
             // =========================
             // ✅ TODO OK
             // =========================
@@ -374,35 +466,54 @@ class SyncFinalRepository(
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun normalizarFecha(fecha: Any): String {
-        val zone = java.time.ZoneId.systemDefault()
-        val formatter = java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME
+        val zone = ZoneId.systemDefault()
+        val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
         return when (fecha) {
-
             is Long -> {
-                // viene como millis
-                java.time.Instant.ofEpochMilli(fecha)
+                Instant.ofEpochMilli(fecha)
                     .atZone(zone)
                     .toLocalDateTime()
                     .format(formatter)
             }
 
             is String -> {
-                try {
-                    val parsed = LocalDateTime.parse(
-                        fecha,
-                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                    )
-                    parsed.format(formatter)
-                } catch (e: Exception) {
-                    LocalDateTime.now().format(formatter) // fallback real
+                val millis = fecha.toLongOrNull()
+
+                when {
+                    millis != null -> {
+                        Instant.ofEpochMilli(millis)
+                            .atZone(zone)
+                            .toLocalDateTime()
+                            .format(formatter)
+                    }
+
+                    else -> {
+                        try {
+                            LocalDateTime.parse(
+                                fecha.replace(" ", "T"),
+                                formatter
+                            ).format(formatter)
+                        } catch (e: Exception) {
+                            throw IllegalArgumentException("Fecha inválida: $fecha", e)
+                        }
+                    }
                 }
             }
 
-            else -> {
-                throw Exception("Formato de fecha no soportado")
-            }
+            else -> throw IllegalArgumentException("Formato de fecha no soportado: $fecha")
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun fechaRotacionISO(fecha: String): String {
+        val millis = fecha.toLongOrNull()
+            ?: throw Exception("Fecha de rotación inválida: $fecha")
+
+        return Instant.ofEpochMilli(millis)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDateTime()
+            .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
     }
 
 }

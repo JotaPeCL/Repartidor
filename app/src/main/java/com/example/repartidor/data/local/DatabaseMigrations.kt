@@ -100,3 +100,51 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
         """.trimIndent())
     }
 }
+
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS rotaciones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                uuid TEXT NOT NULL,
+                clienteId INTEGER,
+                usuarioId INTEGER NOT NULL,
+                miniBodegaId INTEGER NOT NULL,
+                fecha TEXT NOT NULL,
+                descripcion TEXT NOT NULL,
+                sincronizado INTEGER NOT NULL,
+                createdAt TEXT NOT NULL
+            )
+        """.trimIndent())
+
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS rotacion_detalle (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                uuid TEXT NOT NULL,
+                rotacionId INTEGER NOT NULL,
+                rotacionUuid TEXT NOT NULL,
+                productoVariacionId INTEGER NOT NULL,
+                nombreProducto TEXT NOT NULL,
+                cantidad REAL NOT NULL,
+                precioUnitario REAL NOT NULL
+            )
+        """.trimIndent())
+
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS rotacion_sustitucion (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                uuid TEXT NOT NULL,
+                rotacionId INTEGER NOT NULL,
+                rotacionUuid TEXT NOT NULL,
+                rotacionDetalleId INTEGER NOT NULL,
+                productoVariacionId INTEGER NOT NULL,
+                nombreProducto TEXT NOT NULL,
+                cantidad REAL NOT NULL,
+                precioUnitario REAL NOT NULL,
+                createdAt TEXT NOT NULL,
+                sincronizado INTEGER NOT NULL
+            )
+        """.trimIndent())
+    }
+}

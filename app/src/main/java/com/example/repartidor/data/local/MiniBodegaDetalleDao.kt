@@ -225,4 +225,68 @@ interface MiniBodegaDetalleDao {
         miniBodegaId: Int
     ): Flow<List<ProductoConStock>>
 
+
+    @Query(
+        """
+    SELECT 
+        pv.id,
+        pv.producto as productoId,
+        pt.nombre as nombreProducto,
+        pv.precio,
+        mbd.cantidadActual as stockActual,
+        pp.nombre as presentacionNombre
+    FROM mini_bodega_detalle mbd
+    INNER JOIN producto_variacion pv
+        ON pv.id = mbd.productoVariacionId
+    INNER JOIN producto_terminado pt
+        ON pv.producto = pt.id
+    INNER JOIN presentacion_producto pp
+        ON pv.presentacion = pp.id
+    WHERE mbd.miniBodegaId = :miniBodegaId
+    AND mbd.cantidadActual > 0
+    AND pt.estado = 1
+"""
+    )
+    fun getVariacionesParaRotacion(
+        miniBodegaId: Int
+    ): Flow<List<ProductoSustitucion>>
+
+
+    @Query(
+        """
+    SELECT * FROM producto_terminado
+    WHERE estado = 1
+    AND nombre NOT LIKE 'ML %'
+    AND nombre NOT LIKE 'Y %'
+    AND nombre NOT LIKE 'YML %'
+    AND nombre NOT LIKE 'YV %'
+    AND nombre NOT LIKE 'JP %'
+    AND nombre NOT LIKE 'N %'
+    ORDER BY nombre ASC
+    """
+    )
+    fun getTodosProductosParaRotacion(): Flow<List<ProductoTerminadoEntity>>
+
+    @Query(
+        """
+    SELECT
+        pv.id,
+        pv.producto as productoId,
+        pv.precio,
+        IFNULL(mbd.cantidadActual, 0) as stockActual,
+        pp.nombre as presentacionNombre
+    FROM producto_variacion pv
+    INNER JOIN presentacion_producto pp
+        ON pv.presentacion = pp.id
+    LEFT JOIN mini_bodega_detalle mbd
+        ON pv.id = mbd.productoVariacionId
+        AND mbd.miniBodegaId = :miniBodegaId
+    WHERE pv.producto = :productoId
+    ORDER BY pp.nombre ASC
+    """
+    )
+    fun getTodasVariacionesParaRotacion(
+        productoId: Int,
+        miniBodegaId: Int
+    ): Flow<List<ProductoConStock>>
 }

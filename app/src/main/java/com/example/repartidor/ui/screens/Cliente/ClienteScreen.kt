@@ -253,6 +253,7 @@ fun ClienteScreen(
                             nombre = clienteResult.nombre,
                             id = clienteResult.id,
                             negocio = clienteResult.nombreNegocio,
+                            direccion = clienteResult.direccion,
                             seleccionado = isSelected,
                             onClick = { viewModel.seleccionarCliente(clienteResult) }
                         )
@@ -269,18 +270,22 @@ fun ClienteCard(
     nombre: String,
     id: Int,
     negocio: String,
+    direccion: String?,
     seleccionado: Boolean,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            // Eliminamos el .clip() de aquí
             .clickable { onClick() },
-        shape = RoundedCornerShape(20.dp), // <-- Lo agregamos como propiedad de la Card
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (seleccionado) 4.dp else 1.dp),
-        border = if (seleccionado) BorderStroke(2.dp, AccentTeal) else null
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (seleccionado) 4.dp else 1.dp
+        ),
+        border = if (seleccionado) {
+            BorderStroke(2.dp, AccentTeal)
+        } else null
     ) {
         Row(
             modifier = Modifier
@@ -288,11 +293,14 @@ fun ClienteCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             Box(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(if (seleccionado) AccentTeal else AccentTealSoft),
+                    .background(
+                        if (seleccionado) AccentTeal else AccentTealSoft
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -305,16 +313,68 @@ fun ClienteCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = nombre, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+
+                // NOMBRE
+                Text(
+                    text = nombre,
+                    color = TextPrimary,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(text = "$negocio ", color = TextMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+
+                // NEGOCIO
+                Text(
+                    text = negocio,
+                    color = TextMuted,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                // DIRECCIÓN
+                if (!direccion.isNullOrBlank()) {
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = AccentBlue,
+                            modifier = Modifier.size(16.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        Text(
+                            text = direccion,
+                            color = TextMuted,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
             }
 
             if (seleccionado) {
-                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = AccentTeal, modifier = Modifier.size(26.dp))
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = AccentTeal,
+                    modifier = Modifier.size(26.dp)
+                )
             } else {
-                Icon(Icons.Default.ChevronRight, contentDescription = "Seleccionar", tint = TextMuted)
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = "Seleccionar",
+                    tint = TextMuted
+                )
             }
         }
     }

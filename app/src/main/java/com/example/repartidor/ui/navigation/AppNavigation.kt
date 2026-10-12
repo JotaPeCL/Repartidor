@@ -110,10 +110,16 @@ import com.example.repartidor.data.repository.CancelacionVentaRepository
 import com.example.repartidor.data.repository.DevolucionesDiaRepository
 import com.example.repartidor.data.repository.DevolucionesDiaViewModelFactory
 import com.example.repartidor.data.repository.DispositivoRepository
+import com.example.repartidor.data.repository.RotacionInventarioRepository
+import com.example.repartidor.data.repository.RotacionRepository
 import com.example.repartidor.ui.screens.DevolucionesDia.DevolucionesDiaScreen
+import com.example.repartidor.ui.screens.Rotacion.RotacionFormScreen
+import com.example.repartidor.ui.screens.Rotacion.RotacionScreen
 import com.example.repartidor.ui.screens.login.DispositivoScreen
 import com.example.repartidor.viewmodel.Devoluciones.DevolucionesDiaViewModel
 import com.example.repartidor.viewmodel.Login.DispositivoViewModel
+import com.example.repartidor.viewmodel.Rotacion.CarritoRotacionViewModel
+import com.example.repartidor.viewmodel.Rotacion.RotacionViewModel
 
 @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -361,6 +367,33 @@ fun AppNavigation() {
     )
 
 
+    val rotacionRepository = remember {
+        RotacionRepository(db.miniBodegaDetalleDao())
+    }
+
+    val rotacionInventarioRepository = remember {
+        RotacionInventarioRepository(
+            db,
+            db.rotacionDao(),
+            db.rotacionDetalleDao(),
+            db.rotacionSustitucionDao(),
+            db.miniBodegaDetalleDao()
+        )
+    }
+
+    val rotacionViewModel = remember {
+        RotacionViewModel(
+            rotacionRepository,
+            rotacionInventarioRepository,
+            sessionManager
+        )
+    }
+
+    val carritoRotacionViewModel = remember {
+        CarritoRotacionViewModel()
+    }
+
+
     val resumenDiaRepository = remember {
         ResumenDiaRepository(
             db.ventaDao(),
@@ -382,6 +415,9 @@ fun AppNavigation() {
             db.cancelacionVentaDao(),
             db.devolucionSustitucionDao(),
             db.cancelacionDevolucionDao(),
+            db.rotacionDao(),
+            db.rotacionDetalleDao(),
+            db.rotacionSustitucionDao(),
             sessionManager
         )
     }
@@ -569,6 +605,9 @@ fun AppNavigation() {
                 },
                 onIrResumenDia = {
                     navController.navigate(Routes.ResumenDia.route)
+                },
+                onIrRotacion = {
+                    navController.navigate(Routes.Rotacion.route)
                 }
             )
         }
@@ -769,6 +808,40 @@ fun AppNavigation() {
                 }
             )
         }
+
+        composable(Routes.Rotacion.route) {
+            RotacionScreen(
+                onIrFormulario = {
+                    navController.navigate(Routes.CarritoRotacion.route)
+                },
+                viewModel = rotacionViewModel,
+                carritoViewModel = carritoRotacionViewModel,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Routes.CarritoRotacion.route) {
+            RotacionFormScreen(
+                carritoViewModel = carritoRotacionViewModel,
+                clienteViewModel = clienteViewModel,
+                rotacionViewModel = rotacionViewModel,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onRotacionExitosa = {
+                    carritoRotacionViewModel.limpiar()
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(Routes.Home.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
+        }
+
+
 
         composable(Routes.ResumenDia.route) {
             ResumenDiaScreen(

@@ -52,7 +52,7 @@ class MiniBodegaRepository2(
                 val mensaje = if (errorBody != null && errorBody.contains("ya está cerrada")) {
                     "La minibodega ya está cerrada y los datos ya fueron enviados."
                 } else {
-                    "Error ${response.code()}"
+                    "Error ${response.code()}: ${errorBody ?: "Sin detalles del servidor"}"
                 }
 
                 Result.failure(Exception(mensaje))

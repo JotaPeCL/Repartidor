@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.AssignmentReturn
 import androidx.compose.material.icons.filled.AssignmentReturn
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Clear
@@ -288,7 +289,7 @@ fun ProductoCard(
             ) {
                 // Usamos un icono de retorno para darle el toque de "devolución"
                 Icon(
-                    imageVector = Icons.Default.AssignmentReturn,
+                    imageVector = Icons.AutoMirrored.Filled.AssignmentReturn,
                     contentDescription = null,
                     tint = AccentBlue,
                     modifier = Modifier.size(20.dp)
@@ -340,7 +341,7 @@ fun BottomCartBar(
                 )
             ) {
                 Icon(
-                    imageVector = Icons.Default.AssignmentReturn,
+                    imageVector = Icons.AutoMirrored.Filled.AssignmentReturn,
                     contentDescription = "Ver Devolución",
                     modifier = Modifier.size(20.dp)
                 )
