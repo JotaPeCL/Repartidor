@@ -13,7 +13,6 @@ import com.example.repartidor.data.model.entity.RotacionDetalleEntity
 import com.example.repartidor.data.model.entity.RotacionEntity
 import com.example.repartidor.data.model.entity.RotacionSustitucionEntity
 import java.util.UUID
-import kotlin.math.abs
 
 class RotacionInventarioRepository(
     private val database: AppDatabase,
@@ -46,18 +45,9 @@ class RotacionInventarioRepository(
                     )
                 }
 
-                val valorRecibido =
-                    item.cantidad.toDouble() * item.precio
-
-                val valorEntregado =
-                    sustituciones.sumOf {
-                        it.cantidad.toDouble() * it.precio
-                    }
-
-                if (abs(valorRecibido - valorEntregado) > 0.01) {
+                if (sustituciones.any { it.cantidad <= 0 }) {
                     throw Exception(
-                        "El valor de los productos de cambio debe ser igual " +
-                                "al valor del producto rotado"
+                        "Las cantidades de los productos de cambio deben ser mayores a cero"
                     )
                 }
             }

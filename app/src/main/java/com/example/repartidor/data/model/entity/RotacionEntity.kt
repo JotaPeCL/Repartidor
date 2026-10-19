@@ -13,6 +13,10 @@ data class RotacionEntity(
     val miniBodegaId: Int,
     val fecha: String,
     val descripcion: String,
+    // DIFERENCIA ECONÓMICA
+    val diferenciaDinero: Double = 0.0,
+    val tipoDiferencia: String = "SIN_DIFERENCIA",
+    val formaLiquidacion: String = "EFECTIVO",
     val sincronizado: Boolean = false,
     val createdAt: String
 )

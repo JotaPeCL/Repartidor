@@ -148,3 +148,22 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
         """.trimIndent())
     }
 }
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+
+        db.execSQL("""
+            ALTER TABLE rotaciones
+            ADD COLUMN diferenciaDinero REAL NOT NULL DEFAULT 0.0
+        """.trimIndent())
+
+        db.execSQL("""
+            ALTER TABLE rotaciones
+            ADD COLUMN tipoDiferencia TEXT NOT NULL DEFAULT 'SIN_DIFERENCIA'
+        """.trimIndent())
+
+        db.execSQL("""
+            ALTER TABLE rotaciones
+            ADD COLUMN formaLiquidacion TEXT NOT NULL DEFAULT 'EFECTIVO'
+        """.trimIndent())
+    }
+}

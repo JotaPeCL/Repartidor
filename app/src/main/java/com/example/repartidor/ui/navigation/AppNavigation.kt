@@ -385,7 +385,10 @@ fun AppNavigation() {
         RotacionViewModel(
             rotacionRepository,
             rotacionInventarioRepository,
-            sessionManager
+            sessionManager,
+            printerRepository = printerRepository,
+            printerManager = printerManager,
+            bluetoothAdapter = bluetoothAdapter,
         )
     }
 
@@ -401,7 +404,10 @@ fun AppNavigation() {
             db.ventaDetalleDao(),
             db.devolucionDetalleDao(),
             db.usuarioDao(),
-            db.rutaDao()
+            db.rutaDao(),
+            db.rotacionDao(),
+            db.rotacionDetalleDao(),       // 🔥 NUEVO
+            db.rotacionSustitucionDao()    // 🔥 NUEVO
         )
     }
     val syncFinalRepository = remember {

@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -43,6 +44,7 @@ import com.example.repartidor.utils.guardarImpresora
 import com.example.repartidor.utils.obtenerDispositivoGuardado
 import kotlinx.coroutines.launch
 import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

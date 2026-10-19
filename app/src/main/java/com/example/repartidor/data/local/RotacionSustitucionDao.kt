@@ -3,6 +3,7 @@ package com.example.repartidor.data.local
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import com.example.repartidor.data.model.dclass.ProductoResumen
 import com.example.repartidor.data.model.entity.RotacionSustitucionEntity
 
 @Dao
@@ -49,4 +50,25 @@ interface RotacionSustitucionDao {
     suspend fun obtenerPorRotacionUuid(
         rotacionUuid: String
     ): List<RotacionSustitucionEntity>
+
+
+    // 🔹 PRODUCTOS ENTREGADOS EN ROTACIONES DEL DÍA
+    @Query("""
+    SELECT
+        s.nombreProducto AS nombre,
+        SUM(s.cantidad) AS cantidad
+    FROM rotacion_sustitucion s
+    INNER JOIN rotaciones r
+        ON r.uuid = s.rotacionUuid
+    WHERE CAST(r.fecha AS INTEGER) >= :inicioDia
+      AND CAST(r.fecha AS INTEGER) < :finDia
+      AND r.usuarioId = :usuarioId
+    GROUP BY s.productoVariacionId, s.nombreProducto
+    ORDER BY s.nombreProducto ASC
+""")
+    suspend fun getProductosEntregadosDelDia(
+        inicioDia: Long,
+        finDia: Long,
+        usuarioId: Int
+    ): List<ProductoResumen>
 }

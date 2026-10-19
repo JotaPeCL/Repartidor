@@ -1,3 +1,4 @@
+
 package com.example.repartidor.utils
 
 import com.example.repartidor.data.model.dclass.InventarioItem
@@ -14,7 +15,8 @@ object ResumenTicketBuilder {
         imprimirProductos: Boolean,
         imprimirDinero: Boolean,
         imprimirInventario: Boolean,
-        imprimirDevoluciones: Boolean
+        imprimirDevoluciones: Boolean,
+        imprimirRotaciones: Boolean
     ): String {
 
         val sb = StringBuilder()
@@ -24,8 +26,6 @@ object ResumenTicketBuilder {
         sb.append("Usuario: $nombreUsuario\n")
         sb.append("Ruta: $ruta\n")
         sb.append("Fecha: $fecha\n")
-
-        //sb.append("\n--------------------------\n\n")
 
         // 🔹 PRODUCTOS VENDIDOS
         if (imprimirProductos) {
@@ -42,9 +42,40 @@ object ResumenTicketBuilder {
         if (imprimirDinero) {
             sb.append("--- DINERO ---\n")
 
-            sb.append("Efectivo en ventas: %.2f\n".format(state.efectivoVentas))
-            sb.append("Abonos: %.2f\n".format(state.totalAbonos))
-            sb.append("Total efectivo: %.2f\n".format(state.totalEfectivo))
+            sb.append(
+                "Ventas totales: %.2f\n".format(state.dineroTotalVentas)
+            )
+
+            sb.append(
+                "Efectivo en ventas: %.2f\n".format(state.efectivoVentas)
+            )
+
+            sb.append(
+                "Abonos: %.2f\n".format(state.totalAbonos)
+            )
+
+            // Diferencias de dinero por rotaciones
+            if (state.cantidadRotaciones > 0) {
+
+                sb.append(
+                    "Recibido rotaciones: +%.2f\n"
+                        .format(state.totalRotacionesRecibido)
+                )
+
+                sb.append(
+                    "Entregado rotaciones: -%.2f\n"
+                        .format(state.totalRotacionesEntregado)
+                )
+
+                sb.append(
+                    "Balance rotaciones: %+.2f\n"
+                        .format(state.balanceRotaciones)
+                )
+            }
+
+            sb.append(
+                "Total efectivo: %.2f\n".format(state.totalEfectivo)
+            )
 
             sb.append("\n")
 
@@ -64,7 +95,61 @@ object ResumenTicketBuilder {
                 sb.append("${it.nombre}: ${it.cantidad}\n")
             }
 
-            sb.append("Total devoluciones: %.2f\n".format(state.totalDevoluciones))
+            sb.append(
+                "Total devoluciones: %.2f\n"
+                    .format(state.totalDevoluciones)
+            )
+
+            sb.append("\n")
+        }
+
+        // 🔹 ROTACIONES
+        if (imprimirRotaciones) {
+
+            sb.append("--- ROTACIONES DEL DIA ---\n")
+
+            sb.append(
+                "Rotaciones realizadas: ${state.cantidadRotaciones}\n"
+            )
+
+            if (state.cantidadRotaciones == 0) {
+                sb.append("Sin rotaciones registradas\n")
+            } else {
+
+                sb.append("\nPRODUCTOS RECIBIDOS\n")
+
+                if (state.productosRecibidosRotacion.isEmpty()) {
+                    sb.append("Sin productos recibidos\n")
+                } else {
+                    state.productosRecibidosRotacion.forEach {
+                        sb.append("${it.nombre}: ${it.cantidad.toInt()} pz.\n")
+                    }
+                }
+
+                val totalRecibidos =
+                    state.productosRecibidosRotacion.sumOf { it.cantidad }
+
+                sb.append(
+                    "Total recibido: ${totalRecibidos.toInt()} pz.\n"
+                )
+
+                sb.append("\nPRODUCTOS ENTREGADOS\n")
+
+                if (state.productosEntregadosRotacion.isEmpty()) {
+                    sb.append("Sin productos entregados\n")
+                } else {
+                    state.productosEntregadosRotacion.forEach {
+                        sb.append("${it.nombre}: ${it.cantidad.toInt()} pz.\n")
+                    }
+                }
+
+                val totalEntregados =
+                    state.productosEntregadosRotacion.sumOf { it.cantidad }
+
+                sb.append(
+                    "Total entregado: ${totalEntregados.toInt()} pz.\n"
+                )
+            }
 
             sb.append("\n")
         }
@@ -78,7 +163,9 @@ object ResumenTicketBuilder {
             } else {
                 inventario.forEach {
                     sb.append("${it.productoNombre} ${it.presentacion}\n")
-                    sb.append("Ini: ${it.cantidadInicial} | Act: ${it.cantidadActual}\n")
+                    sb.append(
+                        "Ini: ${it.cantidadInicial} | Act: ${it.cantidadActual}\n"
+                    )
                 }
             }
 

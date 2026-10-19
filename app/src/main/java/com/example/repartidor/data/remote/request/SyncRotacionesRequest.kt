@@ -7,6 +7,9 @@ data class RotacionRequest(
     val mini_bodega_id: Int,
     val fecha: String,
     val descripcion: String,
+    val diferencia_dinero: Double,
+    val tipo_diferencia: String,
+    val forma_liquidacion: String,
     val created_at: String
 )
 

@@ -30,7 +30,7 @@ object TicketDevolucionBuilder {
         sb.append("Fecha: $fechaFormateada\n")
         sb.append("Tipo: $motivo\n")
 
-        if (!observacion.isNullOrBlank()) {
+        if (observacion.isNotBlank()) {
             sb.append("Obs: $observacion\n")
         }
 

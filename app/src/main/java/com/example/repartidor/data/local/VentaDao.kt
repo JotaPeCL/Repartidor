@@ -164,6 +164,20 @@ WHERE ventaId = :ventaId
         usuarioId: Int
     ): Double
 
+    @Query("""
+    SELECT IFNULL(SUM(total), 0.0)
+    FROM venta
+    WHERE fecha >= :inicioDia
+    AND fecha < :finDia
+    AND usuarioId = :usuarioId
+    AND tipoVenta IN ('CONTADO', 'CREDITO')
+""")
+    suspend fun getDineroTotalVentasDelDia(
+        inicioDia: Long,
+        finDia: Long,
+        usuarioId: Int
+    ): Double
+
     @Query(
         """
     SELECT COUNT(*) 

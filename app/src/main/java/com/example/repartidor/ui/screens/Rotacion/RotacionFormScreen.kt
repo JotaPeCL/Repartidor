@@ -1,5 +1,8 @@
+
 package com.example.repartidor.ui.screens.Rotacion
 
+import android.annotation.SuppressLint
+import com.example.repartidor.utils.PrintResult
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -15,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Remove
@@ -32,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.repartidor.data.model.dclass.CarritoItem
 import com.example.repartidor.data.model.dclass.ProductoSustitucion
 import com.example.repartidor.data.model.dclass.SustitucionRotacionSeleccionada
@@ -51,9 +56,13 @@ import com.example.repartidor.viewmodel.Cliente.ClienteViewModel
 
 import com.example.repartidor.viewmodel.Rotacion.CarritoRotacionViewModel
 import com.example.repartidor.viewmodel.Rotacion.RotacionViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.round
 
 
+@SuppressLint("MissingPermission")
 @Composable
 fun RotacionFormScreen(
     carritoViewModel: CarritoRotacionViewModel,
@@ -73,6 +82,10 @@ fun RotacionFormScreen(
     val error by rotacionViewModel.error.collectAsState()
     val success by rotacionViewModel.success.collectAsState()
     val isLoading by rotacionViewModel.isLoading.collectAsState()
+    val printResult by rotacionViewModel.printResult.collectAsState()
+    val scope = rememberCoroutineScope()
+    var verificandoImpresora by remember { mutableStateOf(false) }
+    var procesandoRotacion by remember { mutableStateOf(false) }
 
     var clienteBuscado by remember { mutableStateOf("") }
     var clienteNulo by remember { mutableStateOf(false) }
@@ -82,6 +95,8 @@ fun RotacionFormScreen(
     var intentoConfirmar by remember { mutableStateOf(false) }
     var showCambioDialog by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
+    var showSinImpresoraDialog by remember { mutableStateOf(false) }
+    var detalleImpresora by remember { mutableStateOf("") }
     var showResultDialog by remember { mutableStateOf(false) }
 
     var itemParaCambio by remember { mutableStateOf<CarritoItem?>(null) }
@@ -98,16 +113,26 @@ fun RotacionFormScreen(
 
     LaunchedEffect(error) {
         error?.let {
+            procesandoRotacion = false
             esExito = false
             mensajeResultado = it
             showResultDialog = true
         }
     }
 
-    LaunchedEffect(success) {
-        if (success) {
+    // Esperamos a que termine también la impresión antes de mostrar el resultado.
+    LaunchedEffect(success, isLoading, printResult) {
+        if (success && !isLoading) {
+            procesandoRotacion = false
             esExito = true
-            mensajeResultado = "Rotación registrada correctamente"
+            mensajeResultado = when {
+                printResult is PrintResult.Success ->
+                    "Rotación registrada correctamente. Ticket enviado a la impresora."
+                printResult is PrintResult.NoPrinter ->
+                    "Rotación registrada correctamente, sin imprimir ticket."
+                else ->
+                    "Rotación registrada correctamente, pero hubo un problema al imprimir el ticket."
+            }
             showResultDialog = true
 
             carritoViewModel.limpiar()
@@ -124,17 +149,6 @@ fun RotacionFormScreen(
     val cambiosPendientes = remember(items, sustitucionesPorProducto) {
         items.filter { item ->
             sustitucionesPorProducto[item.productoVariacionId].isNullOrEmpty()
-        }
-    }
-
-    val cambiosConValorIncorrecto = remember(items, sustitucionesPorProducto) {
-        items.filter { item ->
-            val sustituciones = sustitucionesPorProducto[item.productoVariacionId]
-
-            !sustituciones.isNullOrEmpty() &&
-                    dineroACentavosRotacion(
-                        sustituciones.sumOf { it.precio * it.cantidad }
-                    ) != dineroACentavosRotacion(item.precio * item.cantidad)
         }
     }
 
@@ -217,16 +231,10 @@ fun RotacionFormScreen(
                                     showResultDialog = true
                                 }
 
-                                cambiosConValorIncorrecto.isNotEmpty() -> {
-                                    mensajeResultado = "El valor de cada cambio debe ser exactamente igual al valor del producto rotado."
-                                    esExito = false
-                                    showResultDialog = true
-                                }
-
                                 else -> showConfirmDialog = true
                             }
                         },
-                        enabled = items.isNotEmpty() && !isLoading,
+                        enabled = items.isNotEmpty() && !isLoading && !procesandoRotacion,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
@@ -479,11 +487,6 @@ fun RotacionFormScreen(
                             )
                         }
 
-                        if (intentoConfirmar && cambiosConValorIncorrecto.isNotEmpty()) {
-                            AdvertenciaRotacion(
-                                texto = "El valor del cambio debe ser exactamente igual al valor del producto rotado."
-                            )
-                        }
                     }
                 }
             }
@@ -517,25 +520,84 @@ fun RotacionFormScreen(
     if (showConfirmDialog) {
         CustomStyledDialogRotacion(
             title = "Confirmar rotación",
-            message = if (clienteNulo) {
-                "¿Deseas registrar esta rotación como venta rápida sin cliente?"
-            } else {
-                "¿Deseas registrar esta rotación con el cliente seleccionado?"
+            message = buildString {
+                append(
+                    if (clienteNulo)
+                        "¿Deseas registrar esta rotación como venta rápida sin cliente?"
+                    else
+                        "¿Deseas registrar esta rotación con el cliente seleccionado?"
+                )
+                append("\n\n")
+                append("Valor recibido: $${centavosADineroRotacion(valorRecibido)}")
+                append("\n")
+                append("Valor entregado: $${centavosADineroRotacion(valorEntregado)}")
+                append("\n\n")
+                append(mensajeDiferenciaRotacion(valorRecibido, valorEntregado))
+                append("\n\nConfirma que la diferencia se liquidó en efectivo.")
             },
             icon = Icons.Default.Info,
             iconColor = AccentBlue,
             iconBgColor = AccentBlueSoft,
             confirmText = "Confirmar",
             onConfirm = {
-                showConfirmDialog = false
+                if (!procesandoRotacion && !isLoading) {
+                    procesandoRotacion = true
+                    verificandoImpresora = true
+                    showConfirmDialog = false
+
+                    scope.launch {
+                        val verificacion = try {
+                            withContext(Dispatchers.IO) {
+                                rotacionViewModel.verificarImpresora()
+                            }
+                        } catch (e: Exception) {
+                            detalleImpresora = e.message ?: "No se pudo verificar la impresora."
+                            null
+                        } finally {
+                            verificandoImpresora = false
+                        }
+
+                        if (verificacion is PrintResult.Success) {
+                            rotacionViewModel.registrarRotacion(
+                                clienteId = if (clienteNulo) null else cliente?.id,
+                                carrito = items,
+                                sustitucionesPorProducto = sustitucionesPorProducto,
+                                descripcion = descripcion,
+                                clienteNombre = if (clienteNulo) "Venta rápida" else cliente?.nombre,
+                                imprimir = true
+                            )
+                        } else {
+                            if (verificacion != null) detalleImpresora = "La impresora no está disponible."
+                            showSinImpresoraDialog = true
+                        }
+                    }
+                }
+            },
+            onDismiss = { showConfirmDialog = false }
+        )
+    }
+
+    if (showSinImpresoraDialog) {
+        CustomStyledDialogRotacion(
+            title = "Impresora no disponible",
+            message = "$detalleImpresora\n\n¿Deseas registrar la rotación sin imprimir ticket?",
+            icon = Icons.Default.Warning,
+            iconColor = ErrorRed,
+            iconBgColor = ErrorRedSoft,
+            confirmText = "Registrar sin imprimir",
+            onConfirm = {
+                showSinImpresoraDialog = false
                 rotacionViewModel.registrarRotacion(
                     clienteId = if (clienteNulo) null else cliente?.id,
                     carrito = items,
                     sustitucionesPorProducto = sustitucionesPorProducto,
-                    descripcion = descripcion
+                    descripcion = descripcion,
+                    clienteNombre = if (clienteNulo) "Venta rápida" else cliente?.nombre,
+                    imprimir = false
                 )
             },
-            onDismiss = { showConfirmDialog = false }
+            onDismiss = { showSinImpresoraDialog = false
+                procesandoRotacion = false }
         )
     }
 
@@ -558,8 +620,7 @@ fun RotacionFormScreen(
             showDismissButton = false
         )
     }
-
-    if (isLoading) {
+    if (verificandoImpresora || isLoading) {
         Dialog(onDismissRequest = {}) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
@@ -574,7 +635,10 @@ fun RotacionFormScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "Registrando rotación...",
+                        text = if (verificandoImpresora)
+                            "Conectando con la impresora..."
+                        else
+                            "Registrando rotación e imprimiendo tickets...",
                         fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
@@ -754,21 +818,20 @@ private fun CambioProductoRotacionDialog(
     }
 
     val variacionesDisponibles = remember(variaciones, item.productoVariacionId) {
-        variaciones.filter { it.id != item.productoVariacionId }
+        variaciones.filter {
+            it.id != item.productoVariacionId && it.stockActual >= 1.0
+        }
     }
 
     var cantidades by remember(item.productoVariacionId, seleccionActual) {
         mutableStateOf(
-            seleccionActual.associate {
-                it.productoVariacionId to it.cantidad
-            }
+            seleccionActual.associate { it.productoVariacionId to it.cantidad }
         )
     }
 
     val seleccionadas = remember(cantidades, variacionesDisponibles) {
         cantidades.mapNotNull { (id, cantidad) ->
             val variacion = variacionesDisponibles.firstOrNull { it.id == id }
-
             if (variacion != null && cantidad > 0) {
                 SustitucionRotacionSeleccionada(
                     productoVariacionId = variacion.id,
@@ -777,55 +840,65 @@ private fun CambioProductoRotacionDialog(
                     precio = variacion.precio,
                     cantidad = cantidad
                 )
-            } else {
-                null
-            }
+            } else null
         }
     }
 
     val valorSeleccionado = seleccionadas.sumOf {
-        dineroACentavosRotacion(it.precio) * it.cantidad
+        dineroACentavosRotacion(it.precio * it.cantidad)
     }
 
-    val restante = objetivoCentavos - valorSeleccionado
-
-    val candidatosValidos = remember(
-        variacionesDisponibles,
-        cantidades,
-        objetivoCentavos
-    ) {
-        obtenerVariacionesValidasRotacion(
-            variaciones = variacionesDisponibles,
-            cantidadesActuales = cantidades,
-            objetivoCentavos = objetivoCentavos
-        ).filter { it.id !in cantidades }
-    }
-
-    val puedeConfirmar =
-        valorSeleccionado == objetivoCentavos &&
-                seleccionadas.isNotEmpty() &&
-                seleccionadas.size == cantidades.size &&
-                seleccionadas.all { seleccion ->
-                    val variacion = variacionesDisponibles.firstOrNull {
-                        it.id == seleccion.productoVariacionId
-                    }
-
-                    variacion != null &&
-                            seleccion.cantidad <= variacion.stockActual.toInt()
+    val puedeConfirmar = seleccionadas.isNotEmpty() &&
+            seleccionadas.size == cantidades.size &&
+            seleccionadas.all { seleccion ->
+                val variacion = variacionesDisponibles.firstOrNull {
+                    it.id == seleccion.productoVariacionId
                 }
+                variacion != null &&
+                        seleccion.cantidad > 0 &&
+                        seleccion.cantidad <= variacion.stockActual.toInt()
+            }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {},
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        ),
         containerColor = SurfaceWhite,
         shape = RoundedCornerShape(24.dp),
         title = {
             Column {
-                Text(
-                    text = "Cambiar producto",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 19.sp,
-                    color = TextPrimary
-                )
+
+                // ==========================================
+                // TITULO Y BOTON X
+                // ==========================================
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+
+                    Text(
+                        text = "Cambiar producto",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 19.sp,
+                        color = TextPrimary
+                    )
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Cancelar cambio",
+                            tint = TextMuted,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
@@ -843,6 +916,51 @@ private fun CambioProductoRotacionDialog(
                     fontWeight = FontWeight.Bold,
                     color = AccentBlue
                 )
+
+                // ==========================================
+                // RESUMEN DE DINERO
+                // ==========================================
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = AccentBlueSoft
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
+                        Text(
+                            text = "Cambio seleccionado: $${centavosADineroRotacion(valorSeleccionado)}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AccentBlue
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = mensajeDiferenciaRotacion(
+                                objetivoCentavos,
+                                valorSeleccionado
+                            ),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (objetivoCentavos == valorSeleccionado)
+                                AccentTeal
+                            else
+                                TextPrimary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
         },
         text = {
@@ -854,7 +972,7 @@ private fun CambioProductoRotacionDialog(
             ) {
                 if (variacionesDisponibles.isEmpty()) {
                     Text(
-                        text = "No hay producto que pueda cambiarse",
+                        text = "No hay productos de cambio con stock disponible",
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
                         color = TextMuted,
@@ -863,7 +981,6 @@ private fun CambioProductoRotacionDialog(
                             .padding(vertical = 24.dp)
                     )
                 } else {
-                    // ── CAMBIOS SELECCIONADOS ──
                     if (seleccionadas.isNotEmpty()) {
                         Text(
                             text = "Cambios seleccionados:",
@@ -871,22 +988,14 @@ private fun CambioProductoRotacionDialog(
                             fontWeight = FontWeight.SemiBold,
                             color = TextPrimary
                         )
-
                         Spacer(modifier = Modifier.height(6.dp))
 
                         seleccionadas.forEach { seleccion ->
                             val variacion = variacionesDisponibles.firstOrNull {
                                 it.id == seleccion.productoVariacionId
                             }
-
                             val puedeAumentar = variacion != null &&
-                                    seleccion.cantidad < variacion.stockActual.toInt() &&
-                                    puedeCompletarValorRotacion(
-                                        variaciones = variacionesDisponibles,
-                                        objetivoCentavos = objetivoCentavos,
-                                        cantidadesActuales = cantidades +
-                                                (seleccion.productoVariacionId to seleccion.cantidad + 1)
-                                    )
+                                    seleccion.cantidad < variacion.stockActual.toInt()
 
                             Card(
                                 modifier = Modifier
@@ -910,18 +1019,15 @@ private fun CambioProductoRotacionDialog(
                                             fontWeight = FontWeight.SemiBold,
                                             color = TextPrimary
                                         )
-
                                         Text(
                                             text = "$${String.format("%.2f", seleccion.precio)} c/u",
                                             fontSize = 11.sp,
                                             color = TextMuted
                                         )
                                     }
-
                                     IconButton(
                                         onClick = {
                                             val nuevaCantidad = seleccion.cantidad - 1
-
                                             cantidades = if (nuevaCantidad <= 0) {
                                                 cantidades - seleccion.productoVariacionId
                                             } else {
@@ -937,7 +1043,6 @@ private fun CambioProductoRotacionDialog(
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
-
                                     Text(
                                         text = seleccion.cantidad.toString(),
                                         fontWeight = FontWeight.Bold,
@@ -945,7 +1050,6 @@ private fun CambioProductoRotacionDialog(
                                         color = AccentBlue,
                                         modifier = Modifier.padding(horizontal = 4.dp)
                                     )
-
                                     IconButton(
                                         onClick = {
                                             if (puedeAumentar) {
@@ -965,184 +1069,116 @@ private fun CambioProductoRotacionDialog(
                                 }
                             }
                         }
-
                         Spacer(modifier = Modifier.height(10.dp))
                         HorizontalDivider(color = BackgroundLight)
                         Spacer(modifier = Modifier.height(10.dp))
                     }
 
-                    // ── PRODUCTOS DISPONIBLES PARA COMPLETAR EL CAMBIO ──
-                    if (restante > 0) {
-                        Text(
-                            text = "Productos que pueden completar el cambio:",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary
-                        )
+                    Text(
+                        text = "Productos disponibles para el cambio:",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
 
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        if (candidatosValidos.isEmpty()) {
-                            Text(
-                                text = "No hay producto que pueda cambiarse",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                color = TextMuted,
+                    variacionesDisponibles.filter { it.id !in cantidades }.forEach { variacion ->
+                        val stockMaximo = variacion.stockActual.toInt()
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 3.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = BackgroundLight
+                            )
+                        ) {
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 20.dp)
-                            )
-                        } else {
-                            candidatosValidos.forEach { variacion ->
-                                val cantidadActual = cantidades[variacion.id] ?: 0
-                                val stockMaximo = variacion.stockActual.toInt()
-
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 3.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = BackgroundLight
+                                    .padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = variacion.nombreProducto,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = TextPrimary
+                                    )
+                                    Text(
+                                        text = variacion.presentacionNombre,
+                                        fontSize = 11.sp,
+                                        color = TextMuted
+                                    )
+                                    Text(
+                                        text = "$${String.format("%.2f", variacion.precio)} • Stock: ${formatearStockRotacion(variacion.stockActual)}",
+                                        fontSize = 11.sp,
+                                        color = AccentBlue
+                                    )
+                                }
+                                Button(
+                                    onClick = {
+                                        if (stockMaximo > 0) {
+                                            cantidades = cantidades + (variacion.id to 1)
+                                        }
+                                    },
+                                    enabled = stockMaximo > 0,
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(
+                                        horizontal = 10.dp,
+                                        vertical = 4.dp
+                                    ),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = AccentIndigo
                                     )
                                 ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = variacion.nombreProducto,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 13.sp,
-                                                color = TextPrimary
-                                            )
-
-                                            Text(
-                                                text = variacion.presentacionNombre,
-                                                fontSize = 11.sp,
-                                                color = TextMuted
-                                            )
-
-                                            Text(
-                                                text = "$${String.format("%.2f", variacion.precio)} • Stock: ${formatearStockRotacion(variacion.stockActual)}",
-                                                fontSize = 11.sp,
-                                                color = AccentBlue
-                                            )
-                                        }
-
-                                        Button(
-                                            onClick = {
-                                                if (cantidadActual == 0 && stockMaximo > 0) {
-                                                    cantidades = cantidades + (variacion.id to 1)
-                                                }
-                                            },
-                                            enabled = cantidadActual < stockMaximo,
-                                            shape = RoundedCornerShape(10.dp),
-                                            contentPadding = PaddingValues(
-                                                horizontal = 10.dp,
-                                                vertical = 4.dp
-                                            ),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = AccentIndigo
-                                            )
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Add,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-
-                                            Spacer(modifier = Modifier.width(3.dp))
-
-                                            Text(
-                                                text = "Agregar",
-                                                fontSize = 11.sp
-                                            )
-                                        }
-                                    }
+                                    Icon(
+                                        Icons.Default.Add,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(text = "Agregar", fontSize = 11.sp)
                                 }
                             }
                         }
                     }
 
-                    // ── RESUMEN DEL CAMBIO ──
                     Spacer(modifier = Modifier.height(12.dp))
-
                     Text(
                         text = "Cambio seleccionado: $${centavosADineroRotacion(valorSeleccionado)}",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (puedeConfirmar) AccentTeal else TextPrimary,
+                        color = AccentBlue,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
-
-                    if (restante > 0) {
-                        Text(
-                            text = "Faltan $${centavosADineroRotacion(restante)}",
-                            fontSize = 12.sp,
-                            color = ErrorRed,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    if (restante < 0) {
-                        Text(
-                            text = "El cambio excede $${centavosADineroRotacion(-restante)}",
-                            fontSize = 12.sp,
-                            color = ErrorRed,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    if (puedeConfirmar) {
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Text(
-                            text = "El valor del cambio coincide exactamente.",
-                            fontSize = 11.sp,
-                            color = AccentTeal,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+                    Text(
+                        text = mensajeDiferenciaRotacion(objetivoCentavos, valorSeleccionado),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (objetivoCentavos == valorSeleccionado) AccentTeal else TextPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         },
-        dismissButton = {
-            OutlinedButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Cancelar")
-            }
-        },
+        dismissButton = {},
         confirmButton = {
             Button(
                 onClick = { onConfirm(seleccionadas) },
                 enabled = puedeConfirmar,
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AccentBlue
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Aceptar cambio",
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text("Aceptar cambio", fontWeight = FontWeight.SemiBold)
             }
         }
     )
 }
-
-
 
 @Composable
 private fun RotacionResumenCard(
@@ -1156,49 +1192,59 @@ private fun RotacionResumenCard(
             containerColor = SurfaceWhite
         )
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement =
-                Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    text = "Valor recibido",
-                    fontSize = 12.sp,
-                    color = TextMuted
-                )
-
-                Text(
-                    text =
-                        "$${centavosADineroRotacion(valorRecibido)}",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Column(
-                horizontalAlignment = Alignment.End
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement =
+                    Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = "Valor entregado",
-                    fontSize = 12.sp,
-                    color = TextMuted
-                )
+                Column {
+                    Text(
+                        text = "Valor recibido",
+                        fontSize = 12.sp,
+                        color = TextMuted
+                    )
 
-                Text(
-                    text =
-                        "$${centavosADineroRotacion(valorEntregado)}",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color =
-                        if (valorRecibido == valorEntregado)
-                            AccentBlue
-                        else
-                            ErrorRed
-                )
+                    Text(
+                        text =
+                            "$${centavosADineroRotacion(valorRecibido)}",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = "Valor entregado",
+                        fontSize = 12.sp,
+                        color = TextMuted
+                    )
+
+                    Text(
+                        text =
+                            "$${centavosADineroRotacion(valorEntregado)}",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color =
+                            if (valorRecibido == valorEntregado)
+                                AccentBlue
+                            else
+                                ErrorRed
+                    )
+                }
             }
+            Text(
+                text = mensajeDiferenciaRotacion(valorRecibido, valorEntregado),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (valorRecibido == valorEntregado) AccentTeal else TextPrimary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+            )
         }
     }
 }
@@ -1346,103 +1392,14 @@ private fun formatearStockRotacion(
         String.format("%.2f", stock)
     }
 
-private fun obtenerVariacionesValidasRotacion(
-    variaciones: List<ProductoSustitucion>,
-    cantidadesActuales: Map<Int, Int>,
-    objetivoCentavos: Int
-): List<ProductoSustitucion> {
-    val valorActual = cantidadesActuales.entries.sumOf { (id, cantidad) ->
-        val variacion = variaciones.firstOrNull { it.id == id }
-        if (variacion == null) 0
-        else dineroACentavosRotacion(variacion.precio) * cantidad
+private fun mensajeDiferenciaRotacion(
+    valorRecibidoCentavos: Int,
+    valorEntregadoCentavos: Int
+): String {
+    val diferencia = valorEntregadoCentavos - valorRecibidoCentavos
+    return when {
+        diferencia > 0 -> "EL CLIENTE PAGA $${centavosADineroRotacion(diferencia)} MÁS"
+        diferencia < 0 -> "EL REPARTIDOR ENTREGA $${centavosADineroRotacion(-diferencia)}"
+        else -> "ROTACIÓN SIN DIFERENCIA"
     }
-
-    val restanteCentavos = objetivoCentavos - valorActual
-    if (restanteCentavos <= 0) return emptyList()
-
-    return variaciones.filter { candidata ->
-        val cantidadActual = cantidadesActuales[candidata.id] ?: 0
-        val stockDisponible = candidata.stockActual.toInt() - cantidadActual
-        val precioCentavos = dineroACentavosRotacion(candidata.precio)
-
-        if (precioCentavos <= 0 || stockDisponible <= 0 || precioCentavos > restanteCentavos) {
-            return@filter false
-        }
-
-        val cantidadMaxima = minOf(
-            stockDisponible,
-            restanteCentavos / precioCentavos
-        )
-
-        (1..cantidadMaxima).any { cantidad ->
-            puedeCompletarValorRotacion(
-                variaciones = variaciones,
-                objetivoCentavos = objetivoCentavos,
-                cantidadesActuales = cantidadesActuales +
-                        (candidata.id to cantidadActual + cantidad)
-            )
-        }
-    }
-}
-
-private fun puedeCompletarValorRotacion(
-    variaciones: List<ProductoSustitucion>,
-    objetivoCentavos: Int,
-    cantidadesActuales: Map<Int, Int>
-): Boolean {
-    var valorSeleccionado = 0
-
-    for ((id, cantidad) in cantidadesActuales) {
-        val variacion = variaciones.firstOrNull { it.id == id } ?: return false
-        if (cantidad < 0 || cantidad > variacion.stockActual.toInt()) return false
-
-        valorSeleccionado += dineroACentavosRotacion(variacion.precio) * cantidad
-        if (valorSeleccionado > objetivoCentavos) return false
-    }
-
-    val restantes = variaciones.mapNotNull { variacion ->
-        val stockRestante = variacion.stockActual.toInt() -
-                (cantidadesActuales[variacion.id] ?: 0)
-
-        if (stockRestante <= 0) null
-        else variacion.copy(stockActual = stockRestante.toDouble())
-    }
-
-    val objetivoRestante = objetivoCentavos - valorSeleccionado
-    if (objetivoRestante == 0) return true
-
-    return puedeFormarValorExactoRotacion(
-        variaciones = restantes,
-        objetivo = objetivoRestante
-    )
-}
-
-private fun puedeFormarValorExactoRotacion(
-    variaciones: List<ProductoSustitucion>,
-    objetivo: Int
-): Boolean {
-    if (objetivo == 0) return true
-    if (objetivo < 0) return false
-
-    val alcanzable = BooleanArray(objetivo + 1)
-    alcanzable[0] = true
-
-    variaciones.forEach { variacion ->
-        val precio = dineroACentavosRotacion(variacion.precio)
-        val stock = variacion.stockActual.toInt()
-
-        if (precio <= 0 || stock <= 0 || precio > objetivo) {
-            return@forEach
-        }
-
-        repeat(stock) {
-            for (suma in objetivo downTo precio) {
-                if (alcanzable[suma - precio]) {
-                    alcanzable[suma] = true
-                }
-            }
-        }
-    }
-
-    return alcanzable[objetivo]
 }

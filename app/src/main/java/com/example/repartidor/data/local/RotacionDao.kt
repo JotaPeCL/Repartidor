@@ -25,14 +25,28 @@ interface RotacionDao {
     suspend fun getById(id: Int): RotacionEntity?
 
     @Query("""
-        SELECT * FROM rotaciones
-        WHERE fecha BETWEEN :inicio AND :fin
-        AND usuarioId = :usuarioId
-        ORDER BY fecha DESC
-    """)
+    SELECT * FROM rotaciones
+    WHERE CAST(fecha AS INTEGER) >= :inicio
+    AND CAST(fecha AS INTEGER) < :fin
+    AND usuarioId = :usuarioId
+    ORDER BY CAST(fecha AS INTEGER) DESC
+""")
     suspend fun getRotacionesDelDia(
         inicio: Long,
         fin: Long,
+        usuarioId: Int
+    ): List<RotacionEntity>
+
+    @Query("""
+    SELECT * FROM rotaciones
+    WHERE usuarioId = :usuarioId
+    AND fecha >= :inicio
+    AND fecha < :fin
+    ORDER BY fecha DESC
+""")
+    suspend fun getRotacionesParaResumen(
+        inicio: String,
+        fin: String,
         usuarioId: Int
     ): List<RotacionEntity>
 }

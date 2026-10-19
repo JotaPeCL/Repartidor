@@ -100,27 +100,29 @@ class ResumenDiaViewModel(
         return Triple(nombreCompleto, nombreRuta, fecha)
     }
 
+
     @RequiresApi(Build.VERSION_CODES.O)
     fun generarTicket(
         imprimirProductos: Boolean,
         imprimirDinero: Boolean,
         imprimirInventario: Boolean,
         imprimirDevoluciones: Boolean,
+        imprimirRotaciones: Boolean,
         onResult: (String) -> Unit
     ) {
         viewModelScope.launch {
 
-            // 🔹 encabezado
+            // 🔹 Encabezado
             val (nombreUsuario, ruta, fecha) = obtenerInfoEncabezado()
 
-            // 🔹 inventario (solo si se necesita)
+            // 🔹 Inventario (solo si se necesita)
             val inventario = if (imprimirInventario) {
                 obtenerInventarioParaImpresion()
             } else {
                 emptyList()
             }
 
-            // 🔹 construir ticket
+            // 🔹 Construir ticket
             val ticket = ResumenTicketBuilder.build(
                 state = state,
                 inventario = inventario,
@@ -130,12 +132,14 @@ class ResumenDiaViewModel(
                 imprimirProductos = imprimirProductos,
                 imprimirDinero = imprimirDinero,
                 imprimirInventario = imprimirInventario,
-                imprimirDevoluciones = imprimirDevoluciones
+                imprimirDevoluciones = imprimirDevoluciones,
+                imprimirRotaciones = imprimirRotaciones
             )
 
             onResult(ticket)
         }
     }
+
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     fun imprimirTicket(

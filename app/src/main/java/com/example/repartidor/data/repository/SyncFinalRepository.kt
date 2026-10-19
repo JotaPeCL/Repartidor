@@ -391,10 +391,16 @@ class SyncFinalRepository(
                     RotacionRequest(
                         uuid = it.uuid,
                         cliente_id = it.clienteId,
-                        usuario_id = usuarioId,
-                        mini_bodega_id = miniBodegaId,
+                        usuario_id = it.usuarioId,
+                        mini_bodega_id = it.miniBodegaId,
                         fecha = fechaRotacionISO(it.fecha),
                         descripcion = it.descripcion,
+
+                        // DIFERENCIA ECONÓMICA
+                        diferencia_dinero = it.diferenciaDinero,
+                        tipo_diferencia = it.tipoDiferencia,
+                        forma_liquidacion = it.formaLiquidacion,
+
                         created_at = fechaRotacionISO(it.createdAt)
                     )
                 }

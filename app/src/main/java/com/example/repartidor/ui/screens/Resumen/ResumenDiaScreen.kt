@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -56,6 +57,7 @@ fun ResumenDiaScreen(
     var imprimirDinero by remember { mutableStateOf(true) }
     var imprimirInventario by remember { mutableStateOf(false) }
     var imprimirDevoluciones by remember { mutableStateOf(false) }
+    var imprimirRotaciones by remember { mutableStateOf(false) }
 
     // Estados de modales
     var showConfirmDialog by remember { mutableStateOf(false) }
@@ -139,7 +141,7 @@ fun ResumenDiaScreen(
                 showLoadingDialog = true
 
                 viewModel.generarTicket(
-                    imprimirProductos, imprimirDinero, imprimirInventario, imprimirDevoluciones
+                    imprimirProductos, imprimirDinero, imprimirInventario, imprimirDevoluciones,imprimirRotaciones
                 ) { ticket ->
                     viewModel.imprimirTicket(
                         ticket = ticket,
@@ -149,10 +151,14 @@ fun ResumenDiaScreen(
                     ) { result ->
                         showLoadingDialog = false
                         mensajeResultado = when (result) {
-                            is PrintResult.Success -> "Impresión completada correctamente."
-                            is PrintResult.NoPrinter -> "No hay impresora configurada."
-                            is PrintResult.BluetoothOff -> "Bluetooth apagado."
-                            is PrintResult.Error -> "Ocurrió un error al imprimir.\nVerifica la conexión."
+                            is PrintResult.Success ->
+                                "Impresión completada correctamente."
+                            is PrintResult.NoPrinter ->
+                                "No hay impresora configurada."
+                            is PrintResult.BluetoothOff ->
+                                "Bluetooth apagado."
+                            is PrintResult.Error ->
+                                "Ocurrió un error al imprimir.\nVerifica la conexión."
                         }
                         showResultDialog = true
                     }
@@ -331,8 +337,37 @@ fun ResumenDiaScreen(
                     accent = AccentTeal,
                     accentBg = AccentTealSoft
                 ) {
+                    InfoRow(
+                        "Dinero en ventas totales",
+                        "$${"%.2f".format(state.dineroTotalVentas)}"
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
                     InfoRow("Efectivo en ventas", "$${"%.2f".format(state.efectivoVentas)}")
                     InfoRow("Abonos recibidos", "$${"%.2f".format(state.totalAbonos)}")
+
+                    // 🔄 DINERO DE ROTACIONES
+                    if (state.cantidadRotaciones > 0) {
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        InfoRow(
+                            "Dinero recibido por rotaciones",
+                            "+$${"%.2f".format(state.totalRotacionesRecibido)}"
+                        )
+
+                        InfoRow(
+                            "Dinero entregado por rotaciones",
+                            "-$${"%.2f".format(state.totalRotacionesEntregado)}"
+                        )
+
+                        InfoRow(
+                            "Balance de rotaciones",
+                            "${if (state.balanceRotaciones >= 0) "+" else "-"}$${"%.2f".format(kotlin.math.abs(state.balanceRotaciones))}"
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -401,7 +436,7 @@ fun ResumenDiaScreen(
                 // 🔄 TARJETA DEVOLUCIONES
                 SummaryCard(
                     title = "Productos Devueltos",
-                    icon = Icons.Default.KeyboardReturn,
+                    icon = Icons.AutoMirrored.Filled.KeyboardReturn,
                     accent = WarningOrange,
                     accentBg = WarningOrangeSoft
                 ) {
@@ -416,6 +451,56 @@ fun ResumenDiaScreen(
                         InfoRow(
                             "Total devoluciones",
                             "$${"%.2f".format(state.totalDevoluciones)}"
+                        )
+                    }
+                }
+
+                // 🔄 TARJETA ROTACIONES DEL DÍA
+                SummaryCard(
+                    title = "Rotaciones del día",
+                    icon = Icons.Default.SyncAlt,
+                    accent = AccentIndigo,
+                    accentBg = AccentIndigo.copy(alpha = 0.1f)
+                ) {
+                    if (state.cantidadRotaciones == 0) {
+                        Text(
+                            "Sin rotaciones registradas hoy.",
+                            color = TextMuted,
+                            fontSize = 14.sp
+                        )
+                    } else {
+                        InfoRow("Rotaciones realizadas", "${state.cantidadRotaciones}")
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            "Productos recibidos",
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            fontSize = 14.sp
+                        )
+                        state.productosRecibidosRotacion.forEach { producto ->
+                            InfoRow(producto.nombre, "${producto.cantidad.toInt()} pz.")
+                        }
+                        InfoRow(
+                            "Total recibido",
+                            "${state.productosRecibidosRotacion.sumOf { it.cantidad }.toInt()} pz.",
+                            isBold = true
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            "Productos entregados",
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            fontSize = 14.sp
+                        )
+                        state.productosEntregadosRotacion.forEach { producto ->
+                            InfoRow(producto.nombre, "${producto.cantidad.toInt()} pz.")
+                        }
+                        InfoRow(
+                            "Total entregado",
+                            "${state.productosEntregadosRotacion.sumOf { it.cantidad }.toInt()} pz.",
+                            isBold = true
                         )
                     }
                 }
@@ -447,6 +532,7 @@ fun ResumenDiaScreen(
                     CustomCheckboxRow("Dinero en ventas", imprimirDinero) { imprimirDinero = it }
                     CustomCheckboxRow("Inventario de camioneta", imprimirInventario) { imprimirInventario = it }
                     CustomCheckboxRow("Productos devueltos", imprimirDevoluciones) { imprimirDevoluciones = it }
+                    CustomCheckboxRow("Productos de rotaciones", imprimirRotaciones) { imprimirRotaciones = it }
 
                     Spacer(modifier = Modifier.height(16.dp))
 

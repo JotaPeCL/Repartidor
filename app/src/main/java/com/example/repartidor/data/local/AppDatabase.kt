@@ -65,7 +65,7 @@ import com.example.repartidor.data.model.entity.RotacionSustitucionEntity
         RotacionSustitucionEntity::class,
 
     ],
-    version = 12 // IMPORTANTE
+    version = 13 // IMPORTANTE
 
 )
 abstract class AppDatabase : RoomDatabase() {
