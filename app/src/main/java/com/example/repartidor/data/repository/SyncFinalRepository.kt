@@ -4,6 +4,8 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.repartidor.data.local.AbonoDao
 import com.example.repartidor.data.local.CancelacionDevolucionDao
+import com.example.repartidor.data.local.CancelacionRotacionDao
+import com.example.repartidor.data.local.CancelacionRotacionDetalleDao
 import com.example.repartidor.data.local.CancelacionVentaDao
 import com.example.repartidor.data.local.DevolucionDao
 import com.example.repartidor.data.local.DevolucionDetalleDao
@@ -23,6 +25,8 @@ import com.example.repartidor.data.remote.RetrofitClient
 import com.example.repartidor.data.remote.request.CancelacionDevolucionDetalleRequest
 import com.example.repartidor.data.remote.request.CancelacionDevolucionRequest
 import com.example.repartidor.data.remote.request.CancelacionDevolucionSustitucionRequest
+import com.example.repartidor.data.remote.request.CancelacionRotacionDetalleRequest
+import com.example.repartidor.data.remote.request.CancelacionRotacionRequest
 import com.example.repartidor.data.remote.request.CancelacionVentaDetalleRequest
 import com.example.repartidor.data.remote.request.CancelacionVentaRequest
 import com.example.repartidor.data.remote.request.RotacionDetalleRequest
@@ -32,6 +36,7 @@ import com.example.repartidor.data.remote.request.SustitucionRequest
 import com.example.repartidor.data.remote.request.SyncAbonosRequest
 import com.example.repartidor.data.remote.request.SyncCancelacionesDevolucionesRequest
 import com.example.repartidor.data.remote.request.SyncCancelacionesRequest
+import com.example.repartidor.data.remote.request.SyncCancelacionesRotacionesRequest
 import com.example.repartidor.data.remote.request.SyncDevolucionesRequest
 import com.example.repartidor.data.remote.request.SyncRotacionesRequest
 import com.example.repartidor.data.remote.request.SyncVentasRequest
@@ -55,6 +60,8 @@ class SyncFinalRepository(
     private val rotacionDao: RotacionDao,
     private val rotacionDetalleDao: RotacionDetalleDao,
     private val rotacionSustitucionDao: RotacionSustitucionDao,
+    private val cancelacionRotacionDao: CancelacionRotacionDao,
+    private val cancelacionRotacionDetalleDao: CancelacionRotacionDetalleDao,
     private val sessionManager: SessionManager
 ) {
 
@@ -456,6 +463,60 @@ class SyncFinalRepository(
 
                 sustituciones.forEach {
                     rotacionSustitucionDao.marcarSincronizado(it.uuid)
+                }
+            }
+
+            // =========================
+// CANCELACIONES DE ROTACIONES
+// =========================
+            val cancelacionesRotaciones = cancelacionRotacionDao.getPendientes()
+
+            if (cancelacionesRotaciones.isNotEmpty()) {
+                val detalles = cancelacionesRotaciones.flatMap {
+                    cancelacionRotacionDetalleDao.obtenerPorCancelacionUuid(it.uuid)
+                }
+
+                val cancelacionesRequest = cancelacionesRotaciones.map {
+                    CancelacionRotacionRequest(
+                        uuid = it.uuid,
+                        rotacion_uuid = it.rotacionUuid,
+                        usuario_id = it.usuarioId,
+                        mini_bodega_id = it.miniBodegaId,
+                        fecha = it.fecha,
+                        descripcion = it.descripcion,
+                        diferencia_dinero = it.diferenciaDinero,
+                        tipo_diferencia = it.tipoDiferencia,
+                        forma_liquidacion = it.formaLiquidacion,
+                        motivo = it.motivo,
+                        created_at = it.createdAt
+                    )
+                }
+
+                val detallesRequest = detalles.map {
+                    CancelacionRotacionDetalleRequest(
+                        uuid = it.uuid,
+                        cancelacion_uuid = it.cancelacionRotacionUuid,
+                        producto_variacion_id = it.productoVariacionId,
+                        nombre_producto = it.nombreProducto,
+                        cantidad = it.cantidad,
+                        precio_unitario = it.precioUnitario,
+                        tipo_movimiento = it.tipoMovimiento
+                    )
+                }
+
+                val response = RetrofitClient.api.syncCancelacionesRotaciones(
+                    SyncCancelacionesRotacionesRequest(
+                        cancelaciones = cancelacionesRequest,
+                        detalles = detallesRequest
+                    )
+                )
+
+                if (!response.isSuccessful) {
+                    return Result.failure(Exception("Error cancelaciones rotaciones ${response.code()}: ${response.errorBody()?.string()}"))
+                }
+
+                cancelacionesRotaciones.forEach {
+                    cancelacionRotacionDao.marcarSincronizado(it.uuid)
                 }
             }
 

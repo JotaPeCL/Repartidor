@@ -28,6 +28,8 @@ import com.example.repartidor.data.model.entity.DevolucionSustitucionEntity
 import com.example.repartidor.data.model.entity.CancelacionDevolucionEntity
 import com.example.repartidor.data.model.entity.CancelacionDevolucionDetalleEntity
 import com.example.repartidor.data.model.entity.CancelacionDevolucionSustitucionEntity
+import com.example.repartidor.data.model.entity.CancelacionRotacionDetalleEntity
+import com.example.repartidor.data.model.entity.CancelacionRotacionEntity
 import com.example.repartidor.data.model.entity.RotacionEntity
 import com.example.repartidor.data.model.entity.RotacionDetalleEntity
 import com.example.repartidor.data.model.entity.RotacionSustitucionEntity
@@ -63,9 +65,11 @@ import com.example.repartidor.data.model.entity.RotacionSustitucionEntity
         RotacionEntity::class,
         RotacionDetalleEntity::class,
         RotacionSustitucionEntity::class,
+        CancelacionRotacionEntity::class,
+        CancelacionRotacionDetalleEntity::class,
 
     ],
-    version = 13 // IMPORTANTE
+    version = 14 // IMPORTANTE
 
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -96,5 +100,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun rotacionDao(): RotacionDao
     abstract fun rotacionDetalleDao(): RotacionDetalleDao
     abstract fun rotacionSustitucionDao(): RotacionSustitucionDao
+    abstract fun cancelacionRotacionDao(): CancelacionRotacionDao
+    abstract fun cancelacionRotacionDetalleDao(): CancelacionRotacionDetalleDao
 
 }

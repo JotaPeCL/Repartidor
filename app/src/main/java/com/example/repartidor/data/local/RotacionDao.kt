@@ -49,4 +49,7 @@ interface RotacionDao {
         fin: String,
         usuarioId: Int
     ): List<RotacionEntity>
+
+    @Query("DELETE FROM rotaciones WHERE id = :rotacionId")
+    suspend fun eliminarPorId(rotacionId: Int)
 }

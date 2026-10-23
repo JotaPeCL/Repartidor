@@ -22,6 +22,7 @@ import com.example.repartidor.data.remote.request.PedidoReabastecimientoRequest
 import com.example.repartidor.data.remote.request.SyncAbonosRequest
 import com.example.repartidor.data.remote.request.SyncCancelacionesDevolucionesRequest
 import com.example.repartidor.data.remote.request.SyncCancelacionesRequest
+import com.example.repartidor.data.remote.request.SyncCancelacionesRotacionesRequest
 import com.example.repartidor.data.remote.request.SyncDevolucionesRequest
 import com.example.repartidor.data.remote.request.SyncRotacionesRequest
 import com.example.repartidor.data.remote.request.SyncVentasRequest
@@ -177,6 +178,11 @@ object RetrofitClient {
         @POST("sync/rotaciones/")
         suspend fun syncRotaciones(
             @Body request: SyncRotacionesRequest
+        ): Response<Unit>
+
+        @POST("sync/cancelaciones-rotaciones/")
+        suspend fun syncCancelacionesRotaciones(
+            @Body request: SyncCancelacionesRotacionesRequest
         ): Response<Unit>
 
     }

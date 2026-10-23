@@ -106,20 +106,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.repartidor.data.repository.CancelacionDevolucionRepository
+import com.example.repartidor.data.repository.CancelacionRotacionRepository
 import com.example.repartidor.data.repository.CancelacionVentaRepository
 import com.example.repartidor.data.repository.DevolucionesDiaRepository
 import com.example.repartidor.data.repository.DevolucionesDiaViewModelFactory
 import com.example.repartidor.data.repository.DispositivoRepository
 import com.example.repartidor.data.repository.RotacionInventarioRepository
 import com.example.repartidor.data.repository.RotacionRepository
+import com.example.repartidor.data.repository.RotacionesDiaRepository
 import com.example.repartidor.ui.screens.DevolucionesDia.DevolucionesDiaScreen
 import com.example.repartidor.ui.screens.Rotacion.RotacionFormScreen
 import com.example.repartidor.ui.screens.Rotacion.RotacionScreen
+import com.example.repartidor.ui.screens.RotacionesDIa.RotacionesDiaScreen
 import com.example.repartidor.ui.screens.login.DispositivoScreen
 import com.example.repartidor.viewmodel.Devoluciones.DevolucionesDiaViewModel
 import com.example.repartidor.viewmodel.Login.DispositivoViewModel
 import com.example.repartidor.viewmodel.Rotacion.CarritoRotacionViewModel
 import com.example.repartidor.viewmodel.Rotacion.RotacionViewModel
+import com.example.repartidor.viewmodel.Rotacion.RotacionesDiaViewModel
 
 @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -172,7 +176,7 @@ fun AppNavigation() {
     val clienteRepository = remember { ClienteRepository(db.clienteDao()) }
 
     val clienteViewModel: ClienteViewModel = viewModel(
-        factory = ClienteViewModelFactory(clienteRepository,sessionManager)
+        factory = ClienteViewModelFactory(clienteRepository, sessionManager)
     )
     val ventaRepository = remember {
         VentaRepository(
@@ -288,7 +292,7 @@ fun AppNavigation() {
             db.miniBodegaDetalleDao(),
             db.mermaDao(),
 
-        )
+            )
     }
 
     val devolucionFormViewModel = remember {
@@ -396,6 +400,40 @@ fun AppNavigation() {
         CarritoRotacionViewModel()
     }
 
+    val rotacionesDiaRepository = remember {
+        RotacionesDiaRepository(
+            rotacionDao = db.rotacionDao(),
+            rotacionDetalleDao = db.rotacionDetalleDao(),
+            rotacionSustitucionDao = db.rotacionSustitucionDao()
+        )
+    }
+
+    val cancelacionRotacionRepository = remember {
+        CancelacionRotacionRepository(
+            database = db,
+            rotacionDao = db.rotacionDao(),
+            rotacionDetalleDao = db.rotacionDetalleDao(),
+            rotacionSustitucionDao = db.rotacionSustitucionDao(),
+            miniBodegaDetalleDao = db.miniBodegaDetalleDao(),
+            cancelacionRotacionDao = db.cancelacionRotacionDao(),
+            cancelacionRotacionDetalleDao = db.cancelacionRotacionDetalleDao()
+        )
+    }
+
+    val rotacionesDiaViewModel = remember {
+        RotacionesDiaViewModel(
+            repository = rotacionesDiaRepository,
+            cancelacionRepository = cancelacionRotacionRepository,
+            sessionManager = sessionManager,
+            clienteDao = db.clienteDao(),
+            productoVariacionDao = db.variacionDao(),
+            presentacionDao = db.presentacionDao(),
+            printerRepository = printerRepository,
+            printerManager = printerManager,
+            bluetoothAdapter = bluetoothAdapter
+        )
+    }
+
 
     val resumenDiaRepository = remember {
         ResumenDiaRepository(
@@ -424,6 +462,8 @@ fun AppNavigation() {
             db.rotacionDao(),
             db.rotacionDetalleDao(),
             db.rotacionSustitucionDao(),
+            db.cancelacionRotacionDao(),
+            db.cancelacionRotacionDetalleDao(),
             sessionManager
         )
     }
@@ -538,7 +578,7 @@ fun AppNavigation() {
         composable(Routes.Dispositivo.route) {
             DispositivoScreen(
                 viewModel = dispositivoViewModel,
-                sessionManager=sessionManager,
+                sessionManager = sessionManager,
                 onActivacionExitosa = {
                     navController.navigate(Routes.Sync.route) {
                         popUpTo(Routes.Dispositivo.route) {
@@ -614,7 +654,11 @@ fun AppNavigation() {
                 },
                 onIrRotacion = {
                     navController.navigate(Routes.Rotacion.route)
-                }
+                },
+                onIrRotacionesDia = {
+                    navController.navigate(Routes.RotacionesDia.route)
+                },
+
             )
         }
 
@@ -663,7 +707,7 @@ fun AppNavigation() {
                     navController.navigate(Routes.Carrito.route)
                 },
                 viewModel = ventaViewModel,
-                carritoViewModel=carritoViewModel,
+                carritoViewModel = carritoViewModel,
                 ventaProcesoViewModel = ventaProcesoViewModel,
                 onBack = {
                     navController.popBackStack() //
@@ -844,6 +888,16 @@ fun AppNavigation() {
                         }
                     }
                 }
+            )
+        }
+
+        composable(Routes.RotacionesDia.route){
+            RotacionesDiaScreen(
+                onBack = {
+                    navController.popBackStack()
+                },
+                viewModel = rotacionesDiaViewModel,
+                sessionManager = sessionManager
             )
         }
 
