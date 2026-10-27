@@ -16,6 +16,10 @@ data class ResumenDiaState(
     val productosRecibidosRotacion: List<ProductoResumen> = emptyList(),
     val productosEntregadosRotacion: List<ProductoResumen> = emptyList(),
 
+    val totalDevolucionesRecibido: Double = 0.0,
+    val totalDevolucionesEntregado: Double = 0.0,
+    val balanceDevoluciones: Double = 0.0,
+
     val cantidadCreditos: Int = 0,
     val totalPendiente: Double = 0.0,
 

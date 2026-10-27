@@ -202,22 +202,18 @@ class DevolucionesDiaViewModel(
                         devolucion.id
                     )
 
-                val ticket =
-                    TicketDevolucionBuilder.build(
-                        items = items,
-                        sustitucionesPorProducto =
-                            sustitucionesPorProducto,
-                        clienteNombre =
-                            if (devolucion.clienteId != null) {
-                                devolucion.nombreCliente
-                            } else {
-                                null
-                            },
-                        motivo = devolucion.tipo,
-                        observacion = devolucion.descripcion,
-                        usuario = sessionManager.getUser(),
-                        fecha = devolucion.fecha
-                    )
+                val ticket = TicketDevolucionBuilder.build(
+                    items = items,
+                    sustitucionesPorProducto = sustitucionesPorProducto,
+                    clienteNombre = if (devolucion.clienteId != null) devolucion.nombreCliente else null,
+                    motivo = devolucion.tipo,
+                    observacion = devolucion.descripcion,
+                    usuario = sessionManager.getUser(),
+                    fecha = devolucion.fecha,
+                    diferenciaDinero = devolucion.diferenciaDinero,
+                    tipoDiferencia = devolucion.tipoDiferencia,
+                    formaLiquidacion = devolucion.formaLiquidacion
+                )
 
                 val result =
                     withContext(Dispatchers.IO) {

@@ -165,40 +165,34 @@ interface MiniBodegaDetalleDao {
         miniBodegaId: Int
     ): Flow<List<ProductoSustitucion>>
 
-    @Query(
-        """
+    @Query("""
     SELECT DISTINCT pt.*
     FROM producto_terminado pt
-    INNER JOIN producto_variacion pv
-        ON pv.producto = pt.id
-    INNER JOIN mini_bodega_detalle mbd
-        ON mbd.productoVariacionId = pv.id
-    WHERE mbd.miniBodegaId = :miniBodegaId
-    AND pt.estado = 1
-"""
-    )
-    fun getProductosParaDevolucion(
-        miniBodegaId: Int
-    ): Flow<List<ProductoTerminadoEntity>>
+    INNER JOIN producto_variacion pv ON pv.producto = pt.id
+    WHERE pt.estado = 1
+    AND pt.nombre NOT LIKE 'ML %'
+    AND pt.nombre NOT LIKE 'Y %'
+    AND pt.nombre NOT LIKE 'YML %'
+    AND pt.nombre NOT LIKE 'YV %'
+    AND pt.nombre NOT LIKE 'JP %'
+    AND pt.nombre NOT LIKE 'N %'
+    ORDER BY pt.nombre ASC
+""")
+    fun getProductosParaDevolucion(): Flow<List<ProductoTerminadoEntity>>
 
 
-    @Query(
-        """
-    SELECT 
-        pv.id,
-        pv.producto as productoId,
-        pv.precio,
-        mbd.cantidadActual as stockActual,
-        pp.nombre as presentacionNombre
-    FROM mini_bodega_detalle mbd
-    INNER JOIN producto_variacion pv
+    @Query("""
+    SELECT pv.id, pv.producto AS productoId, pv.precio,
+           IFNULL(mbd.cantidadActual, 0) AS stockActual,
+           pp.nombre AS presentacionNombre
+    FROM producto_variacion pv
+    INNER JOIN presentacion_producto pp ON pv.presentacion = pp.id
+    LEFT JOIN mini_bodega_detalle mbd
         ON pv.id = mbd.productoVariacionId
-    INNER JOIN presentacion_producto pp
-        ON pv.presentacion = pp.id
+        AND mbd.miniBodegaId = :miniBodegaId
     WHERE pv.producto = :productoId
-    AND mbd.miniBodegaId = :miniBodegaId
-"""
-    )
+    ORDER BY pp.nombre ASC
+""")
     fun getVariacionesParaDevolucion(
         productoId: Int,
         miniBodegaId: Int
@@ -289,4 +283,18 @@ interface MiniBodegaDetalleDao {
         productoId: Int,
         miniBodegaId: Int
     ): Flow<List<ProductoConStock>>
+
+    @Query("""
+    UPDATE mini_bodega_detalle
+    SET cantidadActual = cantidadActual - :cantidad
+    WHERE miniBodegaId = :miniBodegaId
+    AND productoVariacionId = :productoId
+    AND cantidadActual >= :cantidad
+    AND :cantidad > 0
+""")
+    suspend fun descontarStockValidado(
+        miniBodegaId: Int,
+        productoId: Int,
+        cantidad: Double
+    ): Int
 }

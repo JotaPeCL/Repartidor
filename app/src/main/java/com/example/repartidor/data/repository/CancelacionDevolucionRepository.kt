@@ -56,20 +56,22 @@ class CancelacionDevolucionRepository(
                 it.cantidad * it.precioUnitario
             }
 
-            val cancelacionId =
-                cancelacionDevolucionDao.insertarCancelacion(
-                    CancelacionDevolucionEntity(
-                        uuid = cancelacionUuid,
-                        devolucionUuid = devolucion.uuid,
-                        usuarioId = usuarioId,
-                        miniBodegaId = miniBodegaId,
-                        fecha = fechaActual,
-                        total = total,
-                        motivo = motivo,
-                        sincronizado = false,
-                        createdAt = fechaActual
-                    )
-                ).toInt()
+            val cancelacionId = cancelacionDevolucionDao.insertarCancelacion(
+                CancelacionDevolucionEntity(
+                    uuid = cancelacionUuid,
+                    devolucionUuid = devolucion.uuid,
+                    usuarioId = usuarioId,
+                    miniBodegaId = miniBodegaId,
+                    fecha = fechaActual,
+                    total = total,
+                    motivo = motivo,
+                    sincronizado = false,
+                    createdAt = fechaActual,
+                    diferenciaDinero = devolucion.diferenciaDinero,
+                    tipoDiferencia = devolucion.tipoDiferencia,
+                    formaLiquidacion = devolucion.formaLiquidacion
+                )
+            ).toInt()
 
             val detallesCancelacion =
                 detalles.map { detalle ->

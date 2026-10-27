@@ -39,7 +39,7 @@ class DevolucionProductosViewModel(
 
             miniBodegaId = id
 
-            repository.getProductosParaDevolucion(id).collect { lista ->
+            repository.getProductosParaDevolucion().collect { lista ->
                 _productos.value = lista.toList()
             }
         }

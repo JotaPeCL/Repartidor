@@ -21,6 +21,7 @@ import com.example.repartidor.utils.TicketDevolucionBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -45,19 +46,18 @@ class DevolucionViewModel(
     var printResult by mutableStateOf<PrintResult?>(null)
         private set
 
-    fun getVariacionesDisponiblesParaSustitucion(): Flow<List<ProductoSustitucion>> {
-        return kotlinx.coroutines.flow.flow {
-            val miniBodegaId = sessionManager.getMiniBodegaId()
+    var devolucionRegistrada by mutableStateOf<DevolucionEntity?>(null)
+        private set
 
-            if (miniBodegaId == null) {
-                emit(emptyList())
-                return@flow
-            }
+    private var devolucionYaRegistrada = false
 
-            emitAll(
-                repository.getVariacionesDisponiblesParaSustitucion(miniBodegaId)
-            )
+    fun getVariacionesDisponiblesParaSustitucion(): Flow<List<ProductoSustitucion>> = flow {
+        val miniBodegaId = sessionManager.getMiniBodegaId()
+        if (miniBodegaId == null) {
+            emit(emptyList())
+            return@flow
         }
+        emitAll(repository.getVariacionesDisponiblesParaSustitucion(miniBodegaId))
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
@@ -69,17 +69,18 @@ class DevolucionViewModel(
         observacion: String,
         carrito: List<CarritoItem>,
         sustitucionesPorProducto: Map<Int, List<SustitucionSeleccionada>>,
-        imprimir: Boolean,
+        imprimir: Boolean
     ) {
+        if (isLoading || devolucionYaRegistrada) return
 
         isLoading = true
         error = null
         success = false
         printResult = null
+        devolucionRegistrada = null
 
         viewModelScope.launch {
             try {
-
                 val miniBodegaId = sessionManager.getMiniBodegaId()
                 val usuarioId = sessionManager.getUserId()
                 val usuarioNombre = sessionManager.getUser()
@@ -88,76 +89,77 @@ class DevolucionViewModel(
                     error = "Sesión inválida"
                     return@launch
                 }
-
                 if (carrito.isEmpty()) {
                     error = "No hay productos en devolución"
                     return@launch
                 }
-
                 if (motivo.isBlank()) {
                     error = "Debes seleccionar un motivo"
                     return@launch
                 }
 
+                val fechaActual = System.currentTimeMillis()
                 val devolucion = DevolucionEntity(
                     uuid = UUID.randomUUID().toString(),
                     tipo = motivo,
                     clienteId = if (clienteNulo) null else clienteId,
                     usuarioId = usuarioId,
                     miniBodegaId = miniBodegaId,
-                    fecha = System.currentTimeMillis().toString(),
+                    fecha = fechaActual.toString(),
                     descripcion = observacion,
-                    createdAt = System.currentTimeMillis().toString(),
+                    createdAt = fechaActual.toString(),
                     sincronizado = false
                 )
 
-                repository.registrarDevolucion(
+                // REGISTRAR DEVOLUCIÓN E INVENTARIO
+                val registrada = repository.registrarDevolucion(
                     devolucion = devolucion,
                     carrito = carrito,
                     sustitucionesPorProducto = sustitucionesPorProducto
                 )
 
-                // ─────────────────────────────
-                // 2. GENERAR TICKET
-                // ─────────────────────────────
-                val ticket = TicketDevolucionBuilder.build(
-                    items = carrito,
-                    sustitucionesPorProducto = sustitucionesPorProducto,
-                    clienteNombre = when {
-                        clienteNulo -> "Venta rápida"
-                        clienteNombre != null -> clienteNombre
-                        else -> null
-                    },
-                    motivo = motivo,
-                    observacion = observacion,
-                    usuario = usuarioNombre,
-                    fecha = System.currentTimeMillis()
-                )
+                // DESDE AQUÍ LA DEVOLUCIÓN YA ESTÁ GUARDADA
+                devolucionRegistrada = registrada
+                devolucionYaRegistrada = true
+                success = true
 
-                val device = bluetoothAdapter?.let {
-                    printerRepository.getSavedPrinter(it)
-                }
+                // LA IMPRESIÓN NO DEBE AFECTAR EL REGISTRO
+                if (imprimir) {
+                    printResult = try {
+                        val ticket = TicketDevolucionBuilder.build(
+                            items = carrito,
+                            sustitucionesPorProducto = sustitucionesPorProducto,
+                            clienteNombre = when {
+                                clienteNulo -> "Venta rápida"
+                                clienteNombre != null -> clienteNombre
+                                else -> null
+                            },
+                            motivo = motivo,
+                            observacion = observacion,
+                            usuario = usuarioNombre,
+                            fecha = fechaActual,
+                            diferenciaDinero = registrada.diferenciaDinero,
+                            tipoDiferencia = registrada.tipoDiferencia,
+                            formaLiquidacion = registrada.formaLiquidacion
+                        )
 
-                // ─────────────────────────────
-                // 🔥 IMPRESIÓN CONTROLADA
-                // ─────────────────────────────
-                printResult = if (imprimir) {
-                    withContext(Dispatchers.IO) {
-
-                        val firstPrint =
-                            printerManager.print(device, ticket)
-
-                        if (firstPrint is PrintResult.Success) {
-                            printerManager.print(device, ticket)
-                        } else {
-                            firstPrint
+                        withContext(Dispatchers.IO) {
+                            val device = bluetoothAdapter?.let {
+                                printerRepository.getSavedPrinter(it)
+                            }
+                            val firstPrint = printerManager.print(device, ticket)
+                            if (firstPrint is PrintResult.Success) {
+                                printerManager.print(device, ticket)
+                            } else {
+                                firstPrint
+                            }
                         }
+                    } catch (e: Exception) {
+                        PrintResult.Error(e.message ?: "Error al imprimir ticket")
                     }
                 } else {
-                    PrintResult.NoPrinter
+                    printResult = PrintResult.NoPrinter
                 }
-
-                success = true
 
             } catch (e: Exception) {
                 error = e.message ?: "Error al registrar devolución"
@@ -168,18 +170,20 @@ class DevolucionViewModel(
     }
 
     fun reset() {
+        // Solo reiniciar cuando ya no exista una operación en curso
+        if (isLoading) return
         error = null
         success = false
-        isLoading = false
+        printResult = null
+        devolucionRegistrada = null
+        devolucionYaRegistrada = false
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     fun verificarImpresora(): PrintResult {
-
         val device = bluetoothAdapter?.let {
             printerRepository.getSavedPrinter(it)
         }
-
         return printerManager.checkPrinter(device)
     }
 }

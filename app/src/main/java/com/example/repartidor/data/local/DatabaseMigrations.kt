@@ -203,3 +203,41 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
         """.trimIndent())
     }
 }
+
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            ALTER TABLE devoluciones
+            ADD COLUMN diferenciaDinero REAL NOT NULL DEFAULT 0.0
+        """.trimIndent())
+
+        db.execSQL("""
+            ALTER TABLE devoluciones
+            ADD COLUMN tipoDiferencia TEXT NOT NULL DEFAULT 'SIN_DIFERENCIA'
+        """.trimIndent())
+
+        db.execSQL("""
+            ALTER TABLE devoluciones
+            ADD COLUMN formaLiquidacion TEXT NOT NULL DEFAULT 'EFECTIVO'
+        """.trimIndent())
+    }
+}
+
+val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            ALTER TABLE cancelacion_devolucion
+            ADD COLUMN diferenciaDinero REAL NOT NULL DEFAULT 0.0
+        """.trimIndent())
+
+        db.execSQL("""
+            ALTER TABLE cancelacion_devolucion
+            ADD COLUMN tipoDiferencia TEXT NOT NULL DEFAULT 'SIN_DIFERENCIA'
+        """.trimIndent())
+
+        db.execSQL("""
+            ALTER TABLE cancelacion_devolucion
+            ADD COLUMN formaLiquidacion TEXT NOT NULL DEFAULT 'EFECTIVO'
+        """.trimIndent())
+    }
+}

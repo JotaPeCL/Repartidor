@@ -91,4 +91,16 @@ interface CancelacionDevolucionDao {
     suspend fun marcarSincronizado(
         uuid: String
     )
+
+    @Query("""
+    SELECT * FROM cancelacion_devolucion
+    WHERE fecha >= :inicio AND fecha < :fin
+    AND usuarioId = :usuarioId
+    ORDER BY fecha DESC
+""")
+    suspend fun obtenerCancelacionesDelDia(
+        inicio: Long,
+        fin: Long,
+        usuarioId: Int
+    ): List<CancelacionDevolucionEntity>
 }

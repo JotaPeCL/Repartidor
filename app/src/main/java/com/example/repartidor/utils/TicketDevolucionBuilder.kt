@@ -15,17 +15,17 @@ object TicketDevolucionBuilder {
         motivo: String,
         observacion: String,
         usuario: String?,
-        fecha: Long
+        fecha: Long,
+        diferenciaDinero: Double = 0.0,
+        tipoDiferencia: String = "SIN_DIFERENCIA",
+        formaLiquidacion: String = "EFECTIVO"
     ): String {
-
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         val fechaFormateada = sdf.format(Date(fecha))
-
         val sb = StringBuilder()
 
         sb.append("        OSMIT\n")
         sb.append("    DEVOLUCIÓN\n\n")
-
         sb.append("------------------------------\n")
         sb.append("Fecha: $fechaFormateada\n")
         sb.append("Tipo: $motivo\n")
@@ -39,21 +39,16 @@ object TicketDevolucionBuilder {
         }
 
         sb.append("Repartidor: ${usuario ?: "N/A"}\n")
-
         sb.append("------------------------------\n")
-
         sb.append("PRODUCTOS:\n")
 
         items.forEach { item ->
-
             sb.append("${item.cantidad}x ${item.productoNombre}\n")
             sb.append("   ${item.presentacionNombre}\n")
 
-            val sustituciones =
-                sustitucionesPorProducto[item.productoVariacionId]
+            val sustituciones = sustitucionesPorProducto[item.productoVariacionId]
 
             if (!sustituciones.isNullOrEmpty()) {
-
                 sb.append("   CAMBIO POR:\n")
 
                 sustituciones.forEach { cambio ->
@@ -62,6 +57,25 @@ object TicketDevolucionBuilder {
                                 " - ${cambio.presentacionNombre}\n"
                     )
                 }
+            }
+        }
+
+        if (sustitucionesPorProducto.values.any { it.isNotEmpty() }) {
+            sb.append("------------------------------\n")
+            sb.append("DIFERENCIA ECONOMICA:\n")
+
+            val importe = String.format(Locale.US, "%.2f", diferenciaDinero)
+
+            when (tipoDiferencia) {
+                "CLIENTE_PAGO" -> {
+                    sb.append("Cliente paga: $$importe\n")
+                    sb.append("Forma: $formaLiquidacion\n")
+                }
+                "REPARTIDOR_PAGO" -> {
+                    sb.append("Se devuelve: $$importe\n")
+                    sb.append("Forma: $formaLiquidacion\n")
+                }
+                else -> sb.append("Sin diferencia: $0.00\n")
             }
         }
 

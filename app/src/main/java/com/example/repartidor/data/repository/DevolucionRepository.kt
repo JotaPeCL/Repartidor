@@ -27,10 +27,8 @@ class DevolucionRepository(
         return miniBodegaDao.getVariacionesDisponiblesParaSustitucion(miniBodegaId)
     }
 
-    fun getProductosParaDevolucion(
-        miniBodegaId: Int
-    ): Flow<List<ProductoTerminadoEntity>> {
-        return miniBodegaDao.getProductosParaDevolucion(miniBodegaId)
+    fun getProductosParaDevolucion(): Flow<List<ProductoTerminadoEntity>> {
+        return miniBodegaDao.getProductosParaDevolucion()
     }
 
     fun getVariacionesParaDevolucion(

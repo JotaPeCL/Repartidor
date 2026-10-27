@@ -15,5 +15,8 @@ data class CancelacionDevolucionEntity(
     val total: Double,
     val motivo: String = "",
     val sincronizado: Boolean = false,
-    val createdAt: String
+    val createdAt: String,
+    val diferenciaDinero: Double = 0.0,
+    val tipoDiferencia: String = "SIN_DIFERENCIA",
+    val formaLiquidacion: String = "EFECTIVO"
 )

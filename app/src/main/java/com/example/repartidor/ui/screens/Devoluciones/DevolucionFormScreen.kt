@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -40,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Dialog
 import com.example.repartidor.data.model.dclass.CarritoItem
 import com.example.repartidor.data.model.dclass.ProductoSustitucion
@@ -157,41 +159,41 @@ fun DevolucionFormScreen(
         }
     }
 
-    val cambiosConValorIncorrecto = remember(
-        items,
-        motivo,
-        sustitucionesPorProducto
-    ) {
-        if (motivo == "Devolución de cliente") {
-            items.filter { item ->
-                val sustituciones =
-                    sustitucionesPorProducto[
-                        item.productoVariacionId
-                    ]
-
-                !sustituciones.isNullOrEmpty() &&
-                        dineroACentavos(
-                            sustituciones.sumOf {
-                                it.precio * it.cantidad
-                            }
-                        ) != dineroACentavos(
-                    item.precio * item.cantidad
-                )
-            }
-        } else {
-            emptyList()
-        }
+    // Diferencia total: únicamente productos devueltos que tienen cambio.
+    val valorDevueltoCambio = items.filter {
+        !sustitucionesPorProducto[it.productoVariacionId].isNullOrEmpty()
+    }.sumOf { dineroACentavos(it.precio * it.cantidad).toLong() }
+    val valorSustituciones = sustitucionesPorProducto.values.flatten().sumOf {
+        dineroACentavos(it.precio * it.cantidad).toLong()
+    }
+    val diferenciaCentavos = valorSustituciones - valorDevueltoCambio
+    val hayCambios = sustitucionesPorProducto.values.any { it.isNotEmpty() }
+    val diferenciaTexto = when {
+        diferenciaCentavos > 0 -> "Cliente paga: $${centavosADinero(diferenciaCentavos)}"
+        diferenciaCentavos < 0 -> "Repartidor devuelve: $${centavosADinero(-diferenciaCentavos)}"
+        else -> "Sin diferencia económica"
     }
 
-    val devolucionesSinStockBloqueadas =
-        motivo.isNotBlank() &&
-                motivo != "Devolución de cliente" &&
-                itemsSinStock.isNotEmpty()
-
-    val hayBloqueoDevolucion =
-        devolucionesSinStockBloqueadas ||
-                cambiosPendientes.isNotEmpty() ||
-                cambiosConValorIncorrecto.isNotEmpty()
+    // Sumar todos los descuentos, incluidos los productos sin cambio.
+    val descuentosNecesarios = mutableMapOf<Int, Double>()
+    items.forEach { item ->
+        if (sustitucionesPorProducto[item.productoVariacionId].isNullOrEmpty()) {
+            descuentosNecesarios[item.productoVariacionId] =
+                (descuentosNecesarios[item.productoVariacionId] ?: 0.0) + item.cantidad.toDouble()
+        }
+    }
+    sustitucionesPorProducto.values.flatten().forEach { cambio ->
+        descuentosNecesarios[cambio.productoVariacionId] =
+            (descuentosNecesarios[cambio.productoVariacionId] ?: 0.0) + cambio.cantidad.toDouble()
+    }
+    val stockInsuficiente = stockYaCargado && descuentosNecesarios.any { (id, cantidad) ->
+        val stock = variacionesDisponibles.orEmpty().firstOrNull { it.id == id }?.stockActual ?: 0.0
+        cantidad > stock
+    }
+    val devolucionesSinStockBloqueadas = motivo.isNotBlank() &&
+            motivo != "Devolución de cliente" && itemsSinStock.isNotEmpty()
+    val hayBloqueoDevolucion = devolucionesSinStockBloqueadas ||
+            cambiosPendientes.isNotEmpty() || stockInsuficiente
 
     val scope = rememberCoroutineScope()
 
@@ -265,8 +267,7 @@ fun DevolucionFormScreen(
                     cambiosPendientes.isNotEmpty() ->
                         "Hay productos sin existencias que requieren seleccionar un cambio."
 
-                    else ->
-                        "El valor de los productos de cambio debe ser exactamente igual al valor de la devolución."
+                    else -> "No hay existencias suficientes para los productos seleccionados."
                 }
 
             esExito = false
@@ -317,7 +318,16 @@ fun DevolucionFormScreen(
 
         CustomStyledDialog(
             title = "Confirmar devolución",
-            message = "¿Deseas registrar esta devolución con los productos y motivos especificados?",
+            message = buildString {
+                append("¿Deseas registrar esta devolución")
+                append(if (clienteNulo) " como venta rápida?" else if (cliente != null) " para ${cliente?.nombre}?" else "?")
+                if (hayCambios) {
+                    append("\n\nValor devuelto en cambios: $${centavosADinero(valorDevueltoCambio)}")
+                    append("\nValor de sustituciones: $${centavosADinero(valorSustituciones)}")
+                    append("\n\n$diferenciaTexto")
+                    if (diferenciaCentavos != 0L) append("\n\nConfirma que la diferencia se liquidó en efectivo.")
+                }
+            },
             icon = Icons.Default.Info,
             iconColor = AccentBlue,
             iconBgColor = AccentBlueSoft,
@@ -429,8 +439,11 @@ fun DevolucionFormScreen(
             item = item,
             viewModel = devolucionViewModel,
             sustitucionesActuales =
-                sustitucionesPorProducto[item.productoVariacionId]
-                    ?: emptyList(),
+                sustitucionesPorProducto[item.productoVariacionId] ?: emptyList(),
+            cantidadesReservadas = descuentosNecesarios.mapValues { (id, cantidad) ->
+                cantidad - (sustitucionesPorProducto[item.productoVariacionId].orEmpty()
+                    .filter { it.productoVariacionId == id }.sumOf { it.cantidad.toDouble() })
+            },
             onDismiss = {
                 showCambioDialog = false
                 itemParaCambio = null
@@ -1068,14 +1081,12 @@ fun DevolucionFormScreen(
                                     )
                                 }
 
-                                if (
-                                    stockYaCargado &&
-                                    cambiosConValorIncorrecto.isNotEmpty()
-                                ) {
-                                    AdvertenciaDevolucion(
-                                        mensaje =
-                                            "El valor de los productos de cambio debe ser exactamente igual al valor de la devolución."
-                                    )
+                                if (stockInsuficiente) {
+                                    AdvertenciaDevolucion("Las cantidades seleccionadas superan el inventario disponible.")
+                                }
+                                if (hayCambios) {
+                                    Text(diferenciaTexto, color = AccentBlue, fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(top = 12.dp))
                                 }
 
                                 Spacer(
@@ -1121,7 +1132,7 @@ fun DevolucionFormScreen(
                                                 "Hay productos sin existencias que requieren seleccionar un cambio."
 
                                             else ->
-                                                "El valor de los productos de cambio debe ser exactamente igual al valor de la devolución."
+                                                "No hay existencias suficientes para los productos seleccionados."
                                         }
 
                                     showResultDialog = true
@@ -1405,923 +1416,180 @@ fun CarritoItemDevolucionCard(
 }
 
 
-// ── DIÁLOGO DE CAMBIO DE PRODUCTO ─────────────────────────────────────────────
-
+// ── DIÁLOGO DE CAMBIO DE PRODUCTO ──
 @Composable
 fun CambioProductoDialog(
     item: CarritoItem,
     viewModel: DevolucionViewModel,
     sustitucionesActuales: List<SustitucionSeleccionada>,
+    cantidadesReservadas: Map<Int, Double>,
     onDismiss: () -> Unit,
     onConfirm: (List<SustitucionSeleccionada>) -> Unit
 ) {
-    val variaciones by viewModel
-        .getVariacionesDisponiblesParaSustitucion()
+    val variaciones by viewModel.getVariacionesDisponiblesParaSustitucion()
         .collectAsState(initial = emptyList())
-
-    val valorDevueltoCentavos =
-        remember(item) {
-            dineroACentavos(
-                item.cantidad * item.precio
+    var cantidades by remember(item.productoVariacionId, sustitucionesActuales) {
+        mutableStateOf(sustitucionesActuales.associate { it.productoVariacionId to it.cantidad })
+    }
+    val seleccionados = cantidades.filterValues { it > 0 }.mapNotNull { (id, cantidad) ->
+        variaciones.firstOrNull { it.id == id }?.let {
+            SustitucionSeleccionada(
+                productoVariacionId = it.id, nombreProducto = it.nombreProducto,
+                presentacionNombre = it.presentacionNombre, precio = it.precio, cantidad = cantidad
             )
         }
-
-    var cantidades by remember(
-        item.productoVariacionId,
-        sustitucionesActuales
-    ) {
-        mutableStateOf(
-            sustitucionesActuales.associate {
-                it.productoVariacionId to it.cantidad
-            }
-        )
+    }
+    val valorDevuelto = dineroACentavos(item.precio * item.cantidad).toLong()
+    val valorCambio = seleccionados.sumOf { dineroACentavos(it.precio * it.cantidad).toLong() }
+    val diferencia = valorCambio - valorDevuelto
+    val puedeConfirmar = seleccionados.isNotEmpty() && cantidades.all { (id, cantidad) ->
+        val stock = variaciones.firstOrNull { it.id == id }?.stockActual ?: 0.0
+        cantidad > 0 && cantidad + (cantidadesReservadas[id] ?: 0.0) <= stock
     }
 
-    val valorSeleccionadoCentavos =
-        remember(
-            cantidades,
-            variaciones
-        ) {
-            cantidades.entries.sumOf { (id, cantidad) ->
-                val variacion =
-                    variaciones.firstOrNull { it.id == id }
-
-                if (variacion == null) {
-                    0
-                } else {
-                    dineroACentavos(
-                        variacion.precio
-                    ) * cantidad
-                }
-            }
-        }
-
-    val restanteCentavos =
-        valorDevueltoCentavos -
-                valorSeleccionadoCentavos
-
-    val candidatosValidos =
-        remember(
-            variaciones,
-            cantidades,
-            valorDevueltoCentavos
-        ) {
-            obtenerVariacionesValidas(
-                variaciones = variaciones,
-                cantidadesActuales = cantidades,
-                objetivoCentavos = valorDevueltoCentavos
-            )
-        }
-
-    val seleccionados =
-        remember(
-            cantidades,
-            variaciones
-        ) {
-            cantidades
-                .filter { it.value > 0 }
-                .mapNotNull { (id, cantidad) ->
-                    variaciones
-                        .firstOrNull { it.id == id }
-                        ?.let { variacion ->
-                            SustitucionSeleccionada(
-                                productoVariacionId =
-                                    variacion.id,
-                                nombreProducto =
-                                    variacion.nombreProducto,
-                                presentacionNombre =
-                                    variacion.presentacionNombre,
-                                precio =
-                                    variacion.precio,
-                                cantidad = cantidad
-                            )
-                        }
-                }
-        }
-
-    val puedeConfirmar =
-        valorSeleccionadoCentavos ==
-                valorDevueltoCentavos &&
-                seleccionados.isNotEmpty()
+    val disponibles = variaciones.filter { it.id != item.productoVariacionId &&
+            it.stockActual - (cantidadesReservadas[it.id] ?: 0.0) >= 1.0 }
+    val seleccionValida = cantidades.isNotEmpty() && cantidades.all { (id, cantidad) ->
+        val v = disponibles.firstOrNull { it.id == id }
+        v != null && cantidad > 0 && cantidad <= (v.stockActual - (cantidadesReservadas[id] ?: 0.0)).toInt()
+    }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {},
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
         containerColor = SurfaceWhite,
         shape = RoundedCornerShape(24.dp),
         title = {
             Column {
-
-                Text(
-                    text = "Cambiar producto",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 19.sp,
-                    color = TextPrimary
-                )
-
-                Spacer(
-                    modifier = Modifier.height(4.dp)
-                )
-
-                Text(
-                    text =
-                        "${item.productoNombre} - " +
-                                item.presentacionNombre,
-                    fontSize = 13.sp,
-                    color = TextMuted
-                )
-
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
-
-                Text(
-                    text =
-                        "Valor a cambiar: $" +
-                                centavosADinero(
-                                    valorDevueltoCentavos
-                                ),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AccentBlue
-                )
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Cambiar producto", fontWeight = FontWeight.Bold, fontSize = 19.sp, color = TextPrimary)
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = TextMuted)
+                    }
+                }
+                Text("${item.productoNombre} - ${item.presentacionNombre}", fontSize = 13.sp, color = TextMuted)
+                Spacer(Modifier.height(8.dp))
+                Text("Valor a cambiar: $${centavosADinero(valorDevuelto)}",
+                    fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AccentBlue)
+                Spacer(Modifier.height(12.dp))
+                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = AccentBlueSoft)) {
+                    Column(Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Cambio seleccionado: $${centavosADinero(valorCambio)}",
+                            fontWeight = FontWeight.Bold, color = AccentBlue, fontSize = 14.sp)
+                        Spacer(Modifier.height(4.dp))
+                        Text(when {
+                            diferencia > 0 -> "EL CLIENTE PAGA $${centavosADinero(diferencia)} MÁS"
+                            diferencia < 0 -> "EL REPARTIDOR ENTREGA $${centavosADinero(-diferencia)}"
+                            else -> "CAMBIO SIN DIFERENCIA"
+                        }, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                            color = if (diferencia == 0L) AccentTeal else TextPrimary,
+                            textAlign = TextAlign.Center)
+                    }
+                }
             }
         },
         text = {
-
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 430.dp)
-                        .verticalScroll(
-                            rememberScrollState()
-                        )
-            ) {
-
-                if (variaciones.isEmpty()) {
-
-                    Text(
-                        text =
-                            "No hay producto que pueda cambiarse",
-                        textAlign = TextAlign.Center,
-                        fontSize = 14.sp,
-                        color = TextMuted,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    vertical = 24.dp
-                                )
-                    )
-
-                } else {
-
-                    if (seleccionados.isNotEmpty()) {
-
-                        Text(
-                            text = "Cambios seleccionados:",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary
-                        )
-
-                        Spacer(
-                            modifier =
-                                Modifier.height(6.dp)
-                        )
-
-                        seleccionados.forEach { seleccion ->
-
-                            val variacion =
-                                variaciones.firstOrNull {
-                                    it.id ==
-                                            seleccion.productoVariacionId
+            Column(Modifier.fillMaxWidth().heightIn(max = 430.dp).verticalScroll(rememberScrollState())) {
+                if (seleccionados.isNotEmpty()) {
+                    Text("Cambios seleccionados:", fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp, color = TextPrimary)
+                    Spacer(Modifier.height(6.dp))
+                    seleccionados.forEach { seleccion ->
+                        val v = disponibles.firstOrNull { it.id == seleccion.productoVariacionId }
+                        val disponible = ((v?.stockActual ?: 0.0) -
+                                (cantidadesReservadas[seleccion.productoVariacionId] ?: 0.0)).toInt()
+                        Card(Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = AccentBlueSoft)) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("${seleccion.nombreProducto} (${seleccion.presentacionNombre})",
+                                        fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                    Text("$${String.format("%.2f", seleccion.precio)} c/u",
+                                        fontSize = 11.sp, color = TextMuted)
                                 }
-
-                            val puedeAumentar =
-                                if (variacion == null) {
-                                    false
-                                } else {
-                                    val prueba =
-                                        cantidades +
-                                                (
-                                                        variacion.id to
-                                                                (
-                                                                        seleccion.cantidad + 1
-                                                                        )
-                                                        )
-
-                                    puedeCompletarConSeleccionadas(
-                                        variaciones =
-                                            variaciones,
-                                        objetivoCentavos =
-                                            valorDevueltoCentavos,
-                                        cantidadesActuales =
-                                            prueba
-                                    )
+                                IconButton(onClick = {
+                                    val n = seleccion.cantidad - 1
+                                    cantidades = if (n <= 0) cantidades - seleccion.productoVariacionId
+                                    else cantidades + (seleccion.productoVariacionId to n)
+                                }, modifier = Modifier.size(34.dp)) {
+                                    Icon(Icons.Default.Remove, contentDescription = "Quitar", modifier = Modifier.size(18.dp))
                                 }
-
-                            Card(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(
-                                            vertical = 3.dp
-                                        ),
-                                shape =
-                                    RoundedCornerShape(
-                                        12.dp
-                                    ),
-                                colors =
-                                    CardDefaults
-                                        .cardColors(
-                                            containerColor =
-                                                AccentBlueSoft
-                                        )
-                            ) {
-
-                                Row(
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(
-                                                horizontal = 10.dp,
-                                                vertical = 6.dp
-                                            ),
-                                    verticalAlignment =
-                                        Alignment.CenterVertically
-                                ) {
-
-                                    Column(
-                                        modifier =
-                                            Modifier.weight(1f)
-                                    ) {
-
-                                        Text(
-                                            text =
-                                                "${seleccion.nombreProducto} " +
-                                                        "(${seleccion.presentacionNombre})",
-                                            fontSize = 12.sp,
-                                            fontWeight =
-                                                FontWeight.SemiBold,
-                                            color = TextPrimary
-                                        )
-
-                                        Text(
-                                            text =
-                                                "$${
-                                                    String.format(
-                                                        "%.2f",
-                                                        seleccion.precio
-                                                    )
-                                                } c/u",
-                                            fontSize = 11.sp,
-                                            color = TextMuted
-                                        )
-                                    }
-
-                                    IconButton(
-                                        onClick = {
-
-                                            val nuevaCantidad =
-                                                seleccion.cantidad - 1
-
-                                            cantidades =
-                                                if (
-                                                    nuevaCantidad <= 0
-                                                ) {
-                                                    cantidades -
-                                                            seleccion.productoVariacionId
-                                                } else {
-                                                    cantidades +
-                                                            (
-                                                                    seleccion.productoVariacionId to
-                                                                            nuevaCantidad
-                                                                    )
-                                                }
-                                        },
-                                        modifier =
-                                            Modifier.size(34.dp)
-                                    ) {
-
-                                        Icon(
-                                            Icons.Default.Remove,
-                                            contentDescription =
-                                                "Quitar",
-                                            modifier =
-                                                Modifier.size(18.dp)
-                                        )
-                                    }
-
-                                    Text(
-                                        text =
-                                            seleccion.cantidad.toString(),
-                                        fontWeight =
-                                            FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = AccentBlue,
-                                        modifier =
-                                            Modifier.padding(
-                                                horizontal = 4.dp
-                                            )
-                                    )
-
-                                    IconButton(
-                                        onClick = {
-
-                                            if (
-                                                puedeAumentar
-                                            ) {
-                                                cantidades =
-                                                    cantidades +
-                                                            (
-                                                                    seleccion.productoVariacionId to
-                                                                            (
-                                                                                    seleccion.cantidad + 1
-                                                                                    )
-                                                                    )
-                                            }
-                                        },
-                                        enabled =
-                                            puedeAumentar,
-                                        modifier =
-                                            Modifier.size(34.dp)
-                                    ) {
-
-                                        Icon(
-                                            Icons.Default.Add,
-                                            contentDescription =
-                                                "Agregar",
-                                            modifier =
-                                                Modifier.size(18.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(
-                            modifier = Modifier.height(10.dp)
-                        )
-
-                        HorizontalDivider(
-                            color = BackgroundLight
-                        )
-
-                        Spacer(
-                            modifier = Modifier.height(10.dp)
-                        )
-                    }
-
-                    if (restanteCentavos > 0) {
-
-                        Text(
-                            text =
-                                "Productos que pueden completar el cambio:",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary
-                        )
-
-                        Spacer(
-                            modifier = Modifier.height(6.dp)
-                        )
-
-                        if (candidatosValidos.isEmpty()) {
-
-                            Text(
-                                text =
-                                    "No hay producto que pueda cambiarse",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                color = TextMuted,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(
-                                            vertical = 20.dp
-                                        )
-                            )
-
-                        } else {
-
-                            candidatosValidos.forEach { variacion ->
-
-                                val cantidadActual =
-                                    cantidades[
-                                        variacion.id
-                                    ] ?: 0
-
-                                val stockMaximo =
-                                    variacion.stockActual
-                                        .toInt()
-
-                                Card(
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(
-                                                vertical = 3.dp
-                                            ),
-                                    shape =
-                                        RoundedCornerShape(
-                                            12.dp
-                                        ),
-                                    colors =
-                                        CardDefaults
-                                            .cardColors(
-                                                containerColor =
-                                                    BackgroundLight
-                                            )
-                                ) {
-
-                                    Row(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(
-                                                    10.dp
-                                                ),
-                                        verticalAlignment =
-                                            Alignment.CenterVertically
-                                    ) {
-
-                                        Column(
-                                            modifier =
-                                                Modifier.weight(1f)
-                                        ) {
-
-                                            Text(
-                                                text =
-                                                    variacion
-                                                        .nombreProducto,
-                                                fontWeight =
-                                                    FontWeight.Bold,
-                                                fontSize = 13.sp,
-                                                color =
-                                                    TextPrimary
-                                            )
-
-                                            Text(
-                                                text =
-                                                    variacion
-                                                        .presentacionNombre,
-                                                fontSize = 11.sp,
-                                                color = TextMuted
-                                            )
-
-                                            Text(
-                                                text =
-                                                    "$${
-                                                        String.format(
-                                                            "%.2f",
-                                                            variacion.precio
-                                                        )
-                                                    } • Stock: " +
-                                                            "${variacion.stockActual}",
-                                                fontSize = 11.sp,
-                                                color = AccentBlue
-                                            )
-                                        }
-
-                                        Button(
-                                            onClick = {
-
-                                                if (
-                                                    cantidadActual == 0
-                                                ) {
-                                                    val prueba =
-                                                        cantidades +
-                                                                (
-                                                                        variacion.id to 1
-                                                                        )
-
-                                                    if (
-                                                        puedeCompletarConSeleccionadas(
-                                                            variaciones =
-                                                                variaciones,
-                                                            objetivoCentavos =
-                                                                valorDevueltoCentavos,
-                                                            cantidadesActuales =
-                                                                prueba
-                                                        ) ||
-                                                        candidatosValidos.any {
-                                                            it.id ==
-                                                                    variacion.id
-                                                        }
-                                                    ) {
-                                                        cantidades =
-                                                            cantidades +
-                                                                    (
-                                                                            variacion.id to 1
-                                                                            )
-                                                    }
-                                                }
-                                            },
-                                            shape =
-                                                RoundedCornerShape(
-                                                    10.dp
-                                                ),
-                                            contentPadding =
-                                                PaddingValues(
-                                                    horizontal = 10.dp,
-                                                    vertical = 4.dp
-                                                ),
-                                            colors =
-                                                ButtonDefaults
-                                                    .buttonColors(
-                                                        containerColor =
-                                                            AccentIndigo
-                                                    )
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Add,
-                                                contentDescription =
-                                                    null,
-                                                modifier =
-                                                    Modifier.size(16.dp)
-                                            )
-                                            Spacer(
-                                                modifier =
-                                                    Modifier.width(3.dp)
-                                            )
-                                            Text(
-                                                "Agregar",
-                                                fontSize = 11.sp
-                                            )
-                                        }
-                                    }
+                                Text("${seleccion.cantidad}", fontWeight = FontWeight.Bold,
+                                    color = AccentBlue, modifier = Modifier.padding(horizontal = 4.dp))
+                                IconButton(onClick = {
+                                    cantidades = cantidades + (seleccion.productoVariacionId to seleccion.cantidad + 1)
+                                }, enabled = seleccion.cantidad < disponible, modifier = Modifier.size(34.dp)) {
+                                    Icon(Icons.Default.Add, contentDescription = "Agregar", modifier = Modifier.size(18.dp))
                                 }
                             }
                         }
                     }
-
-                    Spacer(
-                        modifier = Modifier.height(12.dp)
-                    )
-
-                    Text(
-                        text =
-                            "Cambio seleccionado: $" +
-                                    centavosADinero(
-                                        valorSeleccionadoCentavos
-                                    ),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color =
-                            if (puedeConfirmar)
-                                AccentTeal
-                            else
-                                TextPrimary,
-                        textAlign = TextAlign.Center,
-                        modifier =
-                            Modifier.fillMaxWidth()
-                    )
-
-                    if (restanteCentavos > 0) {
-
-                        Text(
-                            text =
-                                "Faltan $" +
-                                        centavosADinero(
-                                            restanteCentavos
-                                        ),
-                            fontSize = 12.sp,
-                            color = ErrorRed,
-                            textAlign = TextAlign.Center,
-                            modifier =
-                                Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    if (restanteCentavos < 0) {
-
-                        Text(
-                            text =
-                                "El cambio excede $" +
-                                        centavosADinero(
-                                            -restanteCentavos
-                                        ),
-                            fontSize = 12.sp,
-                            color = ErrorRed,
-                            textAlign = TextAlign.Center,
-                            modifier =
-                                Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    if (puedeConfirmar) {
-
-                        Spacer(
-                            modifier = Modifier.height(6.dp)
-                        )
-
-                        Text(
-                            text =
-                                "El valor del cambio coincide exactamente.",
-                            fontSize = 11.sp,
-                            color = AccentTeal,
-                            textAlign = TextAlign.Center,
-                            modifier =
-                                Modifier.fillMaxWidth()
-                        )
+                    Spacer(Modifier.height(10.dp))
+                    HorizontalDivider(color = BackgroundLight)
+                    Spacer(Modifier.height(10.dp))
+                }
+                Text("Productos disponibles para el cambio:", fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                Spacer(Modifier.height(6.dp))
+                if (disponibles.isEmpty()) {
+                    Text("No hay productos de cambio con stock disponible", fontSize = 13.sp,
+                        color = TextMuted, textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp))
+                }
+                disponibles.filter { it.id !in cantidades }.forEach { v ->
+                    val stock = (v.stockActual - (cantidadesReservadas[v.id] ?: 0.0)).toInt()
+                    Card(Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = BackgroundLight)) {
+                        Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(v.nombreProducto, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                                Text(v.presentacionNombre, fontSize = 11.sp, color = TextMuted)
+                                Text("$${String.format("%.2f", v.precio)} • Stock: $stock",
+                                    fontSize = 11.sp, color = AccentBlue)
+                            }
+                            Button(onClick = { cantidades = cantidades + (v.id to 1) },
+                                enabled = stock > 0, shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(3.dp))
+                                Text("Agregar", fontSize = 11.sp)
+                            }
+                        }
                     }
                 }
+                Spacer(Modifier.height(12.dp))
+                Text("Cambio seleccionado: $${centavosADinero(valorCambio)}", fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold, color = AccentBlue,
+                    modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                Text(when {
+                    diferencia > 0 -> "EL CLIENTE PAGA $${centavosADinero(diferencia)} MÁS"
+                    diferencia < 0 -> "EL REPARTIDOR ENTREGA $${centavosADinero(-diferencia)}"
+                    else -> "CAMBIO SIN DIFERENCIA"
+                }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                    color = if (diferencia == 0L) AccentTeal else TextPrimary,
+                    modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
             }
         },
-        dismissButton = {
-
-            OutlinedButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Cancelar")
-            }
-        },
+        dismissButton = {},
         confirmButton = {
-
-            Button(
-                onClick = {
-                    onConfirm(seleccionados)
-                },
-                enabled = puedeConfirmar,
+            Button(onClick = { onConfirm(seleccionados) }, enabled = seleccionValida,
                 shape = RoundedCornerShape(12.dp),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = AccentBlue
-                    ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-
-                Text(
-                    "Aceptar cambio",
-                    fontWeight = FontWeight.SemiBold
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
+                modifier = Modifier.fillMaxWidth()) {
+                Text("Aceptar cambio", fontWeight = FontWeight.SemiBold)
             }
         }
     )
 }
 
-
-// ── FUNCIONES PARA COMBINACIONES EXACTAS ──────────────────────────────────────
-
-private fun dineroACentavos(
-    valor: Double
-): Int {
-    return kotlin.math.round(
-        valor * 100
-    ).toInt()
-}
-
-private fun centavosADinero(
-    valor: Int
-): String {
-    return String.format(
-        "%.2f",
-        valor / 100.0
-    )
-}
-
-private fun obtenerVariacionesValidas(
-    variaciones: List<ProductoSustitucion>,
-    cantidadesActuales: Map<Int, Int>,
-    objetivoCentavos: Int
-): List<ProductoSustitucion> {
-
-    val valorActual =
-        cantidadesActuales.entries.sumOf { (id, cantidad) ->
-            val variacion =
-                variaciones.firstOrNull {
-                    it.id == id
-                }
-
-            if (variacion == null) {
-                0
-            } else {
-                dineroACentavos(
-                    variacion.precio
-                ) * cantidad
-            }
-        }
-
-    val restanteCentavos =
-        objetivoCentavos - valorActual
-
-    if (restanteCentavos <= 0) {
-        return emptyList()
-    }
-
-    return variaciones.filter { candidata ->
-
-        if (
-            cantidadesActuales.containsKey(
-                candidata.id
-            )
-        ) {
-            return@filter false
-        }
-
-        val precioCandidata =
-            dineroACentavos(
-                candidata.precio
-            )
-
-        val stockDisponible =
-            candidata.stockActual.toInt()
-
-        if (
-            precioCandidata <= 0 ||
-            stockDisponible <= 0 ||
-            precioCandidata > restanteCentavos
-        ) {
-            return@filter false
-        }
-
-        val cantidadMaxima =
-            minOf(
-                stockDisponible,
-                restanteCentavos /
-                        precioCandidata
-            )
-
-        for (
-        cantidad in
-        1..cantidadMaxima
-        ) {
-
-            val prueba =
-                cantidadesActuales +
-                        (
-                                candidata.id to
-                                        cantidad
-                                )
-
-            if (
-                puedeCompletarConSeleccionadas(
-                    variaciones =
-                        variaciones,
-                    objetivoCentavos =
-                        objetivoCentavos,
-                    cantidadesActuales =
-                        prueba
-                )
-            ) {
-                return@filter true
-            }
-        }
-
-        false
-    }
-}
-
-private fun puedeCompletarConSeleccionadas(
-    variaciones: List<ProductoSustitucion>,
-    objetivoCentavos: Int,
-    cantidadesActuales: Map<Int, Int>
-): Boolean {
-
-    val valorSeleccionado =
-        cantidadesActuales.entries.sumOf { (id, cantidad) ->
-            val variacion =
-                variaciones.firstOrNull {
-                    it.id == id
-                }
-
-            if (variacion == null) {
-                Int.MAX_VALUE
-            } else {
-                dineroACentavos(
-                    variacion.precio
-                ) * cantidad
-            }
-        }
-
-    if (valorSeleccionado > objetivoCentavos) {
-        return false
-    }
-
-    val restantes =
-        variaciones.mapNotNull { variacion ->
-
-            val cantidadUsada =
-                cantidadesActuales[
-                    variacion.id
-                ] ?: 0
-
-            val stock =
-                variacion.stockActual
-                    .toInt()
-
-            if (cantidadUsada > stock) {
-                return false
-            }
-
-            val stockRestante =
-                stock - cantidadUsada
-
-            if (stockRestante <= 0) {
-                null
-            } else {
-                ProductoSustitucion(
-                    id = variacion.id,
-                    productoId = variacion.productoId,
-                    nombreProducto =
-                        variacion.nombreProducto,
-                    presentacionNombre =
-                        variacion.presentacionNombre,
-                    precio = variacion.precio,
-                    stockActual =
-                        stockRestante.toDouble()
-                )
-            }
-        }
-
-    val restanteCentavos =
-        objetivoCentavos -
-                valorSeleccionado
-
-    if (restanteCentavos == 0) {
-        return true
-    }
-
-    return puedeFormarValorExacto(
-        variaciones = restantes,
-        objetivo = restanteCentavos
-    )
-}
-
-private fun puedeFormarValorExacto(
-    variaciones: List<ProductoSustitucion>,
-    objetivo: Int
-): Boolean {
-
-    if (objetivo == 0) {
-        return true
-    }
-
-    if (objetivo < 0) {
-        return false
-    }
-
-    val alcanzable =
-        IntArray(
-            objetivo + 1
-        ) {
-            -1
-        }
-
-    alcanzable[0] = 0
-
-    variaciones.forEach { variacion ->
-
-        val precio =
-            dineroACentavos(
-                variacion.precio
-            )
-
-        val stock =
-            variacion.stockActual
-                .toInt()
-
-        if (
-            precio <= 0 ||
-            stock <= 0 ||
-            precio > objetivo
-        ) {
-            return@forEach
-        }
-
-        for (
-        suma in
-        0..objetivo
-        ) {
-
-            if (
-                alcanzable[suma] >= 0
-            ) {
-                alcanzable[suma] =
-                    stock
-            } else if (
-                suma < precio ||
-                alcanzable[
-                    suma - precio
-                ] <= 0
-            ) {
-                alcanzable[suma] =
-                    -1
-            } else {
-                alcanzable[suma] =
-                    alcanzable[
-                        suma - precio
-                    ] - 1
-            }
-        }
-    }
-
-    return alcanzable[objetivo] >= 0
-}
-
+private fun dineroACentavos(valor: Double): Int = kotlin.math.round(valor * 100).toInt()
+private fun centavosADinero(valor: Long): String = String.format("%.2f", valor / 100.0)
 
 @Composable
 private fun AdvertenciaDevolucion(

@@ -287,6 +287,7 @@ fun AppNavigation() {
     }
     val devolucionFormRepository = remember {
         DevolucionInventarioRepository(
+            db,
             db.devolucionDao(),
             db.devolucionSustitucionDao(),
             db.miniBodegaDetalleDao(),
@@ -445,7 +446,8 @@ fun AppNavigation() {
             db.rutaDao(),
             db.rotacionDao(),
             db.rotacionDetalleDao(),       // 🔥 NUEVO
-            db.rotacionSustitucionDao()    // 🔥 NUEVO
+            db.rotacionSustitucionDao(),
+            db.devolucionDao(),
         )
     }
     val syncFinalRepository = remember {

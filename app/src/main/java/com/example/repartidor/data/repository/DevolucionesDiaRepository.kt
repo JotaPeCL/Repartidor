@@ -59,7 +59,10 @@ class DevolucionesDiaRepository(
                 tipo = devolucion.tipo,
                 fecha = parseFecha(devolucion.fecha),
                 total = totalDevuelto,
-                descripcion = devolucion.descripcion
+                descripcion = devolucion.descripcion,
+                diferenciaDinero = devolucion.diferenciaDinero,
+                tipoDiferencia = devolucion.tipoDiferencia,
+                formaLiquidacion = devolucion.formaLiquidacion
             )
         }
     }

@@ -188,7 +188,10 @@ class SyncFinalRepository(
                         usuario_id = usuarioId,
                         mini_bodega_id = miniBodegaId,
                         fecha = normalizarFecha(it.fecha),
-                        descripcion = it.descripcion
+                        descripcion = it.descripcion,
+                        diferencia_dinero = it.diferenciaDinero,
+                        tipo_diferencia = it.tipoDiferencia,
+                        forma_liquidacion = it.formaLiquidacion
                     )
                 }
 
@@ -331,7 +334,10 @@ class SyncFinalRepository(
                         mini_bodega_id = miniBodegaId,
                         fecha = normalizarFecha(it.fecha),
                         total = it.total,
-                        motivo = it.motivo
+                        motivo = it.motivo,
+                        diferencia_dinero = it.diferenciaDinero,
+                        tipo_diferencia = it.tipoDiferencia,
+                        forma_liquidacion = it.formaLiquidacion
                     )
                 }
 

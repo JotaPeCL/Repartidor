@@ -2,6 +2,7 @@ package com.example.repartidor.viewmodel.Rotacion
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -114,13 +115,17 @@ class RotacionViewModel(
         clienteNombre: String? = null,
         imprimir: Boolean = true
     ) {
-            if (_isLoading.value || rotacionYaRegistrada) return
-            _isLoading.value = true
+        Log.d(
+            "OSMIT_ROTACION",
+            "1. registrarRotacion llamado | loading=${_isLoading.value} | yaRegistrada=$rotacionYaRegistrada | imprimir=$imprimir"
+        )
+        if (_isLoading.value || rotacionYaRegistrada) return
+        _isLoading.value = true
 
-            viewModelScope.launch {
-                _error.value = null
-                _success.value = false
-                _printResult.value = null
+        viewModelScope.launch {
+            _error.value = null
+            _success.value = false
+            _printResult.value = null
 
             try {
                 if (carrito.isEmpty()) {
@@ -138,6 +143,8 @@ class RotacionViewModel(
                     ?: throw Exception(
                         "No se encontró la MiniBodega de la sesión"
                     )
+
+                Log.d("OSMIT_ROTACION", "3. Sesión correcta | usuario=$usuarioId | minibodega=$miniBodegaId")
 
                 // VALIDAR PRODUCTOS DE CAMBIO
 
@@ -186,8 +193,9 @@ class RotacionViewModel(
                     else -> "SIN_DIFERENCIA"
                 }
 
-                val diferenciaDinero =
-                    abs(diferenciaCentavos) / 100.0
+                val diferenciaDinero = abs(diferenciaCentavos) / 100.0
+
+                Log.d("OSMIT_ROTACION", "5. Valores calculados | recibido=$valorRecibidoCentavos | entregado=$valorEntregadoCentavos | tipo=$tipoDiferencia")
 
                 // CREAR ROTACIÓN
 
@@ -214,6 +222,7 @@ class RotacionViewModel(
                     carrito = carrito,
                     sustitucionesPorProducto = sustitucionesPorProducto
                 )
+                Log.d("OSMIT_ROTACION", "5. Valores calculados | recibido=$valorRecibidoCentavos | entregado=$valorEntregadoCentavos | tipo=$tipoDiferencia")
 
                 // Desde aquí la rotación ya quedó registrada.
                 // Una falla de impresión no debe cambiar ese resultado.
@@ -221,6 +230,7 @@ class RotacionViewModel(
                 _success.value = true
 
                 if (imprimir) {
+                    Log.d("OSMIT_ROTACION", "8. Iniciando impresión")
                     _printResult.value = try {
 
                         val ticket = TicketRotacionBuilder.build(
@@ -248,23 +258,29 @@ class RotacionViewModel(
                         }
 
                     } catch (e: Exception) {
+                        Log.d("OSMIT_ROTACION", "8. Registro sin impresión")
                         PrintResult.Error(
                             e.message ?: "Error al imprimir ticket"
                         )
                     }
                 } else {
+                    Log.d("OSMIT_ROTACION", "8. Registro sin impresión")
                     _printResult.value = PrintResult.NoPrinter
                 }
+                Log.d("OSMIT_ROTACION", "9. Proceso terminado | success=${_success.value}")
 
             } catch (e: Exception) {
+                Log.e("OSMIT_ROTACION", "ERROR AL REGISTRAR ROTACIÓN", e)
                 _error.value =
                     e.message ?: "Error al registrar la rotación"
 
             } finally {
                 _isLoading.value = false
+                Log.d("OSMIT_ROTACION", "10. FINALLY | loading=false | success=${_success.value} | error=${_error.value}")
             }
         }
     }
+
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     fun verificarImpresora(): PrintResult {
 
@@ -279,5 +295,7 @@ class RotacionViewModel(
     fun limpiarEstado() {
         _error.value = null
         _success.value = false
+        _printResult.value = null
+        rotacionYaRegistrada = false
     }
 }

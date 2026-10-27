@@ -14,6 +14,9 @@ data class DevolucionEntity(
     val miniBodegaId: Int,
     val fecha: String, // viene de la app
     val descripcion: String,
+    val diferenciaDinero: Double = 0.0,
+    val tipoDiferencia: String = "SIN_DIFERENCIA",
+    val formaLiquidacion: String = "EFECTIVO",
     val sincronizado: Boolean = false,
     val createdAt: String
 )

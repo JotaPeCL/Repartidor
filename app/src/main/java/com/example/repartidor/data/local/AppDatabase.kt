@@ -69,7 +69,7 @@ import com.example.repartidor.data.model.entity.RotacionSustitucionEntity
         CancelacionRotacionDetalleEntity::class,
 
     ],
-    version = 14 // IMPORTANTE
+    version = 16 // IMPORTANTE
 
 )
 abstract class AppDatabase : RoomDatabase() {

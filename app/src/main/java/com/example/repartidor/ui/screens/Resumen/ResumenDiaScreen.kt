@@ -221,7 +221,10 @@ fun ResumenDiaScreen(
             shape = RoundedCornerShape(24.dp),
             icon = {
                 Box(
-                    modifier = Modifier.size(56.dp).clip(CircleShape).background(ErrorRedSoft),
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(ErrorRedSoft),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Default.Lock, contentDescription = null, tint = ErrorRed, modifier = Modifier.size(26.dp))
@@ -244,7 +247,9 @@ fun ResumenDiaScreen(
                         fontSize = 13.sp,
                         color = TextPrimary,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 4.dp, bottom = 8.dp),
                         textAlign = TextAlign.Start
                     )
 
@@ -315,7 +320,9 @@ fun ResumenDiaScreen(
         // 🔥 NUEVO: Evaluamos también la primeraCarga aquí
         if (isLoading || primeraCarga) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = AccentBlue)
@@ -339,36 +346,53 @@ fun ResumenDiaScreen(
                 ) {
                     InfoRow(
                         "Dinero en ventas totales",
-                        "$${"%.2f".format(state.dineroTotalVentas)}"
+                        "$${"%.2f".format(state.dineroTotalVentas)}", isBold = true
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
                     InfoRow("Efectivo en ventas", "$${"%.2f".format(state.efectivoVentas)}")
                     InfoRow("Abonos recibidos", "$${"%.2f".format(state.totalAbonos)}")
 
+
+
+                    // DINERO DE DEVOLUCIONES
+                    if (state.totalDevolucionesRecibido != 0.0 || state.totalDevolucionesEntregado != 0.0) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider(color = BorderLight)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Diferencias de devoluciones", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        InfoRow("Dinero recibido por devoluciones", "+$${"%.2f".format(state.totalDevolucionesRecibido)}")
+                        InfoRow("Dinero entregado por devoluciones", "-$${"%.2f".format(state.totalDevolucionesEntregado)}")
+                        InfoRow("Balance de devoluciones", "${if (state.balanceDevoluciones >= 0) "+" else "-"}$${"%.2f".format(kotlin.math.abs(state.balanceDevoluciones))}", isBold = true)
+                    }
                     // 🔄 DINERO DE ROTACIONES
                     if (state.cantidadRotaciones > 0) {
-
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider(color = BorderLight)
                         Spacer(modifier = Modifier.height(8.dp))
-
+                        Text(
+                            "Diferencias de rotaciones",
+                            color = TextPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                         InfoRow(
                             "Dinero recibido por rotaciones",
                             "+$${"%.2f".format(state.totalRotacionesRecibido)}"
                         )
-
                         InfoRow(
                             "Dinero entregado por rotaciones",
                             "-$${"%.2f".format(state.totalRotacionesEntregado)}"
                         )
-
                         InfoRow(
                             "Balance de rotaciones",
-                            "${if (state.balanceRotaciones >= 0) "+" else "-"}$${"%.2f".format(kotlin.math.abs(state.balanceRotaciones))}"
+                            "${if (state.balanceRotaciones >= 0) "+" else "-"}$${
+                                "%.2f".format(
+                                    kotlin.math.abs(state.balanceRotaciones)
+                                )
+                            }", isBold = true
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // 🔥 SECCIÓN PROTAGONISTA: Total Efectivo
@@ -508,7 +532,9 @@ fun ResumenDiaScreen(
                 // 🚚 BOTÓN INVENTARIO (Estilo Tonal)
                 Button(
                     onClick = onGoInventario,
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
                     shape = RoundedCornerShape(16.dp),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -539,7 +565,9 @@ fun ResumenDiaScreen(
                     // 🔥 BOTÓN IMPRIMIR (Estilo Tonal)
                     Button(
                         onClick = { showConfirmDialog = true },
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
                         shape = RoundedCornerShape(14.dp),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -557,7 +585,9 @@ fun ResumenDiaScreen(
 
                 OutlinedButton(
                     onClick = { showCerrarDiaDialog = true },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.5.dp, ErrorRed), // Contorno firme y definido
                     colors = ButtonDefaults.outlinedButtonColors(
@@ -596,7 +626,10 @@ private fun SummaryCard(
         Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    modifier = Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(accentBg),
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(accentBg),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
@@ -613,7 +646,9 @@ private fun SummaryCard(
 @Composable
 private fun InfoRow(label: String, value: String, isBold: Boolean = false) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = label, color = if (isBold) TextPrimary else TextMuted, fontWeight = if (isBold) FontWeight.SemiBold else FontWeight.Normal, fontSize = 14.sp)
@@ -625,7 +660,9 @@ private fun InfoRow(label: String, value: String, isBold: Boolean = false) {
 private fun CustomCheckboxRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp)
     ) {
         Checkbox(
             checked = checked,
@@ -657,7 +694,10 @@ private fun SoftDialog(
         shape = RoundedCornerShape(24.dp),
         icon = {
             Box(
-                modifier = Modifier.size(56.dp).clip(CircleShape).background(iconBg),
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(26.dp))

@@ -16,8 +16,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Locale
 import androidx.compose.ui.window.Dialog
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.data.model.dclass.DetalleDevolucionUI
@@ -151,6 +150,7 @@ fun DevolucionesDiaScreen(
     // ── DIÁLOGO CONFIRMAR CANCELACIÓN ──
     if (showConfirmCancel && devolucionSeleccionada != null) {
         CancelarDevolucionDialog(
+            devolucion = devolucionSeleccionada,
             motivo = motivoCancelacion,
             onMotivoChange = {
                 motivoCancelacion = it
@@ -387,6 +387,17 @@ private fun DevolucionCardRediseñada(
                     color = AccentRed
                 )
 
+                if (devolucion.diferenciaDinero > 0.0 && devolucion.tipoDiferencia != "SIN_DIFERENCIA") {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${etiquetaDiferencia(devolucion)}: ${dineroDevolucion(devolucion.diferenciaDinero)}",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AccentBlue,
+                        textAlign = TextAlign.End
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Box(
@@ -431,7 +442,7 @@ private fun DetalleDevolucionDialog(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier.padding(24.dp).heightIn(max = 650.dp).verticalScroll(rememberScrollState())
             ) {
 
                 // ── HEADER ──
@@ -529,13 +540,11 @@ private fun DetalleDevolucionDialog(
 
                 // ── LISTA DE PRODUCTOS ──
                 Column(
-                    modifier = Modifier
-                        .heightIn(max = 220.dp)
-                        .verticalScroll(rememberScrollState())
+                    modifier = Modifier.fillMaxWidth()
                 ) {
 
                     Text(
-                        text = "Productos devueltos",
+                        text = "PRODUCTOS DEVUELTOS",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -583,13 +592,16 @@ private fun DetalleDevolucionDialog(
                         )
                     }
 
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ResumenValorDevolucion("Valor devuelto", detalle.sumOf { it.subtotal })
+
                     // ── SUSTITUCIONES ──
                     if (sustituciones.isNotEmpty()) {
 
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Text(
-                            text = "Productos entregados por cambio",
+                            text = "PRODUCTOS ENTREGADOS POR CAMBIO",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
@@ -636,6 +648,8 @@ private fun DetalleDevolucionDialog(
                                 color = BackgroundLight
                             )
                         }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        ResumenValorDevolucion("Valor entregado", sustituciones.sumOf { it.subtotal })
                     }
                 }
 
@@ -659,6 +673,20 @@ private fun DetalleDevolucionDialog(
                         fontWeight = FontWeight.Bold,
                         color = AccentRed
                     )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = BackgroundLight)
+                Text("DIFERENCIA DE DINERO", fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = if (devolucion.diferenciaDinero > 0.0 && devolucion.tipoDiferencia != "SIN_DIFERENCIA")
+                        "${etiquetaDiferencia(devolucion)}: ${dineroDevolucion(devolucion.diferenciaDinero)}"
+                    else "Sin diferencia de dinero",
+                    fontWeight = FontWeight.SemiBold, color = AccentRed, fontSize = 14.sp
+                )
+                if (devolucion.diferenciaDinero > 0.0 && devolucion.tipoDiferencia != "SIN_DIFERENCIA") {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Forma: ${devolucion.formaLiquidacion}", color = TextMuted, fontSize = 13.sp)
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -814,6 +842,7 @@ private fun ConfirmActionDialog(
 
 @Composable
 private fun CancelarDevolucionDialog(
+    devolucion: DevolucionUI,
     motivo: String,
     onMotivoChange: (String) -> Unit,
     cancelandoDevolucion: Boolean,
@@ -863,6 +892,20 @@ private fun CancelarDevolucionDialog(
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp
                 )
+
+                if (devolucion.diferenciaDinero > 0.0 && devolucion.tipoDiferencia != "SIN_DIFERENCIA") {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(color = ErrorRedSoft, shape = RoundedCornerShape(12.dp)) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                            Text("Atención: movimiento de dinero", fontWeight = FontWeight.Bold, color = ErrorRed, fontSize = 13.sp)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "En esta devolución: ${etiquetaDiferencia(devolucion).lowercase(Locale.getDefault())} ${dineroDevolucion(devolucion.diferenciaDinero)} (${devolucion.formaLiquidacion}). Al cancelarla, verifica y realiza la operación de dinero inversa correspondiente. La app no mueve efectivo automáticamente.",
+                                fontSize = 13.sp, color = TextPrimary, lineHeight = 18.sp
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -1053,5 +1096,22 @@ private fun LoadingDialog(mensaje: String) {
                 )
             }
         }
+    }
+}
+
+// Etiquetas visuales: se conserva el tipo original cuando no coincide con los casos conocidos.
+private fun etiquetaDiferencia(devolucion: DevolucionUI): String = when (devolucion.tipoDiferencia.uppercase(Locale.ROOT)) {
+    "CLIENTE_PAGO", "CLIENTE_PAGA", "COBRO", "COBRAR", "PAGA_CLIENTE" -> "Cliente pagó"
+    "REPARTIDOR_PAGO", "REPARTIDOR_DEVUELVE", "DEVOLUCION_DINERO", "DEVOLVER", "SE_DEVUELVE" -> "Repartidor entregó"
+    else -> "Diferencia (${devolucion.tipoDiferencia})"
+}
+
+private fun dineroDevolucion(monto: Double): String = "$${String.format(Locale.getDefault(), "%.2f", monto)}"
+
+@Composable
+private fun ResumenValorDevolucion(titulo: String, valor: Double) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(titulo, fontSize = 14.sp, color = TextMuted)
+        Text(dineroDevolucion(valor), fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 14.sp)
     }
 }
