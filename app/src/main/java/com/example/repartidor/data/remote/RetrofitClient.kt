@@ -19,6 +19,8 @@ import com.example.repartidor.data.remote.request.CerrarMiniBodegaRequest
 import com.example.repartidor.data.remote.request.DispositivoActivacionRequest
 import com.example.repartidor.data.remote.request.DispositivoActivacionResponse
 import com.example.repartidor.data.remote.request.PedidoReabastecimientoRequest
+import com.example.repartidor.data.remote.request.PinAdminRequest
+import com.example.repartidor.data.remote.request.PinAdminResponse
 import com.example.repartidor.data.remote.request.SyncAbonosRequest
 import com.example.repartidor.data.remote.request.SyncCancelacionesDevolucionesRequest
 import com.example.repartidor.data.remote.request.SyncCancelacionesRequest
@@ -65,62 +67,62 @@ object RetrofitClient {
 
     interface Api {
 
-        @GET("roles")
+        @GET("roles/")
         suspend fun getRoles(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<RolDto>>
 
-        @GET("usuarios")
+        @GET("usuarios/")
         suspend fun getUsuarios(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<UsuarioDto>>
 
-        @GET("vehiculos")
+        @GET("vehiculos/")
         suspend fun getVehiculos(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<VehiculoDto>>
 
-        @GET("rutas")
+        @GET("rutas/")
         suspend fun getRutas(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<RutaDto>>
 
-        @GET("clientes")
+        @GET("clientes/")
         suspend fun getClientes(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<ClienteDto>>
 
-        @GET("cliente-dias")
+        @GET("cliente-dias/")
         suspend fun getClienteDiasVisita(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<ClienteDiasVisitaDto>>
 
-        @GET("categorias")
+        @GET("categorias/")
         suspend fun getCategorias(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<CategoriaProductoDTO>>
 
-        @GET("presentaciones")
+        @GET("presentaciones/")
         suspend fun getPresentaciones(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<PresentacionProductoTerminadoDTO>>
 
-        @GET("productos")
+        @GET("productos/")
         suspend fun getProductos(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<ProductoTerminadoDTO>>
 
-        @GET("variaciones")
+        @GET("variaciones/")
         suspend fun getVariaciones(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<ProductoVariacionDTO>>
 
-        @GET("mini-bodegas")
+        @GET("mini-bodegas/")
         suspend fun getMiniBodegas(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<MiniBodegaDto>>
 
-        @GET("mini-bodega-detalles")
+        @GET("mini-bodega-detalles/")
         suspend fun getMiniBodegaDetalles(
             @Query("updated_after") updatedAfter: String? = null
         ): Response<List<MiniBodegaDetalleDto>>
@@ -184,6 +186,11 @@ object RetrofitClient {
         suspend fun syncCancelacionesRotaciones(
             @Body request: SyncCancelacionesRotacionesRequest
         ): Response<Unit>
+
+        @POST("admin/verificar-pin/")
+        suspend fun verificarPinAdmin(
+            @Body request: PinAdminRequest
+        ): Response<PinAdminResponse>
 
     }
 

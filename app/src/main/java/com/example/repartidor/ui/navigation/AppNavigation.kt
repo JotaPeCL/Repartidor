@@ -52,6 +52,7 @@ import com.example.repartidor.ui.screens.Venta.VentaScreen
 import com.example.repartidor.ui.screens.VentasDia.VentaDiaScreen
 import com.example.repartidor.ui.screens.login.LoginScreen
 import com.example.repartidor.ui.screens.login.SyncScreen
+import com.example.repartidor.ui.screens.login.SyncAdminScreen
 import com.example.repartidor.utils.AppConfig
 import com.example.repartidor.utils.PrinterManager
 import com.example.repartidor.viewmodel.Devoluciones.CarritoDevolucionViewModel
@@ -67,6 +68,7 @@ import com.example.repartidor.viewmodel.Inventario.ReabastecimientoCarritoViewMo
 import com.example.repartidor.viewmodel.Inventario.ReabastecimientoProcesoViewModel
 import com.example.repartidor.viewmodel.Inventario.ReabastecimientoViewModel
 import com.example.repartidor.viewmodel.Login.SyncViewModel
+import com.example.repartidor.viewmodel.Login.SyncAdminViewModel
 import com.example.repartidor.viewmodel.Venta.VentaProcesoViewModel
 import com.example.repartidor.viewmodel.Venta.VentaViewModel
 import com.example.repartidor.viewmodel.VentasDia.VentasDiaViewModel
@@ -143,6 +145,8 @@ fun AppNavigation() {
     val syncViewModel = remember {
         SyncViewModel(repository, sessionManager)
     }
+
+    val syncAdminViewModel = remember { SyncAdminViewModel(repository) }
 
     val dispositivoRepository = remember {
         DispositivoRepository()
@@ -481,6 +485,7 @@ fun AppNavigation() {
 
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
+    var accesoAdminActivo by remember { mutableStateOf(false) }
 
     // 🔒 1. ESTADO PARA CONTROLAR LA ANIMACIÓN DE CARGA INICIAL
     var isAppReady by remember { mutableStateOf(false) }
@@ -536,8 +541,10 @@ fun AppNavigation() {
     LaunchedEffect(
         dispositivoActivado,
         lastSync,
-        userSession
+        userSession,
+        accesoAdminActivo
     ) {
+        if (accesoAdminActivo && dispositivoActivado && yaSincronizoHoy(lastSync) && userSession.isNullOrEmpty()) return@LaunchedEffect
         when {
             !dispositivoActivado -> {
                 navController.navigate(Routes.Dispositivo.route) {
@@ -605,10 +612,30 @@ fun AppNavigation() {
         composable(Routes.Login.route) {
             LoginScreen(
                 viewModel = loginViewModel,
+                syncAdminViewModel = syncAdminViewModel,
                 onLoginSuccess = {
+                    accesoAdminActivo = false
                     navController.navigate(Routes.Home.route) {
                         popUpTo(Routes.Login.route) { inclusive = true }
                     }
+                },
+                onAdminAccess = {
+                    accesoAdminActivo = true
+                    navController.navigate(Routes.SyncAdmin.route)
+                }
+            )
+        }
+
+        composable(Routes.SyncAdmin.route) {
+            SyncAdminScreen(
+                viewModel = syncAdminViewModel,
+                onBack = {
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(Routes.SyncAdmin.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                    syncAdminViewModel.cerrarAcceso()
+                    accesoAdminActivo = false
                 }
             )
         }
@@ -661,7 +688,7 @@ fun AppNavigation() {
                     navController.navigate(Routes.RotacionesDia.route)
                 },
 
-            )
+                )
         }
 
         composable(Routes.Cliente.route) {

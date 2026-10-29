@@ -532,4 +532,386 @@ class SyncRepository(
         println("PEDIDOS DETALLE OK")
         */
     }
+
+
+    suspend fun sicronizarAdmin(grupos: Set<GrupoSync>) {
+        require(grupos.isNotEmpty()) { "Selecciona al menos un grupo" }
+        val gruposEfectivos = grupos.toMutableSet()
+        //Dependencias: Inventario -> Productos, Rutas -> Usuarios, etc.
+        if (GrupoSync.INVENTARIO in gruposEfectivos) {
+            gruposEfectivos.add(GrupoSync.PRODUCTOS)
+            gruposEfectivos.add(GrupoSync.RUTAS)
+        }
+        if (GrupoSync.CLIENTES in gruposEfectivos) gruposEfectivos.add(GrupoSync.RUTAS)
+        if (GrupoSync.RUTAS in gruposEfectivos) gruposEfectivos.add(GrupoSync.USUARIOS)
+        val updatedAfter: String? = null
+        println("ADMIN - Grupos solicitados: $grupos")
+        println("ADMIN - Grupos efectivos: $gruposEfectivos")
+
+        if (GrupoSync.USUARIOS in gruposEfectivos) {
+            val rolesResponse = RetrofitClient.api.getRoles(updatedAfter)
+            verificarRespuesta(rolesResponse, "roles")
+            val roles = rolesResponse.body() ?: emptyList()
+            val rolesEntity = roles.map {
+                RolEntity(
+                    it.id,
+                    it.nombre,
+                    it.descripcion,
+                    it.estado,
+                    it.updated_at
+                )
+            }
+            syncTable(
+                rolesEntity,
+                { it.id },
+                { db.rolDao().getAllIds() },
+                { db.rolDao().deleteByIds(it) },
+                { db.rolDao().insertAll(it) }
+            )
+            println("ROLES OK")
+        }
+        if (GrupoSync.USUARIOS in gruposEfectivos) {
+            // 🔹 USUARIOS
+            val usuariosResponse = RetrofitClient.api.getUsuarios(updatedAfter)
+
+            verificarRespuesta(usuariosResponse, "usuarios")
+
+            val usuarios = usuariosResponse.body() ?: emptyList()
+
+            val usuariosEntity = usuarios.map {
+                UsuarioEntity(
+                    it.id,
+                    it.username,
+                    it.first_name,
+                    it.last_name,
+                    it.email,
+                    it.telefono,
+                    it.direccion,
+                    it.foto,
+                    it.rol,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                usuariosEntity,
+                { it.id },
+                { db.usuarioDao().getAllIds() },
+                { db.usuarioDao().deleteByIds(it) },
+                { db.usuarioDao().insertAll(it) }
+            )
+
+            println("USUARIOS OK")
+        }
+
+        if (GrupoSync.RUTAS in gruposEfectivos) {
+            // 🔹 VEHICULOS
+            val vehiculosResponse = RetrofitClient.api.getVehiculos(updatedAfter)
+
+            verificarRespuesta(vehiculosResponse, "vehículos")
+
+            val vehiculos = vehiculosResponse.body() ?: emptyList()
+
+            val vehiculosEntity = vehiculos.map {
+                VehiculoEntity(
+                    it.id,
+                    it.marca,
+                    it.color,
+                    it.placa,
+                    it.kilometraje,
+                    it.ultimo_servicio,
+                    it.observaciones,
+                    it.imagen,
+                    it.estado,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                vehiculosEntity,
+                { it.id },
+                { db.vehiculoDao().getAllIds() },
+                { db.vehiculoDao().deleteByIds(it) },
+                { db.vehiculoDao().insertAll(it) }
+            )
+
+            println("VEHICULOS OK")
+        }
+        if (GrupoSync.RUTAS in gruposEfectivos) {
+            // 🔹 RUTAS
+            val rutasResponse = RetrofitClient.api.getRutas(updatedAfter)
+
+            verificarRespuesta(rutasResponse, "rutas")
+
+            val rutas = rutasResponse.body() ?: emptyList()
+
+            val rutasEntity = rutas.map {
+                RutaEntity(
+                    it.id,
+                    it.nombre,
+                    it.descripcion,
+                    it.usuario,
+                    it.vehiculo,
+                    it.estado,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                rutasEntity,
+                { it.id },
+                { db.rutaDao().getAllIds() },
+                { db.rutaDao().deleteByIds(it) },
+                { db.rutaDao().insertAll(it) }
+            )
+
+            println("RUTAS OK")
+        }
+        if (GrupoSync.CLIENTES in gruposEfectivos) {
+            // 🔹 CLIENTES
+            val clientesResponse = RetrofitClient.api.getClientes(updatedAfter)
+
+            verificarRespuesta(clientesResponse, "clientes")
+
+            val clientes = clientesResponse.body() ?: emptyList()
+
+            val clientesEntity = clientes.map {
+                ClienteEntity(
+                    it.id,
+                    it.nombre,
+                    it.nombre_negocio,
+                    it.giro,
+                    it.tipo_exhibidor,
+                    it.direccion,
+                    it.localidad,
+                    it.colonia,
+                    it.telefono,
+                    it.porcentaje_descuento,
+                    it.limite_credito,
+                    it.saldo_adeudo,
+                    it.imagen,
+                    it.observaciones,
+                    it.ruta,
+                    it.estado,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                clientesEntity,
+                { it.id },
+                { db.clienteDao().getAllIds() },
+                { db.clienteDao().deleteByIds(it) },
+                { db.clienteDao().insertAll(it) }
+            )
+
+            println("CLIENTES OK")
+        }
+        if (GrupoSync.CLIENTES in gruposEfectivos) {
+            // 🔹 CLIENTE DIAS VISITA
+            val diasResponse = RetrofitClient.api.getClienteDiasVisita(updatedAfter)
+
+            verificarRespuesta(diasResponse, "cliente-dias")
+
+            val dias = diasResponse.body() ?: emptyList()
+
+            val diasEntity = dias.map {
+                ClienteDiasVisitaEntity(
+                    it.id,
+                    it.cliente,
+                    it.dia_semana,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                diasEntity,
+                { it.id },
+                { db.clienteDiasVisitaDao().getAllIds() },
+                { db.clienteDiasVisitaDao().deleteByIds(it) },
+                { db.clienteDiasVisitaDao().insertAll(it) }
+            )
+
+            println("CLIENTE DIAS OK")
+        }
+
+        if (GrupoSync.PRODUCTOS in gruposEfectivos) {
+            // 🔹 CATEGORIAS
+            val categoriasResponse = RetrofitClient.api.getCategorias(updatedAfter)
+
+            verificarRespuesta(categoriasResponse, "categorías")
+
+            val categorias = categoriasResponse.body() ?: emptyList()
+
+            val categoriasEntity = categorias.map {
+                CategoriaProductoEntity(
+                    it.id,
+                    it.nombre,
+                    it.descripcion,
+                    it.imagen,
+                    it.estado,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                categoriasEntity,
+                { it.id },
+                { db.categoriaDao().getAllIds() },
+                { db.categoriaDao().deleteByIds(it) },
+                { db.categoriaDao().insertAll(it) }
+            )
+
+            println("CATEGORIAS OK")
+        }
+        if (GrupoSync.PRODUCTOS in gruposEfectivos) {
+            // 🔹 PRESENTACIONES
+            val presentacionesResponse = RetrofitClient.api.getPresentaciones(updatedAfter)
+
+            verificarRespuesta(presentacionesResponse, "presentaciones")
+
+            val presentaciones = presentacionesResponse.body() ?: emptyList()
+
+            val presentacionesEntity = presentaciones.map {
+                PresentacionProductoTerminadoEntity(
+                    it.id,
+                    it.nombre,
+                    it.descripcion,
+                    it.imagen,
+                    it.estado,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                presentacionesEntity,
+                { it.id },
+                { db.presentacionDao().getAllIds() },
+                { db.presentacionDao().deleteByIds(it) },
+                { db.presentacionDao().insertAll(it) }
+            )
+
+            println("PRESENTACIONES OK")
+        }
+        if (GrupoSync.PRODUCTOS in gruposEfectivos) {
+            // 🔹 PRODUCTOS
+            val productosResponse = RetrofitClient.api.getProductos(updatedAfter)
+
+            verificarRespuesta(productosResponse, "productos")
+
+            val productos = productosResponse.body() ?: emptyList()
+
+            val productosEntity = productos.map {
+                ProductoTerminadoEntity(
+                    it.id,
+                    it.nombre,
+                    it.categoria_producto,
+                    it.imagen,
+                    it.estado,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                productosEntity,
+                { it.id },
+                { db.productoDao().getAllIds() },
+                { db.productoDao().deleteByIds(it) },
+                { db.productoDao().insertAll(it) }
+            )
+
+            println("PRODUCTOS OK")
+        }
+        if (GrupoSync.PRODUCTOS in gruposEfectivos) {
+            // 🔹 VARIACIONES
+            val variacionesResponse = RetrofitClient.api.getVariaciones(updatedAfter)
+
+            verificarRespuesta(variacionesResponse, "variaciones")
+
+            val variaciones = variacionesResponse.body() ?: emptyList()
+
+            val variacionesEntity = variaciones.map {
+                ProductoVariacionEntity(
+                    it.id,
+                    it.producto,
+                    it.presentacion,
+                    it.costo,
+                    it.precio,
+                    it.stock,
+                    it.stock_min,
+                    it.codigo_barras,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                variacionesEntity,
+                { it.id },
+                { db.variacionDao().getAllIds() },
+                { db.variacionDao().deleteByIds(it) },
+                { db.variacionDao().insertAll(it) }
+            )
+
+            println("VARIACIONES OK")
+        }
+        if (GrupoSync.INVENTARIO in gruposEfectivos) {
+            // 🔹 MINI BODEGA
+            val miniResponse = RetrofitClient.api.getMiniBodegas(updatedAfter)
+
+            verificarRespuesta(miniResponse, "mini-bodegas")
+
+            val miniBodegas = miniResponse.body() ?: emptyList()
+
+            val miniEntity = miniBodegas.map {
+                MiniBodegaEntity(
+                    it.id,
+                    it.ruta,
+                    it.fecha,
+                    it.usuario,
+                    it.vehiculo,
+                    it.estado,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                miniEntity,
+                { it.id },
+                { db.miniBodegaDao().getAllIds() },
+                { db.miniBodegaDao().deleteByIds(it) },
+                { db.miniBodegaDao().insertAll(it) }
+            )
+
+            println("MINI BODEGAS OK")
+        }
+        if (GrupoSync.INVENTARIO in gruposEfectivos) {
+            // 🔹 MINI BODEGA DETALLE
+            val detalleResponse =
+                RetrofitClient.api.getMiniBodegaDetalles(updatedAfter)
+
+            verificarRespuesta(detalleResponse, "mini-bodega-detalles")
+
+            val detalles = detalleResponse.body() ?: emptyList()
+
+            val detalleEntity = detalles.map {
+                MiniBodegaDetalleEntity(
+                    it.id,
+                    it.mini_bodega,
+                    it.producto_variacion,
+                    it.cantidad_inicial,
+                    it.cantidad_actual,
+                    it.updated_at
+                )
+            }
+
+            syncTable(
+                detalleEntity,
+                { it.id },
+                { db.miniBodegaDetalleDao().getAllIds() },
+                { db.miniBodegaDetalleDao().deleteByIds(it) },
+                { db.miniBodegaDetalleDao().insertAll(it) }
+            )
+
+        }
+    }
 }

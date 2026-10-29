@@ -25,4 +25,5 @@ sealed class Routes(val route: String) {
     object Rotacion : Routes("rotacion")
     object CarritoRotacion : Routes("carrito_rotacion")
     object RotacionesDia : Routes("rotaciones_dia")
+    object SyncAdmin : Routes("sync_admin")
 }

@@ -90,6 +90,7 @@ fun DevolucionFormScreen(
     var showPrinterDialog by remember { mutableStateOf(false) }
     var printerStatus by remember { mutableStateOf<PrintResult?>(null) }
     var isProcessing by remember { mutableStateOf(false) }
+    var registroSolicitado by remember { mutableStateOf(false) }
 
     // Estado para la animación de ocultar/mostrar detalles
     var showDetalles by remember { mutableStateOf(false) }
@@ -197,8 +198,13 @@ fun DevolucionFormScreen(
 
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(Unit) {
+        if (!devolucionViewModel.isLoading) devolucionViewModel.reset()
+    }
+
     LaunchedEffect(error) {
         error?.let {
+            registroSolicitado = false
             esExito = false
             mensajeResultado = it
             showResultDialog = true
@@ -207,7 +213,7 @@ fun DevolucionFormScreen(
     }
 
     LaunchedEffect(success) {
-        if (success) {
+        if (success && registroSolicitado) {
             val print = devolucionViewModel.printResult
 
             esExito = true
@@ -232,7 +238,7 @@ fun DevolucionFormScreen(
             showResultDialog = true
             carritoViewModel.limpiar()
             sustitucionesPorProducto = emptyMap()
-            devolucionViewModel.reset()
+            registroSolicitado = false
             isProcessing = false
         }
     }
@@ -291,7 +297,7 @@ fun DevolucionFormScreen(
             when (result) {
 
                 is PrintResult.Success -> {
-
+                    registroSolicitado = true
                     devolucionViewModel.registrarDevolucion(
                         clienteId = clienteIdFinal,
                         clienteNombre = cliente?.nombre,
@@ -373,6 +379,8 @@ fun DevolucionFormScreen(
                 val clienteIdFinal =
                     if (clienteNulo) null else cliente?.id
 
+                registroSolicitado = true
+                isProcessing = true
                 devolucionViewModel.registrarDevolucion(
                     clienteId = clienteIdFinal,
                     clienteNombre = cliente?.nombre,
@@ -415,6 +423,7 @@ fun DevolucionFormScreen(
                 showResultDialog = false
 
                 if (esExito) {
+                    devolucionViewModel.reset()
                     onDevolucionExitosa()
                 }
             },
@@ -422,6 +431,7 @@ fun DevolucionFormScreen(
                 showResultDialog = false
 
                 if (esExito) {
+                    devolucionViewModel.reset()
                     onDevolucionExitosa()
                 }
             },
@@ -806,7 +816,7 @@ fun DevolucionFormScreen(
                                                 )
                                         },
                                         modifier = Modifier
-                                            .menuAnchor()
+                                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                                             .fillMaxWidth(),
                                         shape =
                                             RoundedCornerShape(12.dp),

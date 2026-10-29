@@ -1,39 +1,61 @@
 package com.example.repartidor.ui.screens.login
 
+import android.os.SystemClock
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import com.example.repartidor.R
 import com.example.repartidor.viewmodel.Login.LoginViewModel
 import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
+import com.example.repartidor.viewmodel.Login.SyncAdminViewModel
 
 
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    syncAdminViewModel: SyncAdminViewModel,
+    onAdminAccess: () -> Unit
 ) {
     var usuario by remember { mutableStateOf("") }
+    var mostrarPinAdmin by remember { mutableStateOf(false) }
+    var pinAdmin by remember { mutableStateOf("") }
+    var pulsaciones by remember { mutableIntStateOf(0) }
+    var ultimaPulsacion by remember { mutableLongStateOf(0L) }
     val loginState = viewModel.loginState
     val error = viewModel.error
 
@@ -89,12 +111,24 @@ fun LoginScreen(
             Image(
                 painter = painterResource(id = R.drawable.logo_reparto_camioneta),
                 contentDescription = "Logo de la empresa",
-                // ContentScale.Fit asegura que el rectángulo completo se vea sin deformarse ni cortarse
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
-                    // 👇 Ajusta estos valores según el tamaño que quieras que ocupe en la pantalla
                     .width(300.dp)
                     .height(100.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        val ahora = SystemClock.elapsedRealtime()
+                        pulsaciones = if (ahora - ultimaPulsacion <= 800L) pulsaciones + 1 else 1
+                        ultimaPulsacion = ahora
+                        if (pulsaciones >= 7) {
+                            pulsaciones = 0
+                            pinAdmin = ""
+                            syncAdminViewModel.limpiarError()
+                            mostrarPinAdmin = true
+                        }
+                    }
             )
             Spacer(modifier = Modifier.height(35.dp))
 
@@ -221,12 +255,153 @@ fun LoginScreen(
 
             // Pie de página
             Text(
-                text = "Sistema de Reparto v2.5",
+                text = "Sistema de Reparto v2.6",
                 fontSize = 12.sp,
                 color = TextMuted,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(bottom = 24.dp, top = 24.dp)
             )
         }
+    }
+
+    if (mostrarPinAdmin) {
+        var mostrarPin by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = {
+                if (!syncAdminViewModel.isLoading) {
+                    mostrarPinAdmin = false
+                    pinAdmin = ""
+                    syncAdminViewModel.limpiarError()
+                }
+            },
+            properties = DialogProperties(
+                dismissOnClickOutside = false,
+                dismissOnBackPress = false
+            ),
+            containerColor = SurfaceWhite,
+            shape = RoundedCornerShape(24.dp),
+            icon = {
+                Box(
+                    modifier = Modifier.size(56.dp).clip(CircleShape).background(AccentBlueSoft),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = AccentBlue,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+            },
+            title = {
+                Text(
+                    "Acceso administrativo",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = TextPrimary,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text(
+                        "Ingresa el PIN administrativo de 6 dígitos para continuar.",
+                        fontSize = 14.sp,
+                        color = TextMuted,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp
+                    )
+
+                    OutlinedTextField(
+                        value = pinAdmin,
+                        onValueChange = { pinAdmin = it.filter(Char::isDigit).take(6) },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("PIN de 6 dígitos", color = TextMuted) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = TextMuted)
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { mostrarPin = !mostrarPin }) {
+                                Icon(
+                                    if (mostrarPin) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (mostrarPin) "Ocultar PIN" else "Mostrar PIN",
+                                    tint = TextMuted
+                                )
+                            }
+                        },
+                        singleLine = true,
+                        enabled = !syncAdminViewModel.isLoading,
+                        visualTransformation = if (mostrarPin) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = BackgroundLight,
+                            unfocusedContainerColor = BackgroundLight,
+                            focusedBorderColor = AccentBlue,
+                            unfocusedBorderColor = Color.Transparent,
+                            cursorColor = AccentBlue,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary
+                        )
+                    )
+
+                    if (syncAdminViewModel.isLoading) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = AccentBlue
+                        )
+                        Text(
+                            "Verificando acceso...",
+                            fontSize = 12.sp,
+                            color = TextMuted
+                        )
+                    }
+
+                    syncAdminViewModel.errorMensaje?.let {
+                        Text(
+                            it,
+                            fontSize = 13.sp,
+                            color = ErrorRed
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    enabled = pinAdmin.length == 6 && !syncAdminViewModel.isLoading,
+                    onClick = {
+                        syncAdminViewModel.verificarPin(pinAdmin) {
+                            pinAdmin = ""
+                            mostrarPinAdmin = false
+                            onAdminAccess()
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentBlue,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Verificar acceso", fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    enabled = !syncAdminViewModel.isLoading,
+                    onClick = {
+                        mostrarPinAdmin = false
+                        pinAdmin = ""
+                        syncAdminViewModel.limpiarError()
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cancelar", fontWeight = FontWeight.SemiBold)
+                }
+            }
+        )
     }
 }

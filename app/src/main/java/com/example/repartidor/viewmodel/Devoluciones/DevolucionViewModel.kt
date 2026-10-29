@@ -121,7 +121,6 @@ class DevolucionViewModel(
                 // DESDE AQUÍ LA DEVOLUCIÓN YA ESTÁ GUARDADA
                 devolucionRegistrada = registrada
                 devolucionYaRegistrada = true
-                success = true
 
                 // LA IMPRESIÓN NO DEBE AFECTAR EL REGISTRO
                 if (imprimir) {
@@ -160,6 +159,7 @@ class DevolucionViewModel(
                 } else {
                     printResult = PrintResult.NoPrinter
                 }
+                success=true
 
             } catch (e: Exception) {
                 error = e.message ?: "Error al registrar devolución"
