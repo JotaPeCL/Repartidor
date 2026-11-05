@@ -13,6 +13,7 @@ import com.example.repartidor.data.model.entity.RotacionDetalleEntity
 import com.example.repartidor.data.model.entity.RotacionEntity
 import com.example.repartidor.data.model.entity.RotacionSustitucionEntity
 import java.util.UUID
+import kotlin.math.roundToLong
 
 class RotacionInventarioRepository(
     private val database: AppDatabase,
@@ -22,12 +23,57 @@ class RotacionInventarioRepository(
     private val miniBodegaDetalleDao: MiniBodegaDetalleDao
 ) {
 
+    private fun validarLimiteEconomicoRotacion(
+        carrito: List<CarritoItem>,
+        sustitucionesPorProducto: Map<Int, List<SustitucionRotacionSeleccionada>>
+    ) {
+        carrito.forEach { item ->
+
+            // Valor individual del producto recibido
+            val valorRecibido =
+                (item.precio * item.cantidad * 100.0).roundToLong()
+
+            // Valor de las sustituciones de este producto
+            val valorEntregado =
+                sustitucionesPorProducto[item.productoVariacionId]
+                    .orEmpty()
+                    .sumOf { sustitucion ->
+                        (sustitucion.precio * sustitucion.cantidad * 100.0)
+                            .roundToLong()
+                    }
+
+            // Calcular margen permitido
+            val margen = when {
+                valorRecibido <= 3000L -> 3000L
+                valorRecibido <= 10000L -> valorRecibido * 75 / 100
+                valorRecibido <= 30000L -> valorRecibido * 50 / 100
+                else -> valorRecibido * 30 / 100
+            }
+
+            val maximoPermitido = valorRecibido + margen
+
+            // Bloquear únicamente cuando se excede el máximo
+            if (valorEntregado > maximoPermitido) {
+                throw IllegalArgumentException(
+                    "El cambio de ${item.productoNombre} excede el límite permitido.\n\n" +
+                            "Valor recibido: $${"%.2f".format(valorRecibido / 100.0)}\n" +
+                            "Máximo permitido: $${"%.2f".format(maximoPermitido / 100.0)}"
+                )
+            }
+        }
+    }
+
     suspend fun registrarRotacion(
         rotacion: RotacionEntity,
         carrito: List<CarritoItem>,
         sustitucionesPorProducto: Map<Int, List<SustitucionRotacionSeleccionada>>
     ) {
         database.withTransaction {
+
+            // =========================================================
+            // VALIDAR LÍMITE ECONÓMICO
+            // =========================================================
+            validarLimiteEconomicoRotacion(carrito, sustitucionesPorProducto)
 
             // =========================================================
             // VALIDAR VALORES

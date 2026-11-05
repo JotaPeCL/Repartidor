@@ -63,4 +63,14 @@ interface CancelacionRotacionDao {
     suspend fun existeCancelacion(
         rotacionUuid: String
     ): Boolean
+
+    @Query("""
+SELECT id FROM cancelacion_rotacion
+WHERE sincronizado = 1
+AND datetime(fecha) < datetime('now', '-30 days')
+""")
+    suspend fun getCancelacionesParaEliminar(): List<Int>
+
+    @Query("DELETE FROM cancelacion_rotacion WHERE id IN (:ids)")
+    suspend fun deleteCancelacionesByIds(ids: List<Int>)
 }

@@ -164,14 +164,16 @@ WHERE ventaId = :ventaId
         usuarioId: Int
     ): Double
 
-    @Query("""
+    @Query(
+        """
     SELECT IFNULL(SUM(total), 0.0)
     FROM venta
     WHERE fecha >= :inicioDia
     AND fecha < :finDia
     AND usuarioId = :usuarioId
     AND tipoVenta IN ('CONTADO', 'CREDITO')
-""")
+"""
+    )
     suspend fun getDineroTotalVentasDelDia(
         inicioDia: Long,
         finDia: Long,
@@ -223,20 +225,22 @@ WHERE ventaId = :ventaId
     )
     suspend fun marcarSincronizado(uuid: String)
 
-    @Query("""
-SELECT id FROM venta
-WHERE sincronizado = 1
-AND CAST(fecha AS INTEGER) < :fechaLimite
-AND NOT (
-    tipoVenta = 'CREDITO' 
-    AND estadoPago != 'PAGADO'
+    @Query(
+        """
+SELECT v.id FROM venta v
+WHERE v.sincronizado = 1
+AND CAST(v.fecha AS INTEGER) < :fechaLimite
+AND (v.tipoVenta != 'CREDITO' OR (v.estadoPago = 'PAGADO' AND v.saldoPendiente <= 0.01))
+AND NOT EXISTS (
+    SELECT 1 FROM abono a
+    WHERE a.ventaId = v.id AND a.sincronizado = 0
 )
-""")
+"""
+    )
     suspend fun getVentasParaEliminar(fechaLimite: Long): List<Int>
 
     @Query("DELETE FROM venta WHERE id IN (:ids)")
     suspend fun deleteVentasByIds(ids: List<Int>)
-
 
 
     @Query("DELETE FROM venta_detalle WHERE ventaId = :ventaId")

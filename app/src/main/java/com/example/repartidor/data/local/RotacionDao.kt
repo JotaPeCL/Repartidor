@@ -52,4 +52,19 @@ interface RotacionDao {
 
     @Query("DELETE FROM rotaciones WHERE id = :rotacionId")
     suspend fun eliminarPorId(rotacionId: Int)
+
+    @Query("""
+    SELECT id FROM rotaciones
+    WHERE sincronizado = 1
+    AND CAST(fecha AS INTEGER) < :fechaLimite
+    AND NOT EXISTS (
+        SELECT 1 FROM rotacion_sustitucion
+        WHERE rotacion_sustitucion.rotacionId = rotaciones.id
+        AND rotacion_sustitucion.sincronizado = 0
+    )
+""")
+    suspend fun getRotacionesParaEliminar(fechaLimite: Long): List<Int>
+
+    @Query("DELETE FROM rotaciones WHERE id IN (:ids)")
+    suspend fun deleteRotacionesByIds(ids: List<Int>)
 }

@@ -1,5 +1,6 @@
 package com.example.repartidor.data.repository
 
+import androidx.room.withTransaction
 import com.example.repartidor.data.local.AppDatabase
 import com.example.repartidor.data.model.entity.CategoriaProductoEntity
 import com.example.repartidor.data.model.entity.ClienteDiasVisitaEntity
@@ -437,35 +438,58 @@ class SyncRepository(
 
         println("MERMAS SINCRONIZADAS ELIMINADAS")
 
-        /*
-        val limite =
-            System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000)
+        // 🔹 LIMPIEZA DE DATOS ANTIGUOS SINCRONIZADOS
+        val limite = System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000)
 
-        // 🔥 VENTAS
-        val ventasIds =
-            db.ventaDao().getVentasParaEliminar(limite)
+        db.withTransaction {
+            // VENTAS
+            val ventasIds = db.ventaDao().getVentasParaEliminar(limite)
+            if (ventasIds.isNotEmpty()) {
+                db.ventaDetalleDao().deleteDetallesByVentaIds(ventasIds)
+                db.abonoDao().deleteAbonosByVentaIds(ventasIds)
+                db.ventaDao().deleteVentasByIds(ventasIds)
+            }
 
-        if (ventasIds.isNotEmpty()) {
-            db.ventaDetalleDao().deleteDetallesByVentaIds(ventasIds)
-            db.abonoDao().deleteAbonosByVentaIds(ventasIds)
-            db.ventaDao().deleteVentasByIds(ventasIds)
-        }
+            // DEVOLUCIONES
+            val devolucionesIds = db.devolucionDao().getDevolucionesParaEliminar(limite)
+            if (devolucionesIds.isNotEmpty()) {
+                db.devolucionDetalleDao().deleteDetallesDevolucionByIds(devolucionesIds)
+                db.devolucionSustitucionDao().eliminarPorDevoluciones(devolucionesIds)
+                db.devolucionDao().deleteDevolucionesByIds(devolucionesIds)
+            }
 
+            // ROTACIONES
+            val rotacionesIds = db.rotacionDao().getRotacionesParaEliminar(limite)
+            if (rotacionesIds.isNotEmpty()) {
+                db.rotacionDetalleDao().deleteDetallesByRotacionIds(rotacionesIds)
+                db.rotacionSustitucionDao().deleteSustitucionesByRotacionIds(rotacionesIds)
+                db.rotacionDao().deleteRotacionesByIds(rotacionesIds)
+            }
 
-        // 🔥 DEVOLUCIONES
-        val devolucionesIds =
-            db.devolucionDao().getDevolucionesParaEliminar()
+            // CANCELACIONES DE VENTAS
+            val cancelacionesVentaIds = db.cancelacionVentaDao().getCancelacionesParaEliminar()
+            if (cancelacionesVentaIds.isNotEmpty()) {
+                db.cancelacionVentaDao().deleteDetallesByCancelacionIds(cancelacionesVentaIds)
+                db.cancelacionVentaDao().deleteCancelacionesByIds(cancelacionesVentaIds)
+            }
 
-        if (devolucionesIds.isNotEmpty()) {
-            db.devolucionDetalleDao()
-                .deleteDetallesDevolucionByIds(devolucionesIds)
+            // CANCELACIONES DE DEVOLUCIONES
+            val cancelacionesDevolucionIds = db.cancelacionDevolucionDao().getCancelacionesParaEliminar()
+            if (cancelacionesDevolucionIds.isNotEmpty()) {
+                db.cancelacionDevolucionDao().deleteDetallesByCancelacionIds(cancelacionesDevolucionIds)
+                db.cancelacionDevolucionDao().deleteSustitucionesByCancelacionIds(cancelacionesDevolucionIds)
+                db.cancelacionDevolucionDao().deleteCancelacionesByIds(cancelacionesDevolucionIds)
+            }
 
-            db.devolucionDao()
-                .deleteDevolucionesByIds(devolucionesIds)
+            // CANCELACIONES DE ROTACIONES
+            val cancelacionesRotacionIds = db.cancelacionRotacionDao().getCancelacionesParaEliminar()
+            if (cancelacionesRotacionIds.isNotEmpty()) {
+                db.cancelacionRotacionDetalleDao().deleteDetallesByCancelacionIds(cancelacionesRotacionIds)
+                db.cancelacionRotacionDao().deleteCancelacionesByIds(cancelacionesRotacionIds)
+            }
         }
 
         println("LIMPIEZA DE DATOS ANTIGUOS COMPLETADA")
-        */
 
 
         /*
@@ -540,7 +564,6 @@ class SyncRepository(
         //Dependencias: Inventario -> Productos, Rutas -> Usuarios, etc.
         if (GrupoSync.INVENTARIO in gruposEfectivos) {
             gruposEfectivos.add(GrupoSync.PRODUCTOS)
-            gruposEfectivos.add(GrupoSync.RUTAS)
         }
         if (GrupoSync.CLIENTES in gruposEfectivos) gruposEfectivos.add(GrupoSync.RUTAS)
         if (GrupoSync.RUTAS in gruposEfectivos) gruposEfectivos.add(GrupoSync.USUARIOS)

@@ -40,11 +40,19 @@ interface DevolucionDao {
     suspend fun marcarSincronizado(uuid: String)
 
     @Query("""
-SELECT id FROM devoluciones
-WHERE sincronizado = 1
-AND datetime(createdAt) < datetime('now', '-30 day')
+SELECT d.id FROM devoluciones d
+WHERE d.sincronizado = 1
+AND CAST(d.fecha AS INTEGER) < :fechaLimite
+AND NOT EXISTS (
+    SELECT 1 FROM devolucion_sustitucion s
+    WHERE s.devolucionId = d.id AND s.sincronizado = 0
+)
+AND NOT EXISTS (
+    SELECT 1 FROM mini_bodega_detalle_merma m
+    WHERE m.devolucionId = d.id AND m.sincronizado = 0
+)
 """)
-    suspend fun getDevolucionesParaEliminar(): List<Int>
+    suspend fun getDevolucionesParaEliminar(fechaLimite: Long): List<Int>
 
     @Query("DELETE FROM devoluciones WHERE id IN (:ids)")
     suspend fun deleteDevolucionesByIds(ids: List<Int>)

@@ -103,4 +103,20 @@ interface CancelacionDevolucionDao {
         fin: Long,
         usuarioId: Int
     ): List<CancelacionDevolucionEntity>
+
+    @Query("""
+SELECT id FROM cancelacion_devolucion
+WHERE sincronizado = 1
+AND datetime(fecha) < datetime('now', '-30 days')
+""")
+    suspend fun getCancelacionesParaEliminar(): List<Int>
+
+    @Query("DELETE FROM cancelacion_devolucion_detalle WHERE cancelacionDevolucionId IN (:ids)")
+    suspend fun deleteDetallesByCancelacionIds(ids: List<Int>)
+
+    @Query("DELETE FROM cancelacion_devolucion_sustitucion WHERE cancelacionDevolucionId IN (:ids)")
+    suspend fun deleteSustitucionesByCancelacionIds(ids: List<Int>)
+
+    @Query("DELETE FROM cancelacion_devolucion WHERE id IN (:ids)")
+    suspend fun deleteCancelacionesByIds(ids: List<Int>)
 }

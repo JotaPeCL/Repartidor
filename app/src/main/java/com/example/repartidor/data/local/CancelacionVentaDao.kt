@@ -36,4 +36,17 @@ interface CancelacionVentaDao {
 """)
     suspend fun marcarSincronizado(uuid: String)
 
+    @Query("""
+SELECT id FROM cancelacion_venta
+WHERE sincronizado = 1
+AND datetime(fecha) < datetime('now', '-30 days')
+""")
+    suspend fun getCancelacionesParaEliminar(): List<Int>
+
+    @Query("DELETE FROM cancelacion_venta_detalle WHERE cancelacionVentaId IN (:ids)")
+    suspend fun deleteDetallesByCancelacionIds(ids: List<Int>)
+
+    @Query("DELETE FROM cancelacion_venta WHERE id IN (:ids)")
+    suspend fun deleteCancelacionesByIds(ids: List<Int>)
+
 }

@@ -40,4 +40,7 @@ interface CancelacionRotacionDetalleDao {
     suspend fun obtenerPorCancelacionUuid(
         cancelacionRotacionUuid: String
     ): List<CancelacionRotacionDetalleEntity>
+
+    @Query("DELETE FROM cancelacion_rotacion_detalle WHERE cancelacionRotacionId IN (:ids)")
+    suspend fun deleteDetallesByCancelacionIds(ids: List<Int>)
 }

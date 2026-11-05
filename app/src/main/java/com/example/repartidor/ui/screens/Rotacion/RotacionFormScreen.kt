@@ -847,8 +847,11 @@ private fun CambioProductoRotacionDialog(
     val valorSeleccionado = seleccionadas.sumOf {
         dineroACentavosRotacion(it.precio * it.cantidad)
     }
+    val limitePermitido = limiteRotacionCentavos(objetivoCentavos)
+    val limiteExcedido = valorSeleccionado.toLong() > limitePermitido
 
-    val puedeConfirmar = seleccionadas.isNotEmpty() &&
+    val puedeConfirmar = !limiteExcedido &&
+            seleccionadas.isNotEmpty() &&
             seleccionadas.size == cantidades.size &&
             seleccionadas.all { seleccion ->
                 val variacion = variacionesDisponibles.firstOrNull {
@@ -916,6 +919,16 @@ private fun CambioProductoRotacionDialog(
                     fontWeight = FontWeight.Bold,
                     color = AccentBlue
                 )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Tope máximo de cambio: $${
+                        centavosADineroRotacion(limitePermitido.toInt())
+                    }",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentIndigo
+                )
 
                 // ==========================================
                 // RESUMEN DE DINERO
@@ -959,6 +972,39 @@ private fun CambioProductoRotacionDialog(
                                 TextPrimary,
                             textAlign = TextAlign.Center
                         )
+                    }
+                }
+
+                if (limiteExcedido) {
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = ErrorRedSoft),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = ErrorRed,
+                                modifier = Modifier.size(20.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                text = "Límite de rotación excedido.\n" +
+                                        "Máximo permitido: $${centavosADineroRotacion(limitePermitido.toInt())}.\n" +
+                                        "Reduce los productos de cambio para continuar.",
+                                color = ErrorRed,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }
@@ -1402,4 +1448,15 @@ private fun mensajeDiferenciaRotacion(
         diferencia < 0 -> "EL REPARTIDOR ENTREGA $${centavosADineroRotacion(-diferencia)}"
         else -> "ROTACIÓN SIN DIFERENCIA"
     }
+}
+
+private fun limiteRotacionCentavos(valorRecibido: Int): Long {
+    val recibido = valorRecibido.toLong()
+    val margen = when {
+        recibido <= 3000L -> 3000L
+        recibido <= 10000L -> recibido * 75 / 100
+        recibido <= 30000L -> recibido * 50 / 100
+        else -> recibido * 30 / 100
+    }
+    return recibido + margen
 }

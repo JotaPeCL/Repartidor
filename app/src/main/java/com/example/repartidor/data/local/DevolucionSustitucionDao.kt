@@ -61,6 +61,7 @@ interface DevolucionSustitucionDao {
         devolucionUuid: String
     ): List<DevolucionSustitucionEntity>
 
-
+    @Query("DELETE FROM devolucion_sustitucion WHERE devolucionId IN (:ids)")
+    suspend fun eliminarPorDevoluciones(ids: List<Int>)
 
 }

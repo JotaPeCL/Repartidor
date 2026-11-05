@@ -74,4 +74,7 @@ interface RotacionSustitucionDao {
 
     @Query("DELETE FROM rotacion_sustitucion WHERE rotacionId = :rotacionId")
     suspend fun eliminarPorRotacion(rotacionId: Int)
+
+    @Query("DELETE FROM rotacion_sustitucion WHERE rotacionId IN (:ids)")
+    suspend fun deleteSustitucionesByRotacionIds(ids: List<Int>)
 }
