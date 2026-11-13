@@ -146,12 +146,7 @@ class DevolucionViewModel(
                             val device = bluetoothAdapter?.let {
                                 printerRepository.getSavedPrinter(it)
                             }
-                            val firstPrint = printerManager.print(device, ticket)
-                            if (firstPrint is PrintResult.Success) {
-                                printerManager.print(device, ticket)
-                            } else {
-                                firstPrint
-                            }
+                            printerManager.print(device, ticket)
                         }
                     } catch (e: Exception) {
                         PrintResult.Error(e.message ?: "Error al imprimir ticket")
@@ -159,7 +154,7 @@ class DevolucionViewModel(
                 } else {
                     printResult = PrintResult.NoPrinter
                 }
-                success=true
+                success = true
 
             } catch (e: Exception) {
                 error = e.message ?: "Error al registrar devolución"

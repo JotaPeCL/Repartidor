@@ -70,6 +70,9 @@ class RotacionesDiaViewModel(
     private val _printResult = MutableStateFlow<PrintResult?>(null)
     val printResult: StateFlow<PrintResult?> = _printResult
 
+    private val _isPrinting = MutableStateFlow(false)
+    val isPrinting: StateFlow<Boolean> = _isPrinting
+
     // =========================================================
     // CARGAR ROTACIONES DEL DÍA
     // =========================================================
@@ -201,6 +204,7 @@ class RotacionesDiaViewModel(
 
         viewModelScope.launch {
             _isLoading.value = true
+            _isPrinting.value = true
             _error.value = null
             _printResult.value = null
 
@@ -305,25 +309,17 @@ class RotacionesDiaViewModel(
                 )
 
                 _printResult.value = withContext(Dispatchers.IO) {
-
                     val device = bluetoothAdapter?.let {
                         printerRepository.getSavedPrinter(it)
                     }
-
-                    val firstPrint =
-                        printerManager.print(device, ticket)
-
-                    if (firstPrint is PrintResult.Success) {
-                        printerManager.print(device, ticket)
-                    } else {
-                        firstPrint
-                    }
+                    printerManager.print(device, ticket)
                 }
 
             } catch (e: Exception) {
                 _error.value =
                     e.message ?: "Error al reimprimir el ticket"
             } finally {
+                _isPrinting.value = false
                 _isLoading.value = false
             }
         }

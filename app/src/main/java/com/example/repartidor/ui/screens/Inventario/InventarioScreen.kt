@@ -1,3 +1,4 @@
+
 package com.example.repartidor.ui.screens.Inventario
 
 import androidx.compose.foundation.background
@@ -7,34 +8,66 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.repartidor.data.local.SessionManager
 import com.example.repartidor.ui.screens.components.StandardTopBar
+import com.example.repartidor.ui.screens.components.*
 import com.example.repartidor.viewmodel.Inventario.InventarioViewModel
-import com.example.repartidor.ui.screens.components.* //Aqui estan los colores del tema
+import java.text.Normalizer
+import java.text.NumberFormat
+import java.util.Locale
 
+// ── ORDEN PERSONALIZADO DE PRESENTACIONES ──
+private val ORDEN_PRESENTACIONES = listOf(
+    "Minis", "Chico", "Mediano", "Grande", "250g", "500g",
+    "1kg", "Kiosko", "Grande 150g", "Grande 140g", "Pieza"
+)
+
+// ── ORDEN PERSONALIZADO DE PRODUCTOS ──
+private val ORDEN_PRODUCTOS = listOf(
+    "PISTACHE", "ENCHILADO", "JAPONES", "JAPONES FUEGO", "MACHO",
+    "HORNEADO", "CASCARITA", "SURTIDO", "HABA PELADA", "HABA CON CASCARA",
+    "GARBANZA", "GARAPIÑADO", "GOMITA", "LUNETA", "HUEVITO CHOCOLATE",
+    "GALLETA MARINA", "CIRUELA", "PASAS", "SEMILLA DE CALABAZA",
+    "SEMILLA DE GIRASOL", "NUEZ", "ALMENDRA", "GRANOLA", "CHILE DE ARBOL",
+    "CHILE PULLA", "CHILE CASCABEL", "CAMARON", "CAMARON MOLIDO",
+    "CHARAL NATURAL", "CHARAL ADOBADO", "CECINA NATURAL", "CECINA ADOBADA",
+    "CECINA DE LIMON", "CECINA CHILTEPIN", "CECINA CHIPOTLE",
+    "CECINA HABANERO", "CECINA ARTESANAL", "PAPA FRITA",
+    "CHURRO DE MASA", "CHURRO DELGADO", "CHICHARRON", "CHICHARRON CRAC",
+    "PLATANO", "TOSTADA", "MIEL", "TIRA DE CC MINI", "TIRA DE DULCE",
+    "MIX VERDE", "MIX ROJO"
+)
+
+private fun String.normalizarInventario(): String =
+    Normalizer.normalize(trim(), Normalizer.Form.NFD)
+        .replace(Regex("\\p{M}+"), "")
+        .uppercase(Locale.ROOT)
+
+private val INDICE_PRODUCTOS = ORDEN_PRODUCTOS.mapIndexed { index, nombre ->
+    nombre.normalizarInventario() to index
+}.toMap()
+
+private val INDICE_PRESENTACIONES = ORDEN_PRESENTACIONES.mapIndexed { index, nombre ->
+    nombre.normalizarInventario() to index
+}.toMap()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,30 +78,38 @@ fun InventarioScreen(
     onBack: () -> Unit
 ) {
     val lista = viewModel.inventario
-
-    // Estado para la búsqueda
     var searchQuery by remember { mutableStateOf("") }
     val finalDia by sessionManager.finalDiaFlow.collectAsState(initial = false)
 
-    // Lista filtrada reactiva
-    val filteredList by remember(searchQuery, lista) {
-        derivedStateOf {
-            if (searchQuery.isBlank()) {
-                lista
-            } else {
-                lista.filter {
+    // ── VALOR TOTAL DEL INVENTARIO ──
+    val valorTotalInventario = lista.sumOf {
+        it.cantidadActual * it.precioUnitario
+    }
+    val formatoMoneda = remember {
+        NumberFormat.getCurrencyInstance(
+            Locale.Builder().setLanguage("es").setRegion("MX").build()
+        )
+    }
+
+    // ── BÚSQUEDA Y ORDEN PERSONALIZADO ──
+    val filteredList = remember(searchQuery, lista) {
+        lista.filter {
+            searchQuery.isBlank() ||
                     it.productoNombre.contains(searchQuery, ignoreCase = true) ||
-                            it.presentacion.contains(searchQuery, ignoreCase = true)
-                }
-            }
-        }
+                    it.presentacion.contains(searchQuery, ignoreCase = true)
+        }.sortedWith(
+            compareBy(
+                { INDICE_PRODUCTOS[it.productoNombre.normalizarInventario()] ?: Int.MAX_VALUE },
+                { if (it.productoNombre.normalizarInventario() in INDICE_PRODUCTOS) "" else it.productoNombre.normalizarInventario() },
+                { INDICE_PRESENTACIONES[it.presentacion.normalizarInventario()] ?: Int.MAX_VALUE },
+                { it.presentacion.normalizarInventario() }
+            )
+        )
     }
 
     LaunchedEffect(Unit) {
         val username = sessionManager.getUser()
-        username?.let {
-            viewModel.cargarInventario(it)
-        }
+        username?.let { viewModel.cargarInventario(it) }
     }
 
     Scaffold(
@@ -80,24 +121,21 @@ fun InventarioScreen(
             )
         },
         bottomBar = {
+            // ── BOTÓN ORIGINAL DE REABASTECIMIENTO ──
             if (finalDia) {
-
                 Surface(
                     color = SurfaceWhite,
                     shadowElevation = 8.dp,
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth()
                             .navigationBarsPadding()
                             .padding(horizontal = 20.dp, vertical = 16.dp)
                     ) {
                         Button(
                             onClick = onIrReabastecimiento,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = AccentBlue,
@@ -121,20 +159,49 @@ fun InventarioScreen(
             }
         }
     ) { paddingValues ->
-
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier = Modifier.fillMaxSize().padding(paddingValues)
         ) {
+            // ── TARJETA DE VALOR TOTAL ──
+            Card(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = AccentTealSoft),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(20.dp)
+                ) {
+                    Text(
+                        text = "VALOR TOTAL DEL INVENTARIO",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AccentTeal,
+                        letterSpacing = 0.5.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = formatoMoneda.format(valorTotalInventario),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Valor de venta de las existencias actuales",
+                        fontSize = 12.sp,
+                        color = TextMuted
+                    )
+                }
+            }
 
             // ── BARRA DE BÚSQUEDA ──
             if (lista.isNotEmpty()) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 12.dp),
                     placeholder = {
                         Text(
@@ -144,7 +211,11 @@ fun InventarioScreen(
                         )
                     },
                     leadingIcon = {
-                        Icon(Icons.Default.Search, contentDescription = "Buscar", tint = TextMuted)
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Buscar",
+                            tint = TextMuted
+                        )
                     },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
@@ -170,15 +241,14 @@ fun InventarioScreen(
             }
 
             if (lista.isEmpty()) {
-                // ── ESTADO: INVENTARIO VACÍO ──
+                // ── INVENTARIO VACÍO ──
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
-                            modifier = Modifier
-                                .size(90.dp)
+                            modifier = Modifier.size(90.dp)
                                 .clip(CircleShape)
                                 .background(Color.White),
                             contentAlignment = Alignment.Center
@@ -208,15 +278,14 @@ fun InventarioScreen(
                     }
                 }
             } else if (filteredList.isEmpty()) {
-                // ── ESTADO: SIN RESULTADOS DE BÚSQUEDA ──
+                // ── SIN RESULTADOS DE BÚSQUEDA ──
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
-                            modifier = Modifier
-                                .size(90.dp)
+                            modifier = Modifier.size(90.dp)
                                 .clip(CircleShape)
                                 .background(Color.White),
                             contentAlignment = Alignment.Center
@@ -245,14 +314,11 @@ fun InventarioScreen(
                     }
                 }
             } else {
-                // ── LISTA DE INVENTARIO FILTRADA ──
+                // ── LISTA ORIGINAL CON ORDEN PERSONALIZADO ──
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
-                        start = 20.dp,
-                        end = 20.dp,
-                        top = 8.dp,
-                        bottom = 24.dp
+                        start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp
                     ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -264,12 +330,9 @@ fun InventarioScreen(
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Información del producto
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = item.productoNombre,
@@ -285,10 +348,7 @@ fun InventarioScreen(
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
-
                                 Spacer(modifier = Modifier.width(12.dp))
-
-                                // Etiqueta visual para el Stock (Estilo AccentTeal)
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(12.dp))
@@ -296,7 +356,9 @@ fun InventarioScreen(
                                         .padding(horizontal = 14.dp, vertical = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
                                         Text(
                                             text = "STOCK",
                                             fontSize = 10.sp,
@@ -306,10 +368,26 @@ fun InventarioScreen(
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                            text = "${item.cantidadActual}/${item.cantidadInicial}",
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Black,
-                                            color = AccentTeal
+                                            text = buildAnnotatedString {
+                                                withStyle(
+                                                    SpanStyle(
+                                                        fontSize = 21.sp,
+                                                        fontWeight = FontWeight.Black,
+                                                        color = Color(0xFF102A43)
+                                                    )
+                                                ) {
+                                                    append("${item.cantidadActual}")
+                                                }
+                                                withStyle(
+                                                    SpanStyle(
+                                                        fontSize = 14.sp,
+                                                        fontWeight = FontWeight.Medium,
+                                                        color = TextMuted
+                                                    )
+                                                ) {
+                                                    append("/${item.cantidadInicial}")
+                                                }
+                                            }
                                         )
                                     }
                                 }

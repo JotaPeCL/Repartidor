@@ -144,7 +144,10 @@ class RotacionViewModel(
                         "No se encontró la MiniBodega de la sesión"
                     )
 
-                Log.d("OSMIT_ROTACION", "3. Sesión correcta | usuario=$usuarioId | minibodega=$miniBodegaId")
+                Log.d(
+                    "OSMIT_ROTACION",
+                    "3. Sesión correcta | usuario=$usuarioId | minibodega=$miniBodegaId"
+                )
 
                 // VALIDAR PRODUCTOS DE CAMBIO
 
@@ -195,7 +198,10 @@ class RotacionViewModel(
 
                 val diferenciaDinero = abs(diferenciaCentavos) / 100.0
 
-                Log.d("OSMIT_ROTACION", "5. Valores calculados | recibido=$valorRecibidoCentavos | entregado=$valorEntregadoCentavos | tipo=$tipoDiferencia")
+                Log.d(
+                    "OSMIT_ROTACION",
+                    "5. Valores calculados | recibido=$valorRecibidoCentavos | entregado=$valorEntregadoCentavos | tipo=$tipoDiferencia"
+                )
 
                 // CREAR ROTACIÓN
 
@@ -222,7 +228,10 @@ class RotacionViewModel(
                     carrito = carrito,
                     sustitucionesPorProducto = sustitucionesPorProducto
                 )
-                Log.d("OSMIT_ROTACION", "5. Valores calculados | recibido=$valorRecibidoCentavos | entregado=$valorEntregadoCentavos | tipo=$tipoDiferencia")
+                Log.d(
+                    "OSMIT_ROTACION",
+                    "5. Valores calculados | recibido=$valorRecibidoCentavos | entregado=$valorEntregadoCentavos | tipo=$tipoDiferencia"
+                )
 
                 // Desde aquí la rotación ya quedó registrada.
                 // Una falla de impresión no debe cambiar ese resultado.
@@ -246,15 +255,7 @@ class RotacionViewModel(
                             val device = bluetoothAdapter?.let {
                                 printerRepository.getSavedPrinter(it)
                             }
-
-                            val firstPrint =
-                                printerManager.print(device, ticket)
-
-                            if (firstPrint is PrintResult.Success) {
-                                printerManager.print(device, ticket)
-                            } else {
-                                firstPrint
-                            }
+                            printerManager.print(device, ticket)
                         }
 
                     } catch (e: Exception) {
@@ -276,7 +277,10 @@ class RotacionViewModel(
 
             } finally {
                 _isLoading.value = false
-                Log.d("OSMIT_ROTACION", "10. FINALLY | loading=false | success=${_success.value} | error=${_error.value}")
+                Log.d(
+                    "OSMIT_ROTACION",
+                    "10. FINALLY | loading=false | success=${_success.value} | error=${_error.value}"
+                )
             }
         }
     }

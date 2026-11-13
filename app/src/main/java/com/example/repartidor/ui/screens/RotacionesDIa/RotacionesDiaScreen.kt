@@ -55,6 +55,7 @@ fun RotacionesDiaScreen(
     val error by viewModel.error.collectAsState()
     val success by viewModel.success.collectAsState()
     val printResult by viewModel.printResult.collectAsState()
+    val isPrinting by viewModel.isPrinting.collectAsState()
 
     val finalDia by sessionManager.finalDiaFlow.collectAsState(
         initial = false
@@ -284,7 +285,46 @@ fun RotacionesDiaScreen(
         )
     }
 
-    // RESULTADO
+    //Dialogo de impresion
+    if (isPrinting) {
+        Dialog(onDismissRequest = {}) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = SurfaceWhite
+            ) {
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = 32.dp,
+                        vertical = 28.dp
+                    ),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(
+                        color = AccentBlue,
+                        modifier = Modifier.size(42.dp)
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Text(
+                        text = "Imprimiendo Ticket...",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Espera un momento no cierres la aplicación.",
+                        fontSize = 13.sp,
+                        color = TextMuted,
+                        textAlign = TextAlign.Center
+                    )
+
+
+                }
+            }
+        }
+    }
+
+// RESULTADO
 
     if (mensajeResultado != null) {
         AlertDialog(

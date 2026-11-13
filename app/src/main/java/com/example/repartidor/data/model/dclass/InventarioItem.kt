@@ -4,5 +4,6 @@ data class InventarioItem(
     val productoNombre: String,
     val presentacion: String,
     val cantidadActual: Double,
-    val cantidadInicial: Double
+    val cantidadInicial: Double,
+    val precioUnitario: Double = 0.0
 )

@@ -154,14 +154,7 @@ class VentaProcesoViewModel(
                 // 🔥 AQUÍ ESTÁ EL ÚNICO CAMBIO REAL
                 val result = if (imprimir) {
                     withContext(Dispatchers.IO) {
-
-                        val firstResult = printerManager.print(device, ticket)
-
-                        // 🔥 Segunda copia (sin afectar tu lógica)
-                        delay(300)
                         printerManager.print(device, ticket)
-
-                        firstResult // 👈 respetamos el resultado original
                     }
                 } else {
                     PrintResult.NoPrinter

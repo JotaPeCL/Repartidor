@@ -41,9 +41,10 @@ class InventarioRepository(private val db: AppDatabase) {
 
             InventarioItem(
                 productoNombre = producto.nombre,
-                presentacion = presentacion.nombre, // o como lo tengas
+                presentacion = presentacion.nombre,
                 cantidadActual = detalle.cantidadActual,
-                cantidadInicial = detalle.cantidadInicial
+                cantidadInicial = detalle.cantidadInicial,
+                precioUnitario = variacion.precio
             )
         }.sortedWith(
             compareBy(
